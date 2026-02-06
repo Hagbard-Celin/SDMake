@@ -19,7 +19,7 @@
 #include <clib/icon_protos.h>
 #include <lib/misc.h>
 #endif
-#include "dmake_rev.h"
+#include "sdmake_rev.h"
 
 void help(int);
 void InitStuff(void);
@@ -46,7 +46,7 @@ short	XSaveLockValid;
 BPTR	XSaveLock;
 char     version[] = VERSTAG "\0 Copyright 1994, O.I.C.\n";
 #endif
-char	*XFileName = "DMakefile";
+char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
 
@@ -54,7 +54,7 @@ void
 myexit(void)
 {
 if (SomeWork)
-   printf("DMAKE Done.\n");
+   printf("SDMAKE Done.\n");
 else {
        if (QuietOpt == 0)printf("All Targets up to date.\n");
 }
@@ -215,17 +215,17 @@ main(int ac, char **av)
 
 	while ((node = RemHead(&DoList)) != NULL) {
 	    time_t t;
-            if ((node->rn_Dep->dn_Node.ln_Type != NT_RESOLVED) &&
-               (GetHead(&node->rn_Dep->dn_DepCmdList) == NULL))
-            {
-                error(FATAL, "Unable to find %s", node->rn_Node.ln_Name);
-                break;
-            }
+	    if ((node->rn_Dep->dn_Node.ln_Type != NT_RESOLVED) &&
+	       (GetHead(&node->rn_Dep->dn_DepCmdList) == NULL))
+	    {
+		error(FATAL, "Unable to find %s", node->rn_Node.ln_Name);
+		break;
+	    }
 
 	    if ((r = ExecuteDependency(node, &t)) < 0)
 	    {
 		break;
-            }
+	    }
 	}
     }
     if (r < 0 && ExitCode < 20)
@@ -254,8 +254,8 @@ void
 help(code)
 int code;
 {
-    puts("DMAKE V2.1 (c)Copyright 1991 Matthew Dillon, All Rights Reserved");
-    puts("DMAKE [-f file] [-n] [-Dvariable] [-d] [-a] [-q] [-h]");
+    puts("SDMAKE V0.1 (c)Copyright 1991 Matthew Dillon, All Rights Reserved");
+    puts("SDMAKE [-f file] [-n] [-Dvariable] [-d] [-a] [-q] [-h]");
     exit(code);
 }
 

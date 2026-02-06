@@ -1,10 +1,10 @@
-PROJECT= DMake
+PROJECT= SDMake
 DIR= 
 SRCS= Main.c Parse.c CmdList.c Convert.c Depend.c Var.c Run.c Buffer.c \
 Wildcmp.a
 HDRS= defs.h tokens.h
 EXTRAS= Localize.file oi:Notes/Status Test_DMakefile workbench.doc \
-version.doc dmake.doc
+version.doc sdmake.doc
 PDEFAULT= 
 EXEDIR= 
 OD= dtmp:dmake/
@@ -14,7 +14,7 @@ RUN=
 CLIARGS= -f DMake.DICE -a dtmp:dmake/Dpend.o
 CFLAGS= -r -2.0
 OBJS= $(SRCS:"*.c":"$(OD)*.o") $(SRCS:"*.a":"$(OD)*.o")
-EXE= dmake
+EXE= sdmake
 
 #### AUTOMATICALLY GENERATED - DO NOT EDIT BELOW THIS LINE
 PROTOS= $(OD)$(PROJECT)-protos.h
@@ -51,4 +51,4 @@ rmexe:
     -delete $(EXE)
 
 version:
-    -bumprev 2 dmake_rev
+    -bumprev 2 sdmake_rev

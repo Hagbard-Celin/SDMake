@@ -106,5 +106,5 @@ typedef struct Var {
 } Var;
 
 #include "tokens.h"
-#include "dmake-protos.h"
+#include "sdmake-protos.h"
 
