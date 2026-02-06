@@ -100,7 +100,7 @@ void ParseFile(char *fileName)
 
 token_t ParseAssignment(char *varName, token_t t)
 {
-    Var *var = MakeVar(varName, '$');
+    Var *var = MakeVariable(varName, '$');
     long len;
     short done;
     short eol = 1;
@@ -376,7 +376,7 @@ void ParseVariable(List *cmdList, short c0)
 	AltBuf[i++] = c;
     AltBuf[i] = 0;
 
-    var = FindVar(AltBuf, c0);
+    var = FindVariable(AltBuf, c0);
     if (var == NULL)
 	error(FATAL, "Variable %s does not exist", AltBuf);
 
@@ -470,7 +470,7 @@ char *ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	altBuf[i++] = c;
     altBuf[i] = 0;
 
-    var = FindVar(altBuf, c0);
+    var = FindVariable(altBuf, c0);
     if (var == NULL)
 	error(FATAL, "Variable %s does not exist", altBuf);
 

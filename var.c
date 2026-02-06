@@ -11,14 +11,14 @@
 #include "defs.h"
 #include <dos/dos.h>
 
-Prototype void InitVar(void);
-Prototype Var *MakeVar(char *, char);
-Prototype Var *FindVar(char *, char);
-Prototype void AppendVar(Var *, char *, long);
+Prototype void InitVariable(void);
+Prototype Var *MakeVariable(char *, char);
+Prototype Var *FindVariable(char *, char);
+Prototype void AppendVariable(Var *, char *, long);
 
 List VarList;
 
-void InitVar(void)
+void InitVariable(void)
 {
     NewList(&VarList);
 }
@@ -27,7 +27,7 @@ void InitVar(void)
  *  create a variable, deleting any previous contents
  */
 
-Var *MakeVar(char *name, char type)
+Var *MakeVariable(char *name, char type)
 {
     Var *var;
 
@@ -49,7 +49,7 @@ Var *MakeVar(char *name, char type)
     return(var);
 }
 
-Var *FindVar(char *name, char type)
+Var *FindVariable(char *name, char type)
 {
     Var *var;
 
@@ -72,8 +72,8 @@ Var *FindVar(char *name, char type)
 		len = IoErr();
 		ptr = malloc(len + 1);
 		if (GetVar(name, ptr, len + 1, 0) >= 0) {
-		    var = MakeVar(name, '0');
-		    AppendVar(var, ptr, strlen(ptr));
+		    var = MakeVariable(name, '0');
+		    AppendVariable(var, ptr, strlen(ptr));
 		}
 		free(ptr);
 	    }
@@ -91,8 +91,8 @@ Var *FindVar(char *name, char type)
 			Read(fh, ptr, size);
 			ptr[size] = 0;
 
-			var = MakeVar(name, '0');
-			AppendVar(var, ptr, strlen(ptr));
+			var = MakeVariable(name, '0');
+			AppendVariable(var, ptr, strlen(ptr));
 			free(ptr);
 		    }
 		    Close(fh);
@@ -105,7 +105,7 @@ Var *FindVar(char *name, char type)
 }
 
 
-void AppendVar(Var *var, char *buf, long len)
+void AppendVariable(Var *var, char *buf, long len)
 {
     while (len--)
 	PutCmdListChar(&var->var_CmdList, *buf++);

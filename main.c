@@ -159,7 +159,7 @@ int main(int ac, char **av)
 
 	case 'D':
 	    (*ptr) ? ptr : av[++i];
-	    var = MakeVar(ptr, '$');
+	    var = MakeVariable(ptr, '$');
 	    ptr = av[++i];
 	    (*ptr) ? ptr : av[++i];
 	    ExpandVariable(ptr,&tmpList);
@@ -230,7 +230,7 @@ void InitStuff()
 	NewList(&DoList);
 	InitCommand();
 	InitCmdList();
-	InitVar();
+	InitVariable();
 	InitDep();
 	InitParser();
     }

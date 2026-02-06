@@ -203,10 +203,10 @@ int ExecuteDependency(DepRef *ref, time_t *pt)
 		    if (GetHead(depCmdList->dc_CmdList)) {
 			Var *var;
 
-			if ((var = MakeVar("left", '%')) != NULL) {
+			if ((var = MakeVariable("left", '%')) != NULL) {
 			    PutCmdListSym(&var->var_CmdList, dep->dn_Node.ln_Name, NULL);
 			}
-			if ((var = MakeVar("right", '%')) != NULL) {
+			if ((var = MakeVariable("right", '%')) != NULL) {
 			    short space = 0;
 
 			    for (ref = GetHead(&depCmdList->dc_RhsList); r == 0 && ref; ref = GetSucc(&ref->rn_Node))
