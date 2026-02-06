@@ -16,8 +16,7 @@ Prototype void FreePathBuffer(char *);
 
 List PathBufList = { (Node *)&PathBufList.lh_Tail, NULL, (Node *)&PathBufList.lh_Head };
 
-char *
-AllocPathBuffer()
+char *AllocPathBuffer()
 {
     Node *node;
 
@@ -26,9 +25,7 @@ AllocPathBuffer()
     return((char *)node);
 }
 
-void
-FreePathBuffer(buf)
-char *buf;
+void FreePathBuffer(char *buf)
 {
     AddTail(&PathBufList, (Node *)buf);
 }

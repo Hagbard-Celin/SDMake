@@ -44,8 +44,7 @@ char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
 
-void
-myexit(void)
+void myexit(void)
 {
     if (SomeWork)
        printf("SDMAKE Done.\n");
@@ -60,8 +59,7 @@ myexit(void)
 }
 
 
-wbmain(wbs)
-struct WBStartup *wbs;
+void wbmain(struct WBStartup *wbs)
 {
     struct DiskObject *dob;
     short i;
@@ -128,8 +126,7 @@ struct WBStartup *wbs;
 }
 
 
-int
-main(int ac, char **av)
+int main(int ac, char **av)
 {
     short i;
     int r = 0;
@@ -223,8 +220,7 @@ main(int ac, char **av)
     return(ExitCode);
 }
 
-void
-InitStuff()
+void InitStuff()
 {
     static int Initialized;
 
@@ -240,18 +236,14 @@ InitStuff()
     }
 }
 
-void
-help(code)
-int code;
+void help(int code)
 {
     puts("SDMAKE V0.1 (c)Copyright 1991 Matthew Dillon, All Rights Reserved");
     puts("SDMAKE [-f file] [-n] [-Dvariable] [-d] [-a] [-q] [-h]");
     exit(code);
 }
 
-const char *
-SkipAss(ptr)
-const char *ptr;
+const char *SkipAss(const char *ptr)
 {
     while (*ptr && *ptr != '=')
 	++ptr;
@@ -262,9 +254,7 @@ const char *ptr;
     return(ptr);
 }
 
-struct IntuiText *
-ITextOf(ptr)
-char *ptr;
+struct IntuiText *ITextOf(char *ptr)
 {
     static struct IntuiText ITAry[8];
     static short ITIdx;

@@ -21,16 +21,12 @@ Prototype List DepList;
 
 List DepList;
 
-void
-InitDep(void)
+void InitDep(void)
 {
     NewList(&DepList);	    /*	master list */
 }
 
-DepRef *
-CreateDepRef(list, name)
-List *list;
-char *name;
+DepRef *CreateDepRef(List *list, char *name)
 {
     DepRef *ref;
     DepNode *dep;
@@ -58,9 +54,7 @@ char *name;
 }
 
 
-DepRef *
-DupDepRef(ref0)
-DepRef *ref0;
+DepRef *DupDepRef(DepRef *ref0)
 {
     DepRef *ref = malloc(sizeof(DepRef));
 
@@ -70,11 +64,7 @@ DepRef *ref0;
     return(ref);
 }
 
-void
-IncorporateDependency(lhs, rhs, cmdList)
-DepRef *lhs;
-DepRef *rhs;
-List *cmdList;
+void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
 {
     DepNode *dep = lhs->rn_Dep;     /*	source master */
     DepCmdList *depCmdList = GetHead(&dep->dn_DepCmdList);
@@ -99,10 +89,7 @@ List *cmdList;
  *  completion code is 0 if object does not exit or had to be 'run')
  */
 
-int
-ExecuteDependency(ref, pt)
-DepRef *ref;
-time_t *pt;
+int ExecuteDependency(DepRef *ref, time_t *pt)
 {
     DepNode *dep = ref->rn_Dep;
     int r = 0;
@@ -185,9 +172,9 @@ time_t *pt;
 		    /*
 		     *
 		     */
-                    /* Who knows why this code is here.  Matt seems to remember */
-                    /* a bug that had existed at one time.  This probably used  */
-                    /* to say something different.                              */
+		    /* Who knows why this code is here.  Matt seems to remember */
+		    /* a bug that had existed at one time.  This probably used  */
+		    /* to say something different.                              */
 		    /* if (GetHead(&depCmdList->dc_RhsList)) { ********DEAD******/
 			force = 1;
 		    /* } else {                                ********DEAD******/

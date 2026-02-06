@@ -24,9 +24,7 @@ Running2_04()
 }
 
 
-int
-align(n)
-int n;
+int align(int n)
 {
     if (n & 3)
 	return(4 - (n & 3));

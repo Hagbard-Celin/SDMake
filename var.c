@@ -18,8 +18,7 @@ Prototype void AppendVar(Var *, char *, long);
 
 List VarList;
 
-void
-InitVar(void)
+void InitVar(void)
 {
     NewList(&VarList);
 }
@@ -28,8 +27,7 @@ InitVar(void)
  *  create a variable, deleting any previous contents
  */
 
-Var *
-MakeVar(char *name, char type)
+Var *MakeVar(char *name, char type)
 {
     Var *var;
 
@@ -51,8 +49,7 @@ MakeVar(char *name, char type)
     return(var);
 }
 
-Var *
-FindVar(char *name, char type)
+Var *FindVar(char *name, char type)
 {
     Var *var;
 
@@ -108,11 +105,7 @@ FindVar(char *name, char type)
 }
 
 
-void
-AppendVar(var, buf, len)
-Var *var;
-char *buf;
-long len;
+void AppendVar(Var *var, char *buf, long len)
 {
     while (len--)
 	PutCmdListChar(&var->var_CmdList, *buf++);

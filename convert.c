@@ -20,12 +20,7 @@ Prototype int  WildConvert(char *, char *, char *, char *);
  */
 
 
-int
-WildConvert(srcBuf, dstBuf, srcMat, dstMat)
-char *srcBuf;
-char *dstBuf;
-char *srcMat;
-char *dstMat;
+int WildConvert(char *srcBuf, char *dstBuf, char *srcMat, char *dstMat)
 {
     short r = 0;
     long i;

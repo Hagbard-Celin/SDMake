@@ -25,8 +25,7 @@ char RootPath[512];
 
 extern struct Library *SysBase;
 
-void
-ICExit(void)
+void ICExit(void)
 {
     if (SaveLock) {
 	UnLock(CurrentDir(SaveLock));
@@ -34,8 +33,7 @@ ICExit(void)
     }
 }
 
-void
-InitCommand()
+void InitCommand()
 {
     SaveLock = CurrentDir(DupLock(((Process *)FindTask(NULL))->pr_CurrentDir));
 
@@ -47,8 +45,7 @@ InitCommand()
  *  cmd[-1] is valid space and, in fact, must be long word aligned!
  */
 
-long
-Execute_Command(char *cmd, short ignore)
+long Execute_Command(char *cmd, short ignore)
 {
     register char *ptr;
 
@@ -228,10 +225,7 @@ dosys:
 }
 
 
-long
-LoadSegLock(lock, cmd)
-long lock;
-char *cmd;
+long LoadSegLock(long lock, char *cmd)
 {
     long oldLock;
     long seg;

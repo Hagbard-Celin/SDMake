@@ -39,8 +39,7 @@ long LineNo = 1;
 char *FileName = "";
 FILE *Fi;
 
-void
-InitParser()
+void InitParser()
 {
     short i;
     for (i = 0; SChars[i]; ++i)
@@ -58,9 +57,7 @@ InitParser()
  *
  */
 
-void
-ParseFile(fileName)
-char *fileName;
+void ParseFile(char *fileName)
 {
     FILE *fi;
     token_t t;
@@ -101,8 +98,7 @@ char *fileName;
  *  t contains TokEq, ignore
  */
 
-token_t
-ParseAssignment(char *varName, token_t t)
+token_t ParseAssignment(char *varName, token_t t)
 {
     Var *var = MakeVar(varName, '$');
     long len;
@@ -173,8 +169,7 @@ ParseAssignment(char *varName, token_t t)
  *  Parse a dependency
  */
 
-token_t
-ParseDependency(char *firstSym, token_t t)
+token_t ParseDependency(char *firstSym, token_t t)
 {
     DepRef  *lhs;
     DepRef  *rhs;
@@ -310,8 +305,7 @@ ParseDependency(char *firstSym, token_t t)
  *  GetElement()    - return a token after variable/replace parsing
  */
 
-token_t
-GetElement(void)
+token_t GetElement(void)
 {
     static List CmdList = { (Node *)&CmdList.lh_Tail, NULL, (Node *)&CmdList.lh_Head };
     token_t t;
@@ -368,8 +362,7 @@ swi:
  *
  */
 
-void
-ParseVariable(List *cmdList, short c0)
+void ParseVariable(List *cmdList, short c0)
 {
     short c;
     short i = 0;
@@ -460,8 +453,7 @@ ParseVariable(List *cmdList, short c0)
  */
 
 
-char *
-ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
+char *ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 {
     short c;
     short i = 0;
@@ -560,10 +552,7 @@ ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     return(buf);
 }
 
-char *
-ExpandVariable(buf, list)
-ubyte *buf;
-List *list;
+char *ExpandVariable(ubyte *buf, List *list)
 {
     short c;
     short n = 0;
@@ -627,8 +616,7 @@ List *list;
  */
 
 
-token_t
-GetToken()
+token_t GetToken()
 {
     short c;
     short i;
@@ -706,15 +694,13 @@ GetToken()
     }
 }
 
-void
-expect(token_t tgot, token_t twant)
+void expect(token_t tgot, token_t twant)
 {
     if (tgot != twant)
 	error(FATAL, "Unexpected token");
 }
 
-void
-error(short type, const char *ctl, ...)
+void error(short type, const char *ctl, ...)
 {
     static char *TypeString[] = { "Fatal", "Warning", "Debug" };
     static char ExitAry[] = { 1, 0, 0 };

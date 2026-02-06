@@ -28,9 +28,7 @@ typedef struct LockList {
 
 extern struct ExecBase *SysBase;
 
-long
-_SearchPath(cmd)
-char *cmd;
+long _SearchPath(char *cmd)
 {
     CLI *cli;
     LockList *ll;

@@ -56,9 +56,7 @@ static MsgPort *SaveConsoleTask;
 
 extern struct DosLibrary *DOSBase;
 
-__autoexit static
-void
-opencon_exit(void)
+__autoexit static void opencon_exit(void)
 {
     Process *proc = (Process *)FindTask(NULL);
 
@@ -77,9 +75,7 @@ opencon_exit(void)
     }
 }
 
-BOOL
-OpenConsole(str)
-const char *str;
+BOOL OpenConsole(const char *str)
 {
     Process *proc = (Process *)FindTask(NULL);
     FileHandle *fh;

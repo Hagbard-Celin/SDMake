@@ -119,9 +119,7 @@ static Interrupt DevInt;
 static BPTR DBFh;
 #endif
 
-static __autoinit
-void
-sys13_startup()
+static __autoinit void sys13_startup()
 {
     struct Process *proc = (struct Process *)FindTask(NULL);
     sprintf(DevName, "DICE%08lx", &TermFlag);
@@ -152,9 +150,7 @@ sys13_startup()
     dbprintf((DBFh, "TEST1\n"));
 }
 
-static __autoexit
-void
-sys13_shutdown()
+static __autoexit void sys13_shutdown()
 {
     struct Process *proc = (struct Process *)FindTask(NULL);
 
@@ -189,9 +185,7 @@ sys13_shutdown()
  *  (6) ENDCLI the shell (defered until autoexit)
  */
 
-int
-system13(buf)
-const char *buf;
+int system13(const char *buf)
 {
     long r = -1;
 
@@ -206,9 +200,7 @@ const char *buf;
  *  in the middle of such a call, then trying to do a DOS call itself.
  */
 
-static long
-StartCommand(buf)
-char *buf;
+static long StartCommand(char *buf)
 {
     Process *proc = (Process *)PktPort.mp_Node.ln_Name;
 
@@ -320,8 +312,7 @@ char *buf;
  *  Reenable signal exceptions after completion
  */
 
-static long
-WaitCommand()
+static long WaitCommand()
 {
     Process *proc = (Process *)PktPort.mp_Node.ln_Name;
 
@@ -346,8 +337,7 @@ WaitCommand()
  *  Software Interrupt deals with handler functions
  */
 
-long
-_sys13SoftIntC()
+long _sys13SoftIntC()
 {
     Message *msg;
     DosPacket *pkt;
@@ -447,10 +437,7 @@ _sys13SoftIntC()
  */
 
 
-void
-MkDevice(devName, port)
-char *devName;
-MsgPort *port;
+void MkDevice(char *devName, MsgPort *port)
 {
     DosList *dl;
     RootNode *root;
@@ -471,8 +458,7 @@ MsgPort *port;
     Permit();
 }
 
-void
-DelDevice()
+void DelDevice()
 {
     DosList *dl;
     DosInfo *info;
@@ -500,9 +486,7 @@ DelDevice()
     }
 }
 
-void *
-DosAllocMem(bytes)
-long bytes;
+void *DosAllocMem(long bytes)
 {
     long *ptr;
 
@@ -515,18 +499,14 @@ long bytes;
     Alert(AG_NoMemory|AT_DeadEnd);
 }
 
-void
-DosFree(vptr)
-void *vptr;
+void DosFree(void *vptr)
 {
     long *ptr = vptr;
     --ptr;
     FreeMem(ptr, *ptr);
 }
 
-void
-ReturnPacket(packet)
-DosPacket *packet;
+void ReturnPacket(DosPacket *packet)
 {
     Message *mess;
     MsgPort *replyPort;
@@ -542,9 +522,7 @@ DosPacket *packet;
  *  Copy the path from the workbench process's CLI into the specified CLI
  */
 
-void
-CopyWorkbenchPath(dcli)
-CLI *dcli;
+void CopyWorkbenchPath(CLI *dcli)
 {
     CLI *scli;
     LockList *lls;
@@ -573,8 +551,7 @@ CLI *dcli;
     }
 }
 
-void
-WaitPktMask(void)
+void WaitPktMask(void)
 {
     long mask = 0;
 

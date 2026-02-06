@@ -29,14 +29,12 @@ List CmdFreeList;
 __aligned char CmdTmp1[256];
 __aligned char CmdTmp2[256];
 
-void
-InitCmdList()
+void InitCmdList()
 {
     NewList(&CmdFreeList);
 }
 
-void
-PutCmdListChar(List *list, char c)
+void PutCmdListChar(List *list, char c)
 {
     CmdNode *node;
 
@@ -54,11 +52,7 @@ PutCmdListChar(List *list, char c)
     node->cn_Node.ln_Name[node->cn_Idx++] = c;
 }
 
-void
-PutCmdListSym(list, buf, pspace)
-List *list;
-char *buf;
-short *pspace;
+void PutCmdListSym(List *list, char *buf, short *pspace)
 {
     if (*buf) {
 	if (pspace) {
@@ -74,10 +68,7 @@ short *pspace;
     }
 }
 
-void
-CopyCmdList(fromList, toList)
-List *fromList;
-List *toList;
+void CopyCmdList(List *fromList, List *toList)
 {
     CmdNode *from;
     long n;
@@ -107,10 +98,7 @@ List *toList;
     }
 }
 
-void
-AppendCmdList(fromList, toList)
-List *fromList;
-List *toList;
+void AppendCmdList(List *fromList, List *toList)
 {
     CmdNode *from;
 
@@ -123,11 +111,7 @@ List *toList;
  *  pop a symbol (symbols are separated by white space)
  */
 
-int
-PopCmdListSym(cmdList, buf, max)
-List *cmdList;
-char *buf;
-long max;
+int PopCmdListSym(List *cmdList, char *buf, long max)
 {
     short c;
     short i = 0;
@@ -144,9 +128,7 @@ long max;
     return((i) ? 0 : -1);
 }
 
-int
-PopCmdListChar(cmdList)
-List *cmdList;
+int PopCmdListChar(List *cmdList)
 {
     CmdNode *node;
     short c = EOF;
@@ -160,10 +142,7 @@ List *cmdList;
     return(c);
 }
 
-void
-CopyCmdListBuf(list, buf)
-List *list;
-char *buf;
+void CopyCmdListBuf(List *list, char *buf)
 {
     CmdNode *node;
 
@@ -175,10 +154,7 @@ char *buf;
     buf[0] = 0;
 }
 
-void
-CopyCmdListNewLineBuf(list, buf)
-List *list;
-char *buf;
+void CopyCmdListNewLineBuf(List *list, char *buf)
 {
     CmdNode *node;
     long i;
@@ -196,9 +172,7 @@ char *buf;
     *buf = 0;
 }
 
-long
-CmdListSize(list)
-List *list;
+long CmdListSize(List *list)
 {
     CmdNode *node;
     long n = 0;
@@ -208,9 +182,7 @@ List *list;
     return(n);
 }
 
-long
-CmdListSizeNewLine(list)
-List *list;
+long CmdListSizeNewLine(List *list)
 {
     CmdNode *node;
     long n = 0;
@@ -226,12 +198,7 @@ List *list;
     return(n);
 }
 
-void
-CopyCmdListConvert(fromList, toList, srcMat, dstMat)
-List *fromList;
-List *toList;
-char *srcMat;
-char *dstMat;
+void CopyCmdListConvert(List *fromList, List *toList, char *srcMat, char *dstMat)
 {
     List tmpList;
     short space = 0;
@@ -247,8 +214,8 @@ char *dstMat;
     {
        if (!GetHead(&tmpList))
        {
-          PutCmdListSym(toList, dstMat, &space);
-          return;
+	  PutCmdListSym(toList, dstMat, &space);
+	  return;
        }
        /* We need to replace the src and destination with meaningful wildcards */
        srcMat = dstMat = "*";
@@ -273,10 +240,7 @@ char *dstMat;
  *
  */
 
-long
-ExecuteCmdList(dep, list)
-DepNode *dep;
-List *list;
+long ExecuteCmdList(DepNode *dep, List *list)
 {
     List tmpSrc;
     List tmpDst;
