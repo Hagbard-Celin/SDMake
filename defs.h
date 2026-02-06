@@ -7,18 +7,11 @@
  *    DICE-LICENSE.TXT.
  */
 
-#ifdef AMIGA
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/lists.h>
 #include <lists.h>
 #include <lib/version.h>
-#else
-#include <suplib/lists.h>
-#include <suplib/memory.h>
-#include <include/lib/version.h>
-#define __aligned
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,13 +19,11 @@
 #include <time.h>
 #include <sys/stat.h>
 
-#ifdef AMIGA
 #include <clib/alib_protos.h>
 #include <clib/exec_protos.h>
 #include <exec/libraries.h>
 extern struct Library *SysBase;
 #define Running2_04() (SysBase->lib_Version >= 37)
-#endif
 
 typedef struct Node Node;
 typedef struct List List;
@@ -40,11 +31,7 @@ typedef struct List List;
 typedef unsigned char ubyte;
 typedef unsigned short uword;
 
-#ifdef unix
-#define EXIT_CONTINUE	0
-#else
 #define EXIT_CONTINUE	5
-#endif
 
 #define Prototype extern
 

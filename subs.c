@@ -9,7 +9,6 @@
  */
 
 #include "defs.h"
-#ifdef AMIGA
 #include <exec/libraries.h>
 
 Prototype int Running2_04(void);
@@ -24,7 +23,6 @@ Running2_04()
     return(0);
 }
 
-#endif
 
 int
 align(n)

@@ -12,9 +12,6 @@
 
 #include "defs.h"
 #include <stdarg.h>
-#ifndef AMIGA
-#include <suplib/string.h>
-#endif
 
 Prototype void InitParser(void);
 Prototype void ParseFile(char *);
@@ -114,16 +111,6 @@ ParseAssignment(char *varName, token_t t)
     List tmpList;
 
     NewList(&tmpList);
-
-#ifdef NOTDEF
-    {
-	short c;
-	while ((c = fgetc(Fi)) == ' ' || c == '\t')
-	    ;
-	if (c != EOF)
-	    ungetc(c, Fi);
-    }
-#endif
 
     while (fgets(AltBuf, sizeof(AltBuf), Fi)) {
 	len = strlen(AltBuf);
@@ -322,15 +309,6 @@ ParseDependency(char *firstSym, token_t t)
 /*
  *  GetElement()    - return a token after variable/replace parsing
  */
-
-#ifdef NOTDEF
-token_t
-GetElement(void)
-{
-    token_t t = XGetElement();
-    return(t);
-}
-#endif
 
 token_t
 GetElement(void)
@@ -644,107 +622,10 @@ List *list;
 }
 
 
-#ifdef NOTDEF
-
-    short c;
-    short i;
-    Var *var;
-
-    /*
-     *	variable name
-     */
-
-    while (c = *buf++ && !SpecialChar[c])
-	AltBuf[i++] = c;
-
-    AltBuf[i] = 0;
-
-    var = FindVar(AltBuf, c0);
-    if (var == NULL)
-	error(FATAL, "Variable %s does not exist", AltBuf);
-
-    /*
-     *	now, handle modifiers
-     */
-
-    if (c == ')') {
-	CopyCmdList(&var->var_CmdList, cmdList);
-	return;
-    }
-    if (c != ':')
-	error(FATAL, "Bad variable specification after name");
-
-    /*
-     *	source operation
-     */
-
-    c = fgetc(Fi);
-    if (c == '\"') {
-	ungetc(c, Fi);
-	expect(GetToken(), TokStr);
-	c = fgetc(Fi);
-    } else {
-	i = 0;
-	while (c != ')' && c != ':' && c != EOF) {
-	    SymBuf[i++] = c;
-	    c = fgetc(Fi);
-	}
-    }
-    SymBuf[i] = 0;
-
-    strcpy(AltBuf, SymBuf);
-
-    /*
-     *	destination operation
-     */
-
-    if (c == ')') {
-	CopyCmdListConvert(&var->var_CmdList, cmdList, AltBuf, SymBuf);
-	return;
-    }
-
-    if (c != ':')
-	error(FATAL, "Bad variable replacement spec: %c", c);
-
-
-    c = fgetc(Fi);
-    if (c == '\"') {
-	ungetc(c, Fi);
-	expect(GetToken(), TokStr);
-	c = fgetc(Fi);
-    } else {
-	i = 0;
-	while (c != ')' && c != ':' && c != EOF) {
-	    SymBuf[i++] = c;
-	    c = fgetc(Fi);
-	}
-    }
-
-    if (c != ')')
-	error(FATAL, "Bad variable replacement spec: %c", c);
-
-    CopyCmdListConvert(&var->var_CmdList, cmdList, AltBuf, SymBuf);
-}
-
-#endif
-
-
 /*
  *  GetToken()	- return a single token
  */
 
-#ifdef NOTDEF
-token_t
-GetToken()
-{
-    token_t t;
-    printf("get ");
-    fflush(stdout);
-    t = XGetToken();
-    printf("token %d\n", t);
-    return(t);
-}
-#endif
 
 token_t
 GetToken()

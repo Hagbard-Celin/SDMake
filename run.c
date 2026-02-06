@@ -9,14 +9,9 @@
  */
 
 #include "defs.h"
-#ifdef AMIGA
 #include <dos/dosextens.h>
 #include <dos/var.h>
 #include <dos/dostags.h>
-#else
-#include <unistd.h>
-#include <sys/wait.h>
-#endif
 
 typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
@@ -25,9 +20,7 @@ Prototype long Execute_Command(char *, short);
 Prototype void InitCommand(void);
 Prototype long LoadSegLock(long, char *);
 
-#ifdef AMIGA
 BPTR SaveLock;
-#endif
 char RootPath[512];
 
 extern struct Library *SysBase;
@@ -35,20 +28,17 @@ extern struct Library *SysBase;
 void
 ICExit(void)
 {
-#ifdef AMIGA
     if (SaveLock) {
 	UnLock(CurrentDir(SaveLock));
 	SaveLock = NULL;
     }
-#endif
 }
 
 void
 InitCommand()
 {
-#ifdef AMIGA
     SaveLock = CurrentDir(DupLock(((Process *)FindTask(NULL))->pr_CurrentDir));
-#endif
+
     getcwd(RootPath, sizeof(RootPath));
     atexit(ICExit);
 }
@@ -73,7 +63,6 @@ Execute_Command(char *cmd, short ignore)
      *	Internal CD because we special case it
      */
 
-#ifdef AMIGA
     if (ptr - cmd == 7 && strnicmp(cmd, "makedir", 7) == 0) {
 	long lock;
 	short err = 0;
@@ -114,11 +103,8 @@ Execute_Command(char *cmd, short ignore)
 	}
        return((ignore) ? 0 : err);
     } else
-#endif
     if (ptr - cmd == 2 && strncasecmp(cmd, "cd", 2) == 0) {
-#ifdef AMIGA
 	long lock;
-#endif
 	short err = 0;
 
 	while (*ptr == ' ' || *ptr == '\t')
@@ -128,7 +114,7 @@ Execute_Command(char *cmd, short ignore)
 	    if (len && ptr[len-1] == '\n')
 		ptr[len-1] = 0;
 	}
-#ifdef AMIGA
+
 	if (*ptr == 0)
 	    lock = DupLock(SaveLock);
 	else
@@ -139,16 +125,7 @@ Execute_Command(char *cmd, short ignore)
 	    printf("Unable to cd %s\n", ptr);
 	    err = 20;
 	}
-#else
-	if (*ptr == 0)
-	    err = chdir(RootPath);
-	else
-	    err = chdir(ptr);
-	if (err != 0) {
-	    err = 20;
-	    printf("Unable to cd %s\n", ptr);
-	}
-#endif
+
 	return((ignore) ? 0 : err);
     }
 
@@ -157,7 +134,6 @@ Execute_Command(char *cmd, short ignore)
      *
      */
 
-#ifdef AMIGA
     {
 	short i;
 	short ci;
@@ -187,7 +163,6 @@ Execute_Command(char *cmd, short ignore)
 	 *  MUST use system13() in that case.
 	 */
 
-#if INCLUDE_VERSION >= 36
 	if (SysBase->lib_Version >= 36 && proc->pr_CLI) {
 	    long seg;
 	    long stack;
@@ -238,7 +213,6 @@ dosys:
 	    if (lock)
 		UnLock(lock);
 	} else
-#endif
 	{
 	    dbprintf(("E\n"));
 	    cmd[i] = c;
@@ -251,36 +225,8 @@ dosys:
 	    return(0);
 	return(err);
     }
-#else
-    {
-	int err;
-
-	if ((err = vfork()) == 0) {
-	    execlp("/bin/sh", "/bin/sh", "-c", cmd, 0);
-	    exit(30);
-	} else {
-#ifdef NOTDEF
-	    union wait uwait;
-
-	    while (wait(&uwait) != err || WIFEXITED(uwait) == 0)
-		;
-	    err = uwait.w_retcode;
-#endif
-	    int status;
-	    while (wait(&status) != err || WIFEXITED(status) == 0)
-		;
-	    err = WEXITSTATUS(status);
-	}
-	if (err)
-	    printf("Exit code %d %s\n", err, (ignore) ? "(Ignored)":"");
-	if (ignore)
-	    return(0);
-	return(err);
-    }
-#endif
 }
 
-#ifdef AMIGA
 
 long
 LoadSegLock(lock, cmd)
@@ -295,6 +241,3 @@ char *cmd;
     CurrentDir(oldLock);
     return(seg);
 }
-
-
-#endif

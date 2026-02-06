@@ -9,7 +9,6 @@
  */
 
 #include "defs.h"
-#ifdef AMIGA
 #include <intuition/intuition.h>
 #include <graphics/gfx.h>
 #include <clib/intuition_protos.h>
@@ -18,15 +17,12 @@
 #include <clib/wb_protos.h>
 #include <clib/icon_protos.h>
 #include <lib/misc.h>
-#endif
 #include "sdmake_rev.h"
 
 void help(int);
 void InitStuff(void);
 const char *SkipAss(const char *);
-#ifdef AMIGA
 struct IntuiText *ITextOf(char *);
-#endif
 
 Prototype List	DoList;
 Prototype short DDebug;
@@ -41,11 +37,9 @@ short	NoRunOpt;
 short	QuietOpt;
 short	DoAll;
 short   SomeWork;
-#ifdef AMIGA
 short	XSaveLockValid;
 BPTR	XSaveLock;
 char     version[] = VERSTAG "\0 Copyright 1994, O.I.C.\n";
-#endif
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
@@ -53,20 +47,18 @@ short	ExitCode;
 void
 myexit(void)
 {
-if (SomeWork)
-   printf("SDMAKE Done.\n");
-else {
-       if (QuietOpt == 0)printf("All Targets up to date.\n");
-}
-#ifdef AMIGA
+    if (SomeWork)
+       printf("SDMAKE Done.\n");
+    else {
+	   if (QuietOpt == 0)printf("All Targets up to date.\n");
+    }
+
     if (XSaveLockValid) {
 	CurrentDir(XSaveLock);
 	XSaveLockValid = 0;
     }
-#endif
 }
 
-#ifdef AMIGA
 
 wbmain(wbs)
 struct WBStartup *wbs;
@@ -127,16 +119,14 @@ struct WBStartup *wbs;
 	if (abortIt)
 	    break;
     }
-#ifdef AMIGA
+
     XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
     XSaveLockValid = 1;
-#endif
 
     if (abortIt == 0)
 	main(1, NULL);
 }
 
-#endif
 
 int
 main(int ac, char **av)
@@ -272,7 +262,6 @@ const char *ptr;
     return(ptr);
 }
 
-#ifdef AMIGA
 struct IntuiText *
 ITextOf(ptr)
 char *ptr;
@@ -290,5 +279,4 @@ char *ptr;
     it->IText = (unsigned char *)ptr;
     return(it);
 }
-#endif
 

@@ -9,9 +9,7 @@
  */
 
 #include "defs.h"
-#ifdef AMIGA
 #include <dos/dos.h>
-#endif
 
 Prototype void InitVar(void);
 Prototype Var *MakeVar(char *, char);
@@ -69,7 +67,6 @@ FindVar(char *name, char type)
      */
 
     if (var == NULL || var->var_Node.ln_Type == '0') {
-#ifdef AMIGA
 	if (Running2_04()) {
 	    char *ptr;
 	    long len;
@@ -106,16 +103,6 @@ FindVar(char *name, char type)
 		UnLock(lock);
 	    }
 	}
-#else
-	{
-	    char *ptr;
-
-	    if ((ptr = getenv(name)) != NULL) {
-		var = MakeVar(name, '0');
-		AppendVar(var, ptr, strlen(ptr));
-	    }
-	}
-#endif
     }
     return(var);
 }
