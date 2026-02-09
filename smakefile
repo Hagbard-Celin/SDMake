@@ -1,0 +1,39 @@
+
+OBJS= depend.o cmdlist.o run.o main.o var.o subs.o parse.o convert.o \
+      gethead.o getpred.o gettail.o buffer.o path.o console.o system13.o
+
+bin/sdmake: $(OBJS)
+   sc link to bin/sdmake with <<
+$(OBJS)
+<
+
+clean:
+   -delete $(OBJS)
+   -delete bin/sdmake
+
+
+depend.o: depend.c defs.h tokens.h sdmake-protos.h
+
+path.o: path.c defs.h tokens.h sdmake-protos.h
+
+cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h
+
+run.o: run.c defs.h tokens.h sdmake-protos.h
+
+main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h
+
+var.o: var.c defs.h tokens.h sdmake-protos.h
+
+subs.o: subs.c defs.h tokens.h sdmake-protos.h
+
+parse.o: parse.c defs.h tokens.h sdmake-protos.h
+
+convert.o: convert.c defs.h tokens.h sdmake-protos.h
+
+buffer.o: buffer.c defs.h tokens.h sdmake-protos.h
+
+
+
+
+
+

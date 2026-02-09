@@ -11,6 +11,7 @@
  */
 
 #define DOSBase_DECLARED
+#define Prototype extern
 
 #include <exec/types.h>
 #include <exec/nodes.h>
@@ -19,14 +20,13 @@
 #include <dos/dos.h>
 #include <dos/dosextens.h>
 #include <dos/filehandler.h>
-#include <clib/dos_protos.h>
-#include <clib/exec_protos.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
 #include <clib/alib_protos.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lib/misc.h>
 
 #define BTOC(bptr)  ((void *)((long)(bptr) << 2))
 #define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
@@ -39,6 +39,8 @@
 #else
 #define dbprintf(x)
 #endif
+
+Prototype BOOL OpenConsole(const char *str);
 
 typedef struct FileHandle   FileHandle;
 typedef struct Process	    Process;
@@ -56,7 +58,7 @@ static MsgPort *SaveConsoleTask;
 
 extern struct DosLibrary *DOSBase;
 
-__autoexit static void opencon_exit(void)
+void _STD_opencon_exit(void)
 {
     Process *proc = (Process *)FindTask(NULL);
 
@@ -81,7 +83,7 @@ BOOL OpenConsole(const char *str)
     FileHandle *fh;
     BOOL r = FALSE;
 
-    opencon_exit();
+    _STD_opencon_exit();
     if (CustomCIS = Open(str, 1005)) {
 	fh = BTOC(CustomCIS);
 	if (fh->fh_Type) {
@@ -97,8 +99,6 @@ BOOL OpenConsole(const char *str)
 	    freopen("*", "w", stdout);
 	    freopen("*", "w", stderr);
 	    /*proc->pr_ConsoleTask = SaveConsoleTask;*/
-	    stdout->sd_Flags |= __SIF_IOLBF;
-	    stderr->sd_Flags |= __SIF_IOLBF;
 	} else {
 	    Close(CustomCIS);
 	    CustomCIS = 0;

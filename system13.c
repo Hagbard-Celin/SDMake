@@ -31,7 +31,9 @@
  */
 
 #define DOSBase_DECLARED
+#define Prototype extern
 
+#include <dos.h>
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/ports.h>
@@ -41,14 +43,13 @@
 #include <dos/dos.h>
 #include <dos/dosextens.h>
 #include <dos/filehandler.h>
-#include <clib/dos_protos.h>
-#include <clib/exec_protos.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
 #include <clib/alib_protos.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lib/misc.h>
 
 #define BTOC(bptr)  ((void *)((long)(bptr) << 2))
 #define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
@@ -61,6 +62,8 @@
 #else
 #define dbprintf(x)
 #endif
+
+Prototype int system13(const char *buf);
 
 typedef struct DosPacket    DosPacket;
 typedef struct FileHandle   FileHandle;
@@ -90,12 +93,11 @@ void MkDevice(char *, MsgPort *);
 void DelDevice(void);
 void ReturnPacket(DosPacket *);
 void CopyWorkbenchPath(CLI *);
-long StartCommand(char *);
-long WaitCommand(void);
+static long StartCommand(CONST_STRPTR);
+static long WaitCommand(void);
 void WaitPktMask(void);
 
-long _sys13SoftIntC(void);
-long _sys13SoftIntA(__A1 void *);
+long __asm _sys13SoftInt(register __a1 long a4);
 
 extern struct DosLibrary *DOSBase;
 
@@ -119,7 +121,7 @@ static Interrupt DevInt;
 static BPTR DBFh;
 #endif
 
-static __autoinit void sys13_startup()
+void _STI_sys13_startup(void)
 {
     struct Process *proc = (struct Process *)FindTask(NULL);
     sprintf(DevName, "DICE%08lx", &TermFlag);
@@ -139,8 +141,8 @@ static __autoinit void sys13_startup()
 
     NewList(&PktPort.mp_MsgList);
 
-    DevInt.is_Data = (APTR)rega4();
-    DevInt.is_Code = (void(*)())_sys13SoftIntA;
+    DevInt.is_Data = (APTR)getreg(REG_A4);
+    DevInt.is_Code = (void(*)())_sys13SoftInt;
     DevInt.is_Node.ln_Type = NT_INTERRUPT;
 
     PktMask = 1 << PktPort.mp_SigBit;
@@ -150,10 +152,8 @@ static __autoinit void sys13_startup()
     dbprintf((DBFh, "TEST1\n"));
 }
 
-static __autoexit void sys13_shutdown()
+void _STD_sys13_shutdown(void)
 {
-    struct Process *proc = (struct Process *)FindTask(NULL);
-
     if (ShellRunning) {
 	TermFlag = 1;
 	if (StartCommand("endcli") == 0)
@@ -164,7 +164,7 @@ static __autoexit void sys13_shutdown()
     DelDevice();
     if ((char)PktPort.mp_SigBit >= 0) {
 	FreeSignal(PktPort.mp_SigBit);
-	PktPort.mp_SigBit = -1;
+	PktPort.mp_SigBit = (UBYTE)-1;
     }
 #ifdef DEBUG
     if (DBFh) {
@@ -200,7 +200,7 @@ int system13(const char *buf)
  *  in the middle of such a call, then trying to do a DOS call itself.
  */
 
-static long StartCommand(char *buf)
+static long StartCommand(CONST_STRPTR buf)
 {
     Process *proc = (Process *)PktPort.mp_Node.ln_Name;
 
@@ -263,7 +263,7 @@ static long StartCommand(char *buf)
      */
 
     {
-	Message *msg;
+	Message *msg = 0;
 	DosPacket *pkt;
 	short len = strlen(buf);
 	short n;
@@ -337,10 +337,12 @@ static long WaitCommand()
  *  Software Interrupt deals with handler functions
  */
 
-long _sys13SoftIntC()
+long __asm _sys13SoftInt(register __a1 long a4)
 {
     Message *msg;
     DosPacket *pkt;
+
+    putreg(REG_A4, a4);
 
     while (msg = GetMsg(&PktPort)) {
 	pkt = (DosPacket *)msg->mn_Node.ln_Name;

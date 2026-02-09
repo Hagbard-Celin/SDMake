@@ -1,39 +1,36 @@
 PROJECT= SDMake
 DIR= 
-SRCS= Main.c Parse.c CmdList.c Convert.c Depend.c Var.c Run.c Buffer.c \
-Wildcmp.a
+SRCS= depend.c cmdlist.c run.c main.c var.c subs.c parse.c convert.c \
+gethead.a getpred.a gettail.a buffer.c path.c console.c system13.c
 HDRS= defs.h tokens.h
-EXTRAS= Localize.file oi:Notes/Status Test_DMakefile workbench.doc \
-version.doc sdmake.doc
+EXTRAS= sdmake.doc
 PDEFAULT= 
-EXEDIR= 
-OD= dtmp:dmake/
+EXEDIR= build/bin/
+OD= build/obj/
 PRECOMP= defs.h
 TYPE= Normal
 RUN= 
-CLIARGS= -f DMake.DICE -a dtmp:dmake/Dpend.o
-CFLAGS= -r -2.0
-OBJS= $(SRCS:"*.c":"$(OD)*.o") $(SRCS:"*.a":"$(OD)*.o")
+CFLAGS=
 EXE= sdmake
 
 #### AUTOMATICALLY GENERATED - DO NOT EDIT BELOW THIS LINE
-PROTOS= $(OD)$(PROJECT)-protos.h
+PROTOS= $(PROJECT)-protos.h
 EXE= $(EXEDIR)$(PROJECT)
 COMPFLAGS = $(CFLAGS) $(OD:"*":-I*) $(PRECOMP:"*.h":"-HT:%1.m=%1.h")
 PCOMPFILE = $(PRECOMP:"*.h":"T:*.m")
 
-OBJS= $(SRCS:"*.c":"$(OD)*.o") $(SRCS:"*.a":"$(OD)*.o")
+OBJS= $(SRCS:"*.?":"$(OD)*.o")
 
-all: $(PCOMPFILE) $(PROTOS) $(EXE)
+all: $(EXE)
 
 nopro: $(EXE)
 
 $(EXE): $(OBJS)
-    fwrite $(OD)$(PROJECT).lnktmp $(OBJS) V:lib/debug.lib
-    dcc $(COMPFLAGS) @$(OD)$(PROJECT).lnktmp -o %(left)
+    fwrite $(OD)$(PROJECT).lnktmp %(right)
+    sc $(CFLAGS) LINK to %(left) with $(OD)$(PROJECT).lnktmp
 
 $(OBJS) : $(SRCS)
-    dcc %(right) -o %(left) -c $(COMPFLAGS)
+    sc $(CFLAGS) OBJNAME %(left) %(right)
 
 $(PROTOS) : $(SRCS)
     -delete %(left)

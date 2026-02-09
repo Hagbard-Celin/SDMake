@@ -6,11 +6,9 @@
 
 		section text,CODE
 
-		xdef	_GetTail	    ; node = GetTail(list:4(sp))
-		xdef	@GetTail
+		xdef	_GetTail
 
-_GetTail:	move.l	4(sp),A0
-@GetTail:
+_GetTail:
 		move.l	8(A0),A0
 		move.l	4(A0),D0
 		beq	gt0

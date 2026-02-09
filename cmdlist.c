@@ -38,8 +38,8 @@ void PutCmdListChar(List *list, char c)
 {
     CmdNode *node;
 
-    if ((node = GetTail(list)) == NULL || (node->cn_Idx == node->cn_Max)) {
-	if ((node = RemHead(&CmdFreeList)) == NULL) {
+    if ((node = (CmdNode *)GetTail(list)) == NULL || (node->cn_Idx == node->cn_Max)) {
+	if ((node = (CmdNode *)RemHead(&CmdFreeList)) == NULL) {
 	    node = malloc(sizeof(CmdNode) + 64);
 	    node->cn_Node.ln_Name = (char *)(node + 1);
 	    node->cn_Max = 64;
@@ -74,13 +74,13 @@ void CopyCmdList(List *fromList, List *toList)
     long n;
     long i;
 
-    for (from = GetHead(fromList); from; from = GetSucc(&from->cn_Node)) {
+    for (from = (CmdNode *)GetHead(fromList); from; from = (CmdNode *)GetSucc(&from->cn_Node)) {
 	CmdNode *copy = NULL;
 
 	dbprintf(("COPYFROM %*.*s\n", from->cn_Idx, from->cn_Idx, from->cn_Node.ln_Name));
 
 	for (n = 0; n < from->cn_Idx; ) {
-	    if ((copy = RemHead(&CmdFreeList)) == NULL) {
+	    if ((copy = (CmdNode *)RemHead(&CmdFreeList)) == NULL) {
 		copy = malloc(sizeof(CmdNode) + 64);
 		copy->cn_Max = 64;
 		copy->cn_Node.ln_Name = (char *)(copy + 1);
@@ -102,7 +102,7 @@ void AppendCmdList(List *fromList, List *toList)
 {
     CmdNode *from;
 
-    while ((from = RemHead(fromList)) != NULL)
+    while ((from = (CmdNode *)RemHead(fromList)) != NULL)
 	AddTail(toList, &from->cn_Node);
 }
 
@@ -133,7 +133,7 @@ int PopCmdListChar(List *cmdList)
     CmdNode *node;
     short c = EOF;
 
-    while ((node = GetHead(cmdList)) != NULL) {
+    while ((node = (CmdNode *)GetHead(cmdList)) != NULL) {
 	if (node->cn_RIndex != node->cn_Idx)
 	    return((ubyte)node->cn_Node.ln_Name[node->cn_RIndex++]);
 	Remove((struct Node *)node);
@@ -146,7 +146,7 @@ void CopyCmdListBuf(List *list, char *buf)
 {
     CmdNode *node;
 
-    while ((node = RemHead(list)) != NULL) {
+    while ((node = (CmdNode *)RemHead(list)) != NULL) {
 	movmem(node->cn_Node.ln_Name + node->cn_RIndex, buf, node->cn_Idx - node->cn_RIndex);
 	buf += node->cn_Idx;
 	AddTail(&CmdFreeList, &node->cn_Node);
@@ -159,7 +159,7 @@ void CopyCmdListNewLineBuf(List *list, char *buf)
     CmdNode *node;
     long i;
 
-    while ((node = RemHead(list)) != NULL) {
+    while ((node = (CmdNode *)RemHead(list)) != NULL) {
 	for (i = node->cn_RIndex; i < node->cn_Idx && node->cn_Node.ln_Name[i] != '\n'; ++i)
 	    *buf++ = node->cn_Node.ln_Name[i];
 	if (i != node->cn_Idx) {
@@ -177,7 +177,7 @@ long CmdListSize(List *list)
     CmdNode *node;
     long n = 0;
 
-    for (node = GetHead(list); node; node = GetSucc(&node->cn_Node))
+    for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node))
 	n += node->cn_Idx - node->cn_RIndex;
     return(n);
 }
@@ -188,7 +188,7 @@ long CmdListSizeNewLine(List *list)
     long n = 0;
     long i;
 
-    for (node = GetHead(list); node; node = GetSucc(&node->cn_Node)) {
+    for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node)) {
 	for (i = node->cn_RIndex; i < node->cn_Idx && node->cn_Node.ln_Name[i] != '\n'; ++i)
 	    ;
 	n += i - node->cn_RIndex;

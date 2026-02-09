@@ -13,10 +13,11 @@
 #include <exec/execbase.h>
 #include <libraries/dos.h>
 #include <libraries/dosextens.h>
-#include <clib/dos_protos.h>
+#include <proto/dos.h>
 #include <stdio.h>
-#include <lib/bcpl.h>
-#include <lib/misc.h>
+#include "defs.h"
+
+Prototype long _SearchPath(char *cmd);
 
 typedef struct CommandLineInterface CLI;
 typedef struct Process Process;

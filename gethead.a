@@ -6,14 +6,10 @@
 
 		section text,CODE
 
-		xdef	_GetHead    ; GetHead(list:4(sp))
-		xdef	_GetSucc    ; GetSucc(node:4(sp))
-		xdef	@GetHead
-		xdef	@GetSucc
+		xdef	_GetHead
+		xdef	_GetSucc
 _GetSucc:
-_GetHead:	move.l	4(sp),A0
-@GetHead:
-@GetSucc:
+_GetHead:
 		move.l	(A0),A0
 		move.l	(A0),D0
 		beq	gh0

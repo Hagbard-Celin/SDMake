@@ -14,17 +14,17 @@
 #include <stdarg.h>
 
 Prototype void InitParser(void);
-Prototype void ParseFile(char *);
-Prototype token_t ParseAssignment(char *, token_t);
-Prototype token_t ParseDependency(char *, token_t);
+Prototype void ParseFile(STRPTR);
+Prototype token_t ParseAssignment(STRPTR, token_t);
+Prototype token_t ParseDependency(STRPTR, token_t);
 Prototype token_t GetElement(void);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
-Prototype char	 *ParseVariableBuf(List *, ubyte *, short);
-Prototype char	 *ExpandVariable(ubyte *, List *);
+Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
+Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype token_t GetToken(void);
 Prototype void expect(token_t, token_t);
-Prototype void error(short, const char *, ...);
+Prototype void error(short, CONST_STRPTR, ...);
 
 
 Prototype char SymBuf[256];
@@ -57,7 +57,7 @@ void InitParser()
  *
  */
 
-void ParseFile(char *fileName)
+void ParseFile(STRPTR fileName)
 {
     FILE *fi;
     token_t t;
@@ -98,7 +98,7 @@ void ParseFile(char *fileName)
  *  t contains TokEq, ignore
  */
 
-token_t ParseAssignment(char *varName, token_t t)
+token_t ParseAssignment(STRPTR varName, token_t t)
 {
     Var *var = MakeVariable(varName, '$');
     long len;
@@ -169,7 +169,7 @@ token_t ParseAssignment(char *varName, token_t t)
  *  Parse a dependency
  */
 
-token_t ParseDependency(char *firstSym, token_t t)
+token_t ParseDependency(STRPTR firstSym, token_t t)
 {
     DepRef  *lhs;
     DepRef  *rhs;
@@ -267,31 +267,31 @@ token_t ParseDependency(char *firstSym, token_t t)
      */
 
     if (ncol == 1) {
-	while ((lhs = RemHead(&lhsList)) != NULL) {
+	while ((lhs = (DepRef *)RemHead(&lhsList)) != NULL) {
 	    if (GetHead(&lhsList)) {
-		for (rhs = GetHead(&rhsList); rhs; rhs = GetSucc(&rhs->rn_Node))
+		for (rhs = (DepRef *)GetHead(&rhsList); rhs; rhs = (DepRef *)GetSucc(&rhs->rn_Node))
 		    IncorporateDependency(lhs, DupDepRef(rhs), cmdList);
 	    } else {
-		while ((rhs = RemHead(&rhsList)) != NULL)
+		while ((rhs = (DepRef *)RemHead(&rhsList)) != NULL)
 		    IncorporateDependency(lhs, rhs, cmdList);
 	    }
 	    IncorporateDependency(lhs, NULL, cmdList);
 	    free(lhs);
 	}
     } else if (nlhs == 1) {
-	lhs = RemHead(&lhsList);
-	while ((rhs = RemHead(&rhsList)) != NULL)
+	lhs = (DepRef *)RemHead(&lhsList);
+	while ((rhs = (DepRef *)RemHead(&rhsList)) != NULL)
 	    IncorporateDependency(lhs, rhs, cmdList);
 	IncorporateDependency(lhs, NULL, cmdList);
 	free(lhs);
     } else if (nrhs == 1) {
-	rhs = RemHead(&rhsList);
-	while ((lhs = RemHead(&lhsList)) != NULL) {
+	rhs = (DepRef *)RemHead(&rhsList);
+	while ((lhs = (DepRef *)RemHead(&lhsList)) != NULL) {
 	    IncorporateDependency(lhs, rhs, cmdList);
 	    free(lhs);
 	}
     } else if (nlhs == nrhs) {
-	while ((lhs = RemHead(&lhsList)) && (rhs = RemHead(&rhsList))) {
+	while ((lhs = (DepRef *)RemHead(&lhsList)) && (rhs = (DepRef *)RemHead(&rhsList))) {
 	    IncorporateDependency(lhs, rhs, cmdList);
 	    free(lhs);
 	}
@@ -453,7 +453,7 @@ void ParseVariable(List *cmdList, short c0)
  */
 
 
-char *ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
+STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 {
     short c;
     short i = 0;
@@ -552,7 +552,7 @@ char *ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     return(buf);
 }
 
-char *ExpandVariable(ubyte *buf, List *list)
+STRPTR ExpandVariable(ubyte *buf, List *list)
 {
     short c;
     short n = 0;
@@ -700,7 +700,7 @@ void expect(token_t tgot, token_t twant)
 	error(FATAL, "Unexpected token");
 }
 
-void error(short type, const char *ctl, ...)
+void error(short type, CONST_STRPTR ctl, ...)
 {
     static char *TypeString[] = { "Fatal", "Warning", "Debug" };
     static char ExitAry[] = { 1, 0, 0 };

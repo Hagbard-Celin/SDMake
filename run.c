@@ -23,8 +23,6 @@ Prototype long LoadSegLock(long, char *);
 BPTR SaveLock;
 char RootPath[512];
 
-extern struct Library *SysBase;
-
 void ICExit(void)
 {
     if (SaveLock) {
@@ -100,7 +98,7 @@ long Execute_Command(char *cmd, short ignore)
 	}
        return((ignore) ? 0 : err);
     } else
-    if (ptr - cmd == 2 && strncasecmp(cmd, "cd", 2) == 0) {
+    if (ptr - cmd == 2 && strnicmp(cmd, "cd", 2) == 0) {
 	long lock;
 	short err = 0;
 
@@ -152,7 +150,7 @@ long Execute_Command(char *cmd, short ignore)
 	cmd[i] = 0;
 
 	cmdArgs = malloc(strlen(cmd + ci) + 3);
-	sprintf(cmdArgs, "%s\n\r", cmd + ci);
+	sprintf(cmdArgs, "%s\n", cmd + ci);
 	fflush(stdout);
 
 	/*
@@ -160,14 +158,14 @@ long Execute_Command(char *cmd, short ignore)
 	 *  MUST use system13() in that case.
 	 */
 
-	if (SysBase->lib_Version >= 36 && proc->pr_CLI) {
+	if (SysBase->LibNode.lib_Version >= 36 && proc->pr_CLI) {
 	    long seg;
 	    long stack;
 	    long lock = 0;
 	    CLI *cli = (CLI *)BADDR(proc->pr_CLI);
 	    static char OldCmd[128];
 	    char dt[4];
-	    struct TagItem *tags[] = {
+	    struct TagItem tags[] = {
 		NP_CopyVars, TRUE,
 		TAG_END, NULL};
 
@@ -186,17 +184,17 @@ long Execute_Command(char *cmd, short ignore)
 	    if (useSystem || (Running2_04() && GetVar(cmd, dt, 2, LV_ALIAS | GVF_LOCAL_ONLY) >= 0))
 		goto dosys;
 
-	    if ((seg = FindSegment(cmd, 0L, 0)) || (seg = FindSegment(cmd, 0L, 1))) {
+	    if ((seg = (long)FindSegment(cmd, 0L, 0)) || (seg = (long)FindSegment(cmd, 0L, 1))) {
 		dbprintf(("A cmd = '%s' stack = %d\n", cmdArgs, stack));
-		err = RunCommand(((long *)seg)[2], stack, cmdArgs, strlen(cmdArgs) - 1);
+		err = RunCommand(((long *)seg)[2], stack, cmdArgs, strlen(cmdArgs));
 	    } else if ((lock = _SearchPath(cmd)) && (seg = LoadSegLock(lock, ""))) {
 		dbprintf(("B\n"));
-		err = RunCommand(seg, stack, cmdArgs, strlen(cmdArgs) - 1);
+		err = RunCommand(seg, stack, cmdArgs, strlen(cmdArgs));
 		UnLoadSeg(seg);
 	    } else if ((lock = Lock("dcc:bin", SHARED_LOCK)) && (seg = LoadSegLock(lock, cmd))) {
 		dbprintf(("C %08x\n", seg));
 		dbprintf(("CMD= %s", cmdArgs));
-		err = RunCommand(seg, 8192, cmdArgs, strlen(cmdArgs) - 1);
+		err = RunCommand(seg, 8192, cmdArgs, strlen(cmdArgs));
 		UnLoadSeg(seg);
 	    } else {
 dosys:

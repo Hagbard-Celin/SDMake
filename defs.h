@@ -10,8 +10,7 @@
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/lists.h>
-#include <lists.h>
-#include <lib/version.h>
+#include "lists.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,10 +19,9 @@
 #include <sys/stat.h>
 
 #include <clib/alib_protos.h>
-#include <clib/exec_protos.h>
-#include <exec/libraries.h>
-extern struct Library *SysBase;
-#define Running2_04() (SysBase->lib_Version >= 37)
+#include <proto/exec.h>
+#include <proto/dos.h>
+#define Running2_04() (SysBase->LibNode.lib_Version >= 37)
 
 typedef struct Node Node;
 typedef struct List List;
@@ -42,6 +40,10 @@ typedef unsigned short uword;
 #define PBUFSIZE 256
 
 #define NT_RESOLVED	0x01
+
+#define clrmem(d,n)	  memset(d,0,n)
+#define BTOC(bptr, type)  ((type *)((long)(bptr) << 2))
+#define CTOB(cptr)  ((BPTR)((unsigned long)(cptr) >> 2))
 
 #if USE_DEBUG
 #define dbprintf(x)  { if (DDebug) printf x;}

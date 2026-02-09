@@ -11,14 +11,16 @@
 #include "defs.h"
 #include <intuition/intuition.h>
 #include <graphics/gfx.h>
-#include <clib/intuition_protos.h>
+#include <proto/intuition.h>
 #include <workbench/icon.h>
 #include <workbench/startup.h>
-#include <clib/wb_protos.h>
-#include <clib/icon_protos.h>
-#include <lib/misc.h>
+#include <proto/wb.h>
+#include <proto/icon.h>
 #include "sdmake_rev.h"
 
+int main(ULONG argc, char *argv[]);
+void wbmain(struct WBStartup *wbs);
+int realmain(int ac, char **av);
 void help(int);
 void InitStuff(void);
 const char *SkipAss(const char *);
@@ -122,11 +124,11 @@ void wbmain(struct WBStartup *wbs)
     XSaveLockValid = 1;
 
     if (abortIt == 0)
-	main(1, NULL);
+	realmain(1, NULL);
 }
 
 
-int main(int ac, char **av)
+int realmain(int ac, char **av)
 {
     short i;
     int r = 0;
@@ -196,11 +198,11 @@ int main(int ac, char **av)
 	ParseFile(XFileName);
 
 	if (GetHead(&DoList) == NULL) {
-	    if ((node = GetHead(&DepList)) != NULL)
+	    if ((node = (DepRef *)GetHead(&DepList)) != NULL)
 		CreateDepRef(&DoList, ((DepNode *)node)->dn_Node.ln_Name);
 	}
 
-	while ((node = RemHead(&DoList)) != NULL) {
+	while ((node = (DepRef *)RemHead(&DoList)) != NULL) {
 	    time_t t;
 	    if ((node->rn_Dep->dn_Node.ln_Type != NT_RESOLVED) &&
 	       (GetHead(&node->rn_Dep->dn_DepCmdList) == NULL))
@@ -218,6 +220,20 @@ int main(int ac, char **av)
     if (r < 0 && ExitCode < 20)
 	ExitCode = 20;
     return(ExitCode);
+}
+
+int main(ULONG argc, char *argv[])
+{
+    if (argc == 0)
+    {
+	wbmain((struct WBStartup *)argv);
+    }
+    else
+    {
+	realmain(argc, argv);
+    }
+
+    return 0;
 }
 
 void InitStuff()

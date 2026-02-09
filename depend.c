@@ -11,7 +11,7 @@
 #include "defs.h"
 
 Prototype void InitDep(void);
-Prototype DepRef  *CreateDepRef(List *, char *);
+Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
@@ -26,12 +26,12 @@ void InitDep(void)
     NewList(&DepList);	    /*	master list */
 }
 
-DepRef *CreateDepRef(List *list, char *name)
+DepRef *CreateDepRef(List *list, CONST_STRPTR name)
 {
     DepRef *ref;
     DepNode *dep;
 
-    for (dep = GetTail(&DepList); dep; dep = GetPred(&dep->dn_Node)) {
+    for (dep = (DepNode *)GetTail(&DepList); dep; dep = (DepNode *)GetPred(&dep->dn_Node)) {
 	if (strcmp(name, dep->dn_Node.ln_Name) == 0)
 	    break;
     }
@@ -67,7 +67,7 @@ DepRef *DupDepRef(DepRef *ref0)
 void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
 {
     DepNode *dep = lhs->rn_Dep;     /*	source master */
-    DepCmdList *depCmdList = GetHead(&dep->dn_DepCmdList);
+    DepCmdList *depCmdList = (DepCmdList *)GetHead(&dep->dn_DepCmdList);
 
     if (depCmdList == NULL || depCmdList->dc_CmdList != cmdList) {
 	depCmdList = malloc(sizeof(DepCmdList));
@@ -113,7 +113,7 @@ int ExecuteDependency(DepRef *ref, time_t *pt)
 	    dep->dn_Time = sbuf.st_mtime;
 	}
 
-	for (depCmdList = GetHead(&dep->dn_DepCmdList); r == 0 && depCmdList; depCmdList = GetSucc(&depCmdList->dc_Node)) {
+	for (depCmdList = (DepCmdList *)GetHead(&dep->dn_DepCmdList); r == 0 && depCmdList; depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node)) {
 	    short force;
 
 	    /*
@@ -131,7 +131,7 @@ int ExecuteDependency(DepRef *ref, time_t *pt)
 
 	    *pt = 0;
 
-	    for (ref = GetHead(&depCmdList->dc_RhsList); r == 0 && ref; ref = GetSucc(&ref->rn_Node)) {
+	    for (ref = (DepRef *)GetHead(&depCmdList->dc_RhsList); r == 0 && ref; ref = (DepRef *)GetSucc(&ref->rn_Node)) {
 		time_t t;
 
 		if ((r = ExecuteDependency(ref, &t)) < 0)
@@ -209,7 +209,7 @@ int ExecuteDependency(DepRef *ref, time_t *pt)
 			if ((var = MakeVariable("right", '%')) != NULL) {
 			    short space = 0;
 
-			    for (ref = GetHead(&depCmdList->dc_RhsList); r == 0 && ref; ref = GetSucc(&ref->rn_Node))
+			    for (ref = (DepRef *)GetHead(&depCmdList->dc_RhsList); r == 0 && ref; ref = (DepRef *)GetSucc(&ref->rn_Node))
 				PutCmdListSym(&var->var_CmdList, ref->rn_Node.ln_Name, &space);
 			}
 			SomeWork = 1;

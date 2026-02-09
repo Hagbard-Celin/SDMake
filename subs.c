@@ -11,18 +11,7 @@
 #include "defs.h"
 #include <exec/libraries.h>
 
-Prototype int Running2_04(void);
 Prototype int align(int);
-
-extern struct Library *SysBase;
-
-Running2_04()
-{
-    if (SysBase->lib_Version >= 37)
-	return(1);
-    return(0);
-}
-
 
 int align(int n)
 {

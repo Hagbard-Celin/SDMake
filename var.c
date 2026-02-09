@@ -31,7 +31,7 @@ Var *MakeVariable(char *name, char type)
 {
     Var *var;
 
-    for (var = GetHead(&VarList); var; var = GetSucc(&var->var_Node)) {
+    for (var = (Var *)GetHead(&VarList); var; var = (Var *)GetSucc(&var->var_Node)) {
 	if ((char)var->var_Node.ln_Type == type && strcmp(var->var_Node.ln_Name, name) == 0) {
 	    while (PopCmdListChar(&var->var_CmdList) != EOF)
 		;
@@ -53,7 +53,7 @@ Var *FindVariable(char *name, char type)
 {
     Var *var;
 
-    for (var = GetHead(&VarList); var; var = GetSucc(&var->var_Node)) {
+    for (var = (Var *)GetHead(&VarList); var; var = (Var *)GetSucc(&var->var_Node)) {
 	if ((char)var->var_Node.ln_Type == type && strcmp(var->var_Node.ln_Name, name) == 0)
 	    break;
     }
