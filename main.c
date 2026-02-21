@@ -2,6 +2,43 @@
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *     Copyright (c) 2003-2011,2023 The DragonFly Project.  All rights reserved.
+ *
+ *     This code is derived from software contributed to The DragonFly Project
+ *     by Matthew Dillon <dillon@backplane.com>
+ *
+ *     Redistribution and use in source and binary forms, with or without
+ *     modification, are permitted provided that the following conditions
+ *     are met:
+ *
+ *     1. Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in
+ *        the documentation and/or other materials provided with the
+ *        distribution.
+ *     3. Neither the name of The DragonFly Project nor the names of its
+ *        contributors may be used to endorse or promote products derived
+ *        from this software without specific, prior written permission.
+ *
+ *     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *     ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *     FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ *     COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *     INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ *     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ *     SUCH DAMAGE.
+ *
  */
 
 /*
@@ -141,6 +178,7 @@ int realmain(int ac, char **av)
     /*printf("ARGS= %d\n", ac);*/
     for (i = 1; i < ac; ++i) {
 	char *ptr = av[i];
+	char *p2;
 
 	/*printf("ARG[%d]= %d:%s\n", i, strlen(av[i]), av[i]);*/
 
@@ -160,12 +198,14 @@ int realmain(int ac, char **av)
 	    break;
 
 	case 'D':
-	    (*ptr) ? ptr : av[++i];
+	    ptr = (*ptr) ? ptr : av[++i];
+	    if ((p2 = strchr(ptr, '=')) != NULL)
+		*p2++ = 0;
 	    var = MakeVariable(ptr, '$');
-	    ptr = av[++i];
-	    (*ptr) ? ptr : av[++i];
-	    ExpandVariable(ptr,&tmpList);
-	    AppendCmdList(&tmpList, &var->var_CmdList);
+	    if (p2) {
+		ExpandVariable(p2, &tmpList);
+		AppendCmdList(&tmpList, &var->var_CmdList);
+	    }
 	    break;
 
 	case 'd':
@@ -192,6 +232,8 @@ int realmain(int ac, char **av)
      *	the resolve the first one
      */
 
+    (void)MakeVariable("TOPDIR", '$');
+
     {
 	DepRef *node;
 
@@ -203,7 +245,6 @@ int realmain(int ac, char **av)
 	}
 
 	while ((node = (DepRef *)RemHead(&DoList)) != NULL) {
-	    time_t t;
 	    if ((node->rn_Dep->dn_Node.ln_Type != NT_RESOLVED) &&
 	       (GetHead(&node->rn_Dep->dn_DepCmdList) == NULL))
 	    {
@@ -211,7 +252,7 @@ int realmain(int ac, char **av)
 		break;
 	    }
 
-	    if ((r = ExecuteDependency(node, &t)) < 0)
+	    if ((r = ExecuteDependency(NULL, node)) < 0)
 	    {
 		break;
 	    }
@@ -254,7 +295,7 @@ void InitStuff()
 
 void help(int code)
 {
-    puts("SDMAKE V0.1 (c)Copyright 1991 Matthew Dillon, All Rights Reserved");
+    puts("SDMAKE V0.1 (c)Copyright 1991-2003 Matthew Dillon, All Rights Reserved");
     puts("SDMAKE [-f file] [-n] [-Dvariable] [-d] [-a] [-q] [-h]");
     exit(code);
 }

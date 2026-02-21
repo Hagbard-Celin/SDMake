@@ -2,6 +2,43 @@
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *     Copyright (c) 2003-2011,2023 The DragonFly Project.  All rights reserved.
+ *
+ *     This code is derived from software contributed to The DragonFly Project
+ *     by Matthew Dillon <dillon@backplane.com>
+ *
+ *     Redistribution and use in source and binary forms, with or without
+ *     modification, are permitted provided that the following conditions
+ *     are met:
+ *
+ *     1. Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in
+ *        the documentation and/or other materials provided with the
+ *        distribution.
+ *     3. Neither the name of The DragonFly Project nor the names of its
+ *        contributors may be used to endorse or promote products derived
+ *        from this software without specific, prior written permission.
+ *
+ *     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *     ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *     FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ *     COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *     INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ *     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ *     SUCH DAMAGE.
+ *
  */
 
 /*
@@ -15,9 +52,9 @@
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t ParseAssignment(STRPTR, token_t);
+Prototype token_t ParseAssignment(STRPTR, token_t, int, char);
 Prototype token_t ParseDependency(STRPTR, token_t);
-Prototype token_t GetElement(void);
+Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
 Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
@@ -61,34 +98,222 @@ void ParseFile(STRPTR fileName)
 {
     FILE *fi;
     token_t t;
+    IfNode *ifBase = NULL;
+    int ifTrue = 1;
+    int expansion;
+    List topdirList;
 
-    if ((fi = fopen(fileName, "r")) == NULL)
-	error(FATAL, "Unable to open %s", fileName);
+    NewList(&topdirList);
+
+    /*
+     * Open the file
+     */
+    {
+	Var *var = FindVar("TOPDIR", '$');
+	char *tfileName;
+	int len;
+	List list;
+
+	NewList(&list);
+	CopyCmdList(&var->var_CmdList, &list);
+	CopyCmdList(&var->var_CmdList, &topdirList);
+	len = CmdListSize(&list);
+	tfileName = malloc(len + strlen(fileName) + 1);
+	CopyCmdListBuf(&list, tfileName);
+	strcpy(tfileName + len, fileName);
+
+	if ((fi = fopen(tfileName, "r")) == NULL)
+	    error(FATAL, "Unable to open %s", tfileName);
+	free(tfileName);
+    }
     FileName = strdup(fileName);
     Fi = fi;
+    LineNo = 1;
 
-    for (t = GetElement(); t; ) {
+    /*
+     * Adjust TOPDIR based on include path
+     */
+    {
+	const char *p;
+
+	if ((p = strrchr(fileName, '/')) != NULL) {
+		Var *var = FindVar("TOPDIR", '$');
+		AppendVar(var, fileName, p - fileName + 1);
+	}
+    }
+
+    /*
+     * Parse the file
+     */
+    for (t = GetElement(ifTrue, &expansion); t; ) {
 	switch(t) {
 	case TokNewLine:
-	    t = GetElement();
+	    t = GetElement(ifTrue, &expansion);
 	    break;
 	case TokSym:
 	    strcpy(AltBuf2, SymBuf);
 
+	    if (expansion == 0 && SymBuf[0] == '.' &&
+		SymBuf[1] != '.' && SymBuf[1] != '/'
+	    ) {
+		if (ifTrue && strcmp(SymBuf, ".export") == 0) {
+		    char *data;
+		    Var *var;
+
+		    while ((t = GetElement(ifTrue, &expansion)) != TokNewLine) {
+			int maxl;
+
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .export!");
+
+			if ((var = FindVar(SymBuf, '$')) == NULL) {
+			    error(
+				FATAL,
+				"export %s failed, variable not found",
+				SymBuf
+			    );
+			}
+			{
+			    static List CmdList = {
+				(Node *)&CmdList.lh_Tail,
+				NULL,
+				(Node *)&CmdList.lh_Head
+			    };
+			    CopyCmdList(&var->var_CmdList, &CmdList);
+			    maxl = CmdListSize(&CmdList) + 1;
+			    data = malloc(maxl);
+			    CopyCmdListBuf(&CmdList, data);
+			    setenv(SymBuf, data, 1);
+			    free(data);
+			}
+		    }
+		} else if (ifTrue && strcmp(SymBuf, ".include") == 0) {
+		    FILE *saveFi = Fi;
+		    char *saveFileName = FileName;
+		    int saveLine = LineNo;
+		    char *path;
+
+		    t = GetElement(ifTrue, &expansion);
+		    if (t != TokSym)
+			error(FATAL, "Expected a symbol for .include!");
+		    path = strdup(SymBuf);
+		    ParseFile(path);
+		    free(path);
+
+		    LineNo = saveLine;
+		    Fi = saveFi;
+		    FileName = saveFileName;
+
+		    t = GetElement(ifTrue, &expansion);
+		    if (t != TokNewLine)
+			error(FATAL, "Expected newline after .include filename");
+		} else if (strcmp(SymBuf, ".else") == 0) {
+		    if (ifBase == NULL)
+			error(FATAL, ".else without .if*");
+		    ifTrue = elseIf(&ifBase);
+		} else if (strcmp(SymBuf, ".ifdef") == 0) {
+		    if (ifTrue) {
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifdef!");
+			if (FindVar(SymBuf, '$')) {
+			    ifTrue = pushIf(&ifBase, 1);
+			} else {
+			    ifTrue = pushIf(&ifBase, 0);
+			}
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
+		} else if (strcmp(SymBuf, ".iffile") == 0) {
+		    if (ifTrue) {
+			struct stat st;
+
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .iffile!");
+			if (stat(SymBuf, &st) == 0) {
+			    ifTrue = pushIf(&ifBase, 1);
+			} else {
+			    ifTrue = pushIf(&ifBase, 0);
+			}
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
+		} else if (strcmp(SymBuf, ".endif") == 0) {
+		    if (ifBase == NULL)
+			error(FATAL, ".endif without .if");
+		    ifTrue = popIf(&ifBase);
+		} else if (ifTrue) {
+		    error(FATAL, "unknown '.' directive");
+		}
+
+		/*
+		 * End of special directive handling
+		 */
+		while (t && t != TokNewLine)
+		    t = GetElement(ifTrue, &expansion);
+		continue;
+	    }
+
+	    /*
+	     * Ignore .if'd out code
+	     */
+	    if (ifTrue == 0) {
+		while (t && t != TokNewLine)
+		    t = GetElement(ifTrue, &expansion);
+		continue;
+	    }
+
 	    /*
 	     *	check for '=' -- assignment
 	     */
-
-	    t = GetElement();
-	    if (t == TokEq)
-		t = ParseAssignment(AltBuf2, t);
-	    else
+	    t = GetElement(ifTrue, &expansion);
+	    if (t == TokQuestion) {
+		t = GetElement(ifTrue, &expansion);
+		if (t == TokEq)
+		    t = ParseAssignment(AltBuf2, t, 1, '$');
+		else
+		    error(FATAL, "Expected '?=' got '?'");
+	    } else if (t == TokEq) {
+		t = ParseAssignment(AltBuf2, t, 0, '$');
+	    } else {
 		t = ParseDependency(AltBuf2, t);
+	    }
+	    break;
+	case TokColon:
+	    /*
+	     * Ignore .if'd out code
+	     */
+	    if (ifTrue == 0) {
+		while (t && t != TokNewLine)
+		    t = GetElement(ifTrue, &expansion);
+		continue;
+	    }
+	    t = ParseDependency(NULL, t);
 	    break;
 	default:
+	    /*
+	     * Ignore .if'd out code
+	     */
+	    if (ifTrue == 0) {
+		while (t && t != TokNewLine)
+		    t = GetElement(ifTrue, &expansion);
+		continue;
+	    }
 	    error(FATAL, "Expected a symbol!");
 	    break;
 	}
+    }
+    if (ifBase != NULL)
+	error(FATAL, "Dangling .if's at EOF");
+
+    /*
+     * Restore TOPDIR
+     */
+    {
+	Var *var = FindVar("TOPDIR", '$');
+	FreeCmdList(&var->var_CmdList);
+	AppendCmdList(&topdirList, &var->var_CmdList);
     }
 }
 
@@ -98,13 +323,18 @@ void ParseFile(STRPTR fileName)
  *  t contains TokEq, ignore
  */
 
-token_t ParseAssignment(STRPTR varName, token_t t)
+token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 {
-    Var *var = MakeVariable(varName, '$');
+    Var *var;
+    int newVar = 0;
     long len;
     short done;
     short eol = 1;
     List tmpList;
+
+    if (cond == 0 || FindVar(varName, type) == NULL) {
+	newVar = 1;
+    }
 
     NewList(&tmpList);
 
@@ -158,11 +388,14 @@ token_t ParseAssignment(STRPTR varName, token_t t)
     {
 	char *buf = malloc(CmdListSize(&tmpList) + 1);
 	CopyCmdListBuf(&tmpList, buf);
-	ExpandVariable(buf, &tmpList);
-	AppendCmdList(&tmpList, &var->var_CmdList);
+	if (newVar) {
+	    ExpandVariable(buf, &tmpList);
+	    var = MakeVar(varName, type);
+	    AppendCmdList(&tmpList, &var->var_CmdList);
+	}
 	free(buf);
     }
-    return(GetElement());
+    return(GetElement(1, NULL));
 }
 
 /*
@@ -184,23 +417,28 @@ token_t ParseDependency(STRPTR firstSym, token_t t)
     NewList(&lhsList);
     NewList(&rhsList);
 
-    ++nlhs;
-    for (CreateDepRef(&lhsList, firstSym); t != TokColon; t = GetElement()) {
+    if (firstSym) {
+	++nlhs;
+	CreateDepRef(&lhsList, firstSym);
+    }
+
+    while (t != TokColon) {
 	expect(t, TokSym);
 	CreateDepRef(&lhsList, SymBuf);
 	++nlhs;
+	t = GetElement(1, NULL);
     }
-    t = GetElement();
+    t = GetElement(1, NULL);
     if (t == TokColon) {
 	++ncol;
-	t = GetElement();
+	t = GetElement(1, NULL);
     }
 
     while (t != TokNewLine) {
 	expect(t, TokSym);
 	CreateDepRef(&rhsList, SymBuf);
 	++nrhs;
-	t = GetElement();
+	t = GetElement(1, NULL);
     }
 
     /*
@@ -215,10 +453,16 @@ token_t ParseDependency(STRPTR firstSym, token_t t)
 	while ((c = getc(Fi)) != EOF) {
 	    if (c == '\n') {
 		++LineNo;
-		if (blankLine)break;
+		if (blankLine)
+		    break;
 		PutCmdListChar(cmdList, '\n');
 		blankLine = 1;
+		ws = 0;
 		continue;
+	    }
+	    if (c == '.' && blankLine && ws == 0) {
+		ungetc(c, Fi);
+		break;
 	    }
 
 	    switch(c) {
@@ -305,7 +549,8 @@ token_t ParseDependency(STRPTR firstSym, token_t t)
  *  GetElement()    - return a token after variable/replace parsing
  */
 
-token_t GetElement(void)
+token_t
+GetElement(int ifTrue, int *expansion)
 {
     static List CmdList = { (Node *)&CmdList.lh_Tail, NULL, (Node *)&CmdList.lh_Head };
     token_t t;
@@ -313,8 +558,12 @@ token_t GetElement(void)
 
 top:
     if (PopCmdListSym(&CmdList, SymBuf, sizeof(SymBuf)) == 0) {
+	if (expansion)
+	    *expansion = 1;
 	return(TokSym);
     }
+    if (expansion)
+	*expansion = 0;
 
     t = GetToken();
 swi:
@@ -339,7 +588,7 @@ swi:
     case TokDollar:
     case TokPercent:
 	c = fgetc(Fi);
-	if (c == '(') {
+	if (c == '(' && ifTrue) {
 	    ParseVariable(&CmdList, (t == TokPercent) ? '%' : '$');
 
 	    /*
@@ -364,6 +613,7 @@ swi:
 	    goto top;
 	}
 	ungetc(c, Fi);
+	/* fall through */
     default:
 	break;
     }
@@ -646,6 +896,8 @@ token_t GetToken()
 	    return(TokColon);
 	case '=':
 	    return(TokEq);
+	case '?':
+	    return(TokQuestion);
 	case '\n':
 	    ++LineNo;
 	    return(TokNewLine);
@@ -723,7 +975,7 @@ void error(short type, CONST_STRPTR ctl, ...)
     static char ExitAry[] = { 1, 0, 0 };
     va_list va;
 
-    printf("%s: %s Line %d: ", FileName, TypeString[type], (int)LineNo);
+    printf("%s: %s Line %ld: ", FileName, TypeString[type], LineNo);
     va_start(va, ctl);
     vprintf(ctl, va);
     va_end(va);

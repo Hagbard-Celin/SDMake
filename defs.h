@@ -5,6 +5,43 @@
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *     Copyright (c) 2003-2011,2023 The DragonFly Project.  All rights reserved.
+ *
+ *     This code is derived from software contributed to The DragonFly Project
+ *     by Matthew Dillon <dillon@backplane.com>
+ *
+ *     Redistribution and use in source and binary forms, with or without
+ *     modification, are permitted provided that the following conditions
+ *     are met:
+ *
+ *     1. Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in
+ *        the documentation and/or other materials provided with the
+ *        distribution.
+ *     3. Neither the name of The DragonFly Project nor the names of its
+ *        contributors may be used to endorse or promote products derived
+ *        from this software without specific, prior written permission.
+ *
+ *     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *     ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *     FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ *     COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *     INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ *     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ *     SUCH DAMAGE.
+ *
  */
 
 #include <exec/types.h>
@@ -16,6 +53,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 #include <sys/stat.h>
 
 #include <clib/alib_protos.h>
@@ -64,10 +102,19 @@ typedef unsigned short uword;
 typedef struct DepNode {
     Node    dn_Node;
     List    dn_DepCmdList;	/*  list of lists   */
-    time_t  dn_Time;
+/*    time_t  dn_Time;*/
     short   dn_Symbolic;
-    short   dn_Reserved;
+    short   dn_Flags;
+    int	    dn_Result;
 } DepNode;
+
+#define DNF_VIRTUAL	0x0001	/* virtual lhs - has no command list */
+
+#define DN_FAILED		-1
+#define DN_CHANGED 		0
+#define DN_NOCHANGE_TOUCH	1
+#define DN_NOCHANGE		2
+
 
 typedef struct DepRef  {
     Node    rn_Node;
@@ -93,6 +140,11 @@ typedef struct Var {
     Node    var_Node;
     List    var_CmdList;
 } Var;
+
+typedef struct IfNode {
+    struct IfNode *if_Next;
+    int		if_Value;
+} IfNode;
 
 #include "tokens.h"
 #include "sdmake-protos.h"
