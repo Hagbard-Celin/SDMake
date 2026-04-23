@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.	
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -52,8 +72,8 @@
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t ParseAssignment(STRPTR, token_t, int, char);
-Prototype token_t ParseDependency(STRPTR, token_t);
+Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
+Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft);
 Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
@@ -61,7 +81,7 @@ Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype token_t GetToken(void);
 Prototype void expect(token_t, token_t);
-Prototype void error(short, CONST_STRPTR, ...);
+Prototype void error(short type, CONST_STRPTR ctl, ...);
 
 
 Prototype char SymBuf[256];
@@ -102,6 +122,7 @@ void ParseFile(STRPTR fileName)
     int ifTrue = 1;
     int expansion;
     List topdirList;
+    UWORD virtualleft = 0;
 
     NewList(&topdirList);
 
@@ -109,7 +130,7 @@ void ParseFile(STRPTR fileName)
      * Open the file
      */
     {
-	Var *var = FindVar("TOPDIR", '$');
+	Var *var = FindVariable("TOPDIR", '$');
 	char *tfileName;
 	int len;
 	List list;
@@ -137,8 +158,8 @@ void ParseFile(STRPTR fileName)
 	const char *p;
 
 	if ((p = strrchr(fileName, '/')) != NULL) {
-		Var *var = FindVar("TOPDIR", '$');
-		AppendVar(var, fileName, p - fileName + 1);
+		Var *var = FindVariable("TOPDIR", '$');
+		AppendVariable(var, fileName, p - fileName + 1);
 	}
     }
 
@@ -166,7 +187,7 @@ void ParseFile(STRPTR fileName)
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .export!");
 
-			if ((var = FindVar(SymBuf, '$')) == NULL) {
+			if ((var = FindVariable(SymBuf, '$')) == NULL) {
 			    error(
 				FATAL,
 				"export %s failed, variable not found",
@@ -183,7 +204,24 @@ void ParseFile(STRPTR fileName)
 			    maxl = CmdListSize(&CmdList) + 1;
 			    data = malloc(maxl);
 			    CopyCmdListBuf(&CmdList, data);
-			    setenv(SymBuf, data, 1);
+			    if (Running2_04())
+			    {
+				SetVar(SymBuf, data, -1, GVF_GLOBAL_ONLY);
+			    }
+			    else
+			    {
+				BPTR dir, file, old;
+				if (dir = Lock("ENV:", SHARED_LOCK))
+				{
+				    old = CurrentDir(dir);
+				    if (file = Open(SymBuf, MODE_NEWFILE))
+				    {
+					Write(file, data, strlen(data) + 1);
+					Close(file);
+				    }
+				    UnLock(CurrentDir(old));
+				}
+			    }
 			    free(data);
 			}
 		    }
@@ -216,7 +254,7 @@ void ParseFile(STRPTR fileName)
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .ifdef!");
-			if (FindVar(SymBuf, '$')) {
+			if (FindVariable(SymBuf, '$')) {
 			    ifTrue = pushIf(&ifBase, 1);
 			} else {
 			    ifTrue = pushIf(&ifBase, 0);
@@ -226,12 +264,15 @@ void ParseFile(STRPTR fileName)
 		    }
 		} else if (strcmp(SymBuf, ".iffile") == 0) {
 		    if (ifTrue) {
-			struct stat st;
+			BPTR tmplock;
 
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .iffile!");
-			if (stat(SymBuf, &st) == 0) {
+
+			if (tmplock = Lock(SymBuf, ACCESS_READ))
+			{
+			    UnLock(tmplock);
 			    ifTrue = pushIf(&ifBase, 1);
 			} else {
 			    ifTrue = pushIf(&ifBase, 0);
@@ -243,6 +284,12 @@ void ParseFile(STRPTR fileName)
 		    if (ifBase == NULL)
 			error(FATAL, ".endif without .if");
 		    ifTrue = popIf(&ifBase);
+		} else if (strcmp(SymBuf, ".leftislabel") == 0) {
+		    printf("Setting virtualleft\n");
+		    virtualleft = 1;
+		} else if (strcmp(SymBuf, ".leftisfile") == 0) {
+		    printf("UnSetting virtualleft\n");
+		    virtualleft = 0;
 		} else if (ifTrue) {
 		    error(FATAL, "unknown '.' directive");
 		}
@@ -277,7 +324,7 @@ void ParseFile(STRPTR fileName)
 	    } else if (t == TokEq) {
 		t = ParseAssignment(AltBuf2, t, 0, '$');
 	    } else {
-		t = ParseDependency(AltBuf2, t);
+		t = ParseDependency(AltBuf2, t, virtualleft);
 	    }
 	    break;
 	case TokColon:
@@ -289,7 +336,7 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		continue;
 	    }
-	    t = ParseDependency(NULL, t);
+	    t = ParseDependency(NULL, t, virtualleft);
 	    break;
 	default:
 	    /*
@@ -311,7 +358,7 @@ void ParseFile(STRPTR fileName)
      * Restore TOPDIR
      */
     {
-	Var *var = FindVar("TOPDIR", '$');
+	Var *var = FindVariable("TOPDIR", '$');
 	FreeCmdList(&var->var_CmdList);
 	AppendCmdList(&topdirList, &var->var_CmdList);
     }
@@ -332,7 +379,7 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
     short eol = 1;
     List tmpList;
 
-    if (cond == 0 || FindVar(varName, type) == NULL) {
+    if (cond == 0 || FindVariable(varName, type) == NULL) {
 	newVar = 1;
     }
 
@@ -390,7 +437,7 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	CopyCmdListBuf(&tmpList, buf);
 	if (newVar) {
 	    ExpandVariable(buf, &tmpList);
-	    var = MakeVar(varName, type);
+	    var = MakeVariable(varName, type);
 	    AppendCmdList(&tmpList, &var->var_CmdList);
 	}
 	free(buf);
@@ -402,7 +449,7 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
  *  Parse a dependency
  */
 
-token_t ParseDependency(STRPTR firstSym, token_t t)
+token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft)
 {
     DepRef  *lhs;
     DepRef  *rhs;
@@ -419,12 +466,16 @@ token_t ParseDependency(STRPTR firstSym, token_t t)
 
     if (firstSym) {
 	++nlhs;
-	CreateDepRef(&lhsList, firstSym);
+	lhs = CreateDepRef(&lhsList, firstSym);
+	if (virtualleft)
+	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_VIRTUAL;
     }
 
     while (t != TokColon) {
 	expect(t, TokSym);
-	CreateDepRef(&lhsList, SymBuf);
+	lhs = CreateDepRef(&lhsList, SymBuf);
+	if (virtualleft)
+	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_VIRTUAL;
 	++nlhs;
 	t = GetElement(1, NULL);
     }
@@ -549,8 +600,7 @@ token_t ParseDependency(STRPTR firstSym, token_t t)
  *  GetElement()    - return a token after variable/replace parsing
  */
 
-token_t
-GetElement(int ifTrue, int *expansion)
+token_t GetElement(int ifTrue, int *expansion)
 {
     static List CmdList = { (Node *)&CmdList.lh_Tail, NULL, (Node *)&CmdList.lh_Head };
     token_t t;
@@ -713,7 +763,7 @@ void ParseVariable(List *cmdList, short c0)
 }
 
 /*
- *  Since this is recursively called we have to save/restore oru temporary
+ *  Since this is recursively called we have to save/restore our temporary
  *  bufferse (SymBuf & AltBuf).  the buf pointer may itself be pointing
  *  into these but we are ok since it is guarenteed >= our copy destination
  *  as we index through it.

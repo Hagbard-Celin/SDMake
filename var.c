@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -63,29 +83,39 @@ Var *FindVariable(char *name, char type)
      *	or later only.
      */
 
-    if (var == NULL || var->var_Node.ln_Type == '0') {
-	if (Running2_04()) {
+    if (var == NULL || var->var_Node.ln_Type == '0')
+    {
+	if (Running2_04())
+	{
 	    char *ptr;
 	    long len;
 
-	    if (GetVar(name, (char *)&ptr, 2, 0) >= 0) {
+	    if (GetVar(name, (char *)&ptr, 2, 0) >= 0)
+	    {
 		len = IoErr();
 		ptr = malloc(len + 1);
-		if (GetVar(name, ptr, len + 1, 0) >= 0) {
+		if (GetVar(name, ptr, len + 1, 0) >= 0)
+		{
 		    var = MakeVariable(name, '0');
 		    AppendVariable(var, ptr, strlen(ptr));
 		}
 		free(ptr);
 	    }
-	} else {
-	    BPTR lock;
-	    long fh;
+	}
+	else
+	{
+	    BPTR lock, old, fh;
 	    long size;
 
-	    if (lock = Lock("ENV:", SHARED_LOCK)) {
-		if (fh = Open(name, 1005)) {
+	    if (lock = Lock("ENV:", SHARED_LOCK))
+	    {
+		old = CurrentDir(lock);
+
+		if (fh = Open(name, MODE_OLDFILE))
+		{
 		    Seek(fh, 0L, 1);
-		    if ((size = Seek(fh, 0L, -1)) >= 0) {
+		    if ((size = Seek(fh, 0L, -1)) >= 0)
+		    {
 			char *ptr = malloc(size + 1);
 
 			Read(fh, ptr, size);
@@ -97,7 +127,8 @@ Var *FindVariable(char *name, char type)
 		    }
 		    Close(fh);
 		}
-		UnLock(lock);
+
+		UnLock(CurrentDir(old));
 	    }
 	}
     }

@@ -1,6 +1,24 @@
 
 /*
- *  DEFS.H
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
@@ -79,6 +97,10 @@ typedef unsigned short uword;
 
 #define NT_RESOLVED	0x01
 
+#define D_S(type,name) char a_##name[sizeof(type)+3]; \
+		       type *name = (type *)((ULONG)(a_##name+3) & ~3UL)
+
+
 #define clrmem(d,n)	  memset(d,0,n)
 #define BTOC(bptr, type)  ((type *)((long)(bptr) << 2))
 #define CTOB(cptr)  ((BPTR)((unsigned long)(cptr) >> 2))
@@ -109,6 +131,7 @@ typedef struct DepNode {
 } DepNode;
 
 #define DNF_VIRTUAL	0x0001	/* virtual lhs - has no command list */
+#define DNF_LEFT_VIRTUAL (1<<1)
 
 #define DN_FAILED		-1
 #define DN_CHANGED 		0
@@ -145,6 +168,13 @@ typedef struct IfNode {
     struct IfNode *if_Next;
     int		if_Value;
 } IfNode;
+
+typedef struct FileInfo
+{
+    ULONG size;
+    LONG type;
+    struct DateStamp datestamp;
+} FileInfo;
 
 #include "tokens.h"
 #include "sdmake-protos.h"

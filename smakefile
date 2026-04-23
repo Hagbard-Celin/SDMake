@@ -1,5 +1,5 @@
 
-OBJS= depend.o cmdlist.o run.o main.o var.o subs.o parse.o convert.o \
+OBJS= depend.o cmdlist.o run.o main.o var.o parse.o cond.o convert.o \
       gethead.o getpred.o gettail.o buffer.o path.o console.o system13.o
 
 bin/sdmake: $(OBJS)

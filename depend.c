@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -52,7 +72,7 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int	  ExecuteDependency(DepNode *parent, DepRef *lhs, int how);
+Prototype int	  ExecuteDependency(DepNode *parent, DepRef *lhs);
 
 Prototype List DepList;
 
@@ -113,7 +133,7 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
     while (depCmdList) {
 	if (depCmdList->dc_CmdList == cmdList)
 	    break;
-	depCmdList = GetSucc(&depCmdList->dc_Node);
+	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node);
     }
     if (depCmdList == NULL) {
 	depCmdList = malloc(sizeof(DepCmdList));
@@ -134,7 +154,7 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
  * ExecuteDependancy()
  *
  *  Execute a dependency.  Return the appropriate DN_ code.  We are passed
- *  (parent : lhs)  (lhs is one of possibly several right hand sides to 
+ *  (parent : lhs)  (lhs is one of possibly several right hand sides to
  *  parent).  We must resolve 'lhs' by running through its own right hand
  *  sides and then aggregating the result into parent.
  *
@@ -142,8 +162,7 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
  *  of its own dependancies (which is why we call it lhs).
  */
 
-int
-ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
+int ExecuteDependency(DepNode *parent, DepRef *lhs)
 {
     DepNode *lhsDep = lhs->rn_Dep;
     DepRef *rhsRef;
@@ -152,8 +171,10 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
     int parStRes;
     int lhsStRes;
     int runCmds = 0;
-    struct stat parSt;
-    struct stat lhsSt;
+    //struct stat parSt;
+    //struct stat lhsSt;
+    FileInfo parent_info;
+    FileInfo lefthand_info;
     int yr = DN_NOCHANGE;
     static int tab;
 
@@ -162,14 +183,55 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
      * e.g. if lib depends on a.o, b.o, c.o, the parent is 'lib'
      * and we run through lhs->rn_Dep (a.o, b.o, c.o).
      */
-    if (parent != NULL) {
-	parStRes = stat(parent->dn_Node.ln_Name, &parSt);
-    } else {
+    if (parent == NULL || parent->dn_Flags & DNF_LEFT_VIRTUAL)
+    {
 	parStRes = -1;
-	bzero(&parSt, sizeof(parSt));
+	clrmem(&parent_info, sizeof(parent_info));
+    }
+    else
+    {
+	BPTR tmplock;
+	D_S(struct FileInfoBlock, fib);
+
+	if (tmplock = Lock(parent->dn_Node.ln_Name, ACCESS_READ))
+	{
+	    if (Examine(tmplock, fib))
+	    {
+		parent_info.size = fib->fib_Size;
+		parent_info.type = fib->fib_DirEntryType;
+		parent_info.datestamp = fib->fib_Date;
+	    }
+	    parStRes = 0;
+	    UnLock(tmplock);
+	}
+	else
+	{
+	    parStRes = -1;
+	    clrmem(&parent_info, sizeof(parent_info));
+	}
     }
 
-    lhsStRes = stat(lhsDep->dn_Node.ln_Name, &lhsSt);
+    if (lhsDep->dn_Flags & DNF_LEFT_VIRTUAL)
+	lhsStRes = -1;
+    else
+    {
+	BPTR tmplock;
+	D_S(struct FileInfoBlock, fib);
+
+	if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
+	{
+	    if (Examine(tmplock, fib))
+	    {
+		lefthand_info.size = fib->fib_Size;
+		lefthand_info.type = fib->fib_DirEntryType;
+		lefthand_info.datestamp = fib->fib_Date;
+	    }
+	    lhsStRes = 0;
+	    UnLock(tmplock);
+	}
+	else
+	    lhsStRes = -1;
+    }
 
     /*
      *  If this lhs has no dependancies, compare the parent file against
@@ -188,7 +250,8 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	}
 	if (parStRes < 0)
 	    return(DN_CHANGED);
-	if ((int)parSt.st_mtime - (int)lhsSt.st_mtime > 0)
+
+	if (CompareDates(&parent_info.datestamp, &lefthand_info.datestamp) < 0)
 	    return(DN_NOCHANGE);
 	return(DN_CHANGED);
     }
@@ -203,9 +266,9 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
     lhsDep->dn_Node.ln_Type = NT_RESOLVED;
     lhsDep->dn_Flags |= DNF_VIRTUAL;
 
-    for (depCmdList = GetHead(&lhsDep->dn_DepCmdList);
+    for (depCmdList = (DepCmdList *)GetHead(&lhsDep->dn_DepCmdList);
 	lhsDep->dn_Result > DN_FAILED && depCmdList;
-	depCmdList = GetSucc(&depCmdList->dc_Node)
+	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node)
     ) {
 	int xr = DN_NOCHANGE;
 
@@ -215,7 +278,7 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	    lhsDep->dn_Flags &= ~DNF_VIRTUAL;
 
 	/*
-	 * Scan and run the rhs that our lhs depends on to determine 
+	 * Scan and run the rhs that our lhs depends on to determine
 	 * whether the command list for our lhs must be run.
 	 *
 	 * Handle the special case where there are no rhs dependancies.
@@ -230,9 +293,9 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	if (GetHead(&depCmdList->dc_RhsList) == NULL)
 	    xr = DN_CHANGED;
 
-	for (rhsRef = GetHead(&depCmdList->dc_RhsList);
+	for (rhsRef = (DepRef *)GetHead(&depCmdList->dc_RhsList);
 	    xr > DN_FAILED && rhsRef;
-	    rhsRef = GetSucc(&rhsRef->rn_Node)
+	    rhsRef = (DepRef *)GetSucc(&rhsRef->rn_Node)
 	) {
 	    int r;
 
@@ -240,10 +303,13 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 		/*
 		 * file:file or dir:dir
 		 */
-		struct stat st;
+		BPTR tmplock;
 
-		if (stat(lhsDep->dn_Node.ln_Name, &st) == 0)
+		if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
+		{
 		    r = DN_NOCHANGE;
+		    UnLock(tmplock);
+		}
 		else
 		    r = DN_CHANGED;
 	    } else {
@@ -251,7 +317,7 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 		 * Run the dependancy
 		 */
 		tab += 4;
-		r = ExecuteDependency(lhsDep, rhsRef, ED_WAIT);
+		r = ExecuteDependency(lhsDep, rhsRef);
 		tab -= 4;
 	    }
 
@@ -260,7 +326,7 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	     * have been run or the parent not existing anyway, and this
 	     * baby is not a virtual node (i.e. one that has no command list
 	     * and does not exist as a file), then we still have to see if
-	     * we are out of date relative to the rhs.  
+	     * we are out of date relative to the rhs.
 	     *
 	     * However, if the rhs is a directory we simply check for
 	     * existance.
@@ -289,12 +355,19 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 		r >= DN_NOCHANGE_TOUCH &&
 		(lhsDep->dn_Flags & DNF_VIRTUAL) == 0
 	    ) {
-		struct stat st2;
-		if (stat(lhsDep->dn_Node.ln_Name, &st2) == 0) {
-		    if ((int)parSt.st_mtime - (int)st2.st_mtime < 0) {
-			if (!S_ISDIR(st2.st_mode))
-			    yr = DN_CHANGED;
+		BPTR tmplock;
+		D_S(struct FileInfoBlock, fib);
+
+		if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
+		{
+		    if (Examine(tmplock, fib))
+		    {
+			if (CompareDates(&parent_info.datestamp, &fib->fib_Date) > 0)
+			    if (fib->fib_DirEntryType < 0)
+				yr = DN_CHANGED;
+
 		    }
+		    UnLock(tmplock);
 		} else {
 		    yr = DN_CHANGED;
 		}
@@ -331,7 +404,7 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	    xr = DN_CHANGED;
 
 	/*
-	 *  If our result is 0 then something had to be run in the 
+	 *  If our result is 0 then something had to be run in the
 	 *  subdependancies, so we have to run this dependency's
 	 *  command list.
 	 *
@@ -347,9 +420,9 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
      * If runCmds was set, do another run through and execute all the
      * related commands.
      */
-    for (depCmdList = GetHead(&lhsDep->dn_DepCmdList);
+    for (depCmdList = (DepCmdList *)GetHead(&lhsDep->dn_DepCmdList);
 	runCmds && lhsDep->dn_Result > DN_FAILED && depCmdList;
-	depCmdList = GetSucc(&depCmdList->dc_Node)
+	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node)
     ) {
 	DepRef  *rhsRef;
 	int xr = DN_CHANGED;
@@ -361,16 +434,16 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 		tab, tab, "",
 		lhsDep->dn_Node.ln_Name, index));
 
-	    if ((var = MakeVar("left", '%')) != NULL) {
+	    if ((var = MakeVariable("left", '%')) != NULL) {
 		PutCmdListSym(&var->var_CmdList, lhsDep->dn_Node.ln_Name, NULL);
 	    }
-	    if ((var = MakeVar("right", '%')) != NULL) {
+	    if ((var = MakeVariable("right", '%')) != NULL) {
 		short space = 0;
 
 		for (
-		    rhsRef = GetHead(&depCmdList->dc_RhsList);
+		    rhsRef = (DepRef *)GetHead(&depCmdList->dc_RhsList);
 		    rhsRef;
-		    rhsRef = GetSucc(&rhsRef->rn_Node)
+		    rhsRef = (DepRef *)GetSucc(&rhsRef->rn_Node)
 		) {
 		    PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
 		}
@@ -385,21 +458,27 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 
     /*
      * If we ran commands and the left hand side result is marked as having
-     * changed, and the left hand side represents a pre-existing file, 
+     * changed, and the left hand side represents a pre-existing file,
      * check to see if the file has been updated.  Normally the file will
      * have been updated by the commands that were run but in certain
-     * cases, such as when generating prototypes or dependancies, it is 
+     * cases, such as when generating prototypes or dependancies, it is
      * quite possible that no changes were made and the commands explicitly
      * did not rewrite the left hand side file because of that.
      */
     if (runCmds && lhsStRes == 0 && lhsDep->dn_Result == DN_CHANGED) {
-	struct stat newSt;
+	BPTR tmplock;
+	D_S(struct FileInfoBlock, fib);
 
-	if (stat(lhsDep->dn_Node.ln_Name, &newSt) == 0
-	    && lhsSt.st_mtime == newSt.st_mtime
-	    && lhsSt.st_size == newSt.st_size
-	) {
-	    lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
+	if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
+	{
+	    if ((Examine(tmplock, fib)) &&
+		(CompareDates(&lefthand_info.datestamp, &fib->fib_Date) == 0) &&
+		lefthand_info.size == fib->fib_Size)
+	    {
+		printf("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
+		lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
+	    }
+	    UnLock(tmplock);
 	}
     }
 
@@ -411,29 +490,21 @@ ExecuteDependency(DepNode *parent, DepRef *lhs, int how)
 	lhsDep->dn_Result = yr;
 
     /*
-     * If the result code is DN_NOCHANGE_TOUCH we have to touch the 
+     * If the result code is DN_NOCHANGE_TOUCH we have to touch the
      * pre-existing left hand side file so the next dmake run does not
      * go through this whole mess again.  This will cause DN_NOCHANGE_TOUCH
      * to propogate so, for example, if a source module is changed but the
      * prototypes generation dependancy does not change the prototype file,
      * the prototype file, object modules, and library files will be touched
-     * so the next dmake run doesn't have to regenerate the prototypes 
+     * so the next dmake run doesn't have to regenerate the prototypes
      * again.
      */
     if (lhsDep->dn_Result == DN_NOCHANGE_TOUCH) {
-	int fd;
-
-#if 0
+	struct DateStamp ds;
+	
 	printf("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
-#endif
-	if ((fd = open(lhsDep->dn_Node.ln_Name, O_RDWR)) >= 0) {
-	    char c;
-	    if (read(fd, &c, 1) == 1) {
-		lseek(fd, 0, SEEK_SET);
-		write(fd, &c, 1);
-	    }
-	    close(fd);
-	}
+	DateStamp(&ds);
+	SetFileDate(lhsDep->dn_Node.ln_Name , &ds);
     }
 
     /*

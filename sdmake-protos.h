@@ -30,8 +30,10 @@ Prototype long LoadSegLock(long, char *);
 
 Prototype void InitCmdList(void);
 Prototype void PutCmdListChar(List *, char);
+Prototype void InsCmdListChar(List *, char);
 Prototype void PutCmdListSym(List *, char *, short *);
 Prototype void CopyCmdList(List *, List *);
+Prototype void FreeCmdList(List *);
 Prototype void AppendCmdList(List *, List *);
 Prototype int  PopCmdListSym(List *, char *, long);
 Prototype int  PopCmdListChar(List *);
@@ -49,23 +51,23 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int	  ExecuteDependency(DepRef *, time_t *);
+Prototype int	  ExecuteDependency(DepNode *parent, DepRef *lhs);
 Prototype List DepList;
 
 /* parse.c              */
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t ParseAssignment(STRPTR, token_t);
-Prototype token_t ParseDependency(STRPTR, token_t);
-Prototype token_t GetElement(void);
+Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
+Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft);
+Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
 Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype token_t GetToken(void);
 Prototype void expect(token_t, token_t);
-Prototype void error(short, CONST_STRPTR, ...);
+Prototype void error(short type, CONST_STRPTR ctl, ...);
 Prototype char SymBuf[256];
 Prototype long LineNo;
 
@@ -75,10 +77,6 @@ Prototype void InitVariable(void);
 Prototype Var *MakeVariable(char *, char);
 Prototype Var *FindVariable(char *, char);
 Prototype void AppendVariable(Var *, char *, long);
-
-/* subs.c               */
-
-Prototype int align(int);
 
 /* path.c               */
 
@@ -91,3 +89,9 @@ Prototype int system13(const char *buf);
 /* console.c            */
 
 Prototype BOOL OpenConsole(const char *str);
+
+/* cond.c               */
+
+Prototype int pushIf(IfNode **ifBase, int value);
+Prototype int popIf(IfNode **ifBase);
+Prototype int elseIf(IfNode **ifBase);

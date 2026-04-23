@@ -37,12 +37,11 @@ Prototype int pushIf(IfNode **ifBase, int value);
 Prototype int popIf(IfNode **ifBase);
 Prototype int elseIf(IfNode **ifBase);
 
-int
-pushIf(IfNode **ifBase, int value)
+int pushIf(IfNode **ifBase, int value)
 {
     IfNode *ifn = malloc(sizeof(IfNode));
 
-    bzero(ifn, sizeof(IfNode));
+    clrmem(ifn, sizeof(IfNode));
     ifn->if_Next = *ifBase;
     *ifBase = ifn;
 
@@ -53,8 +52,7 @@ pushIf(IfNode **ifBase, int value)
     return(ifn->if_Value);
 }
 
-int
-popIf(IfNode **ifBase)
+int popIf(IfNode **ifBase)
 {
     IfNode *ifn = *ifBase;
 
@@ -66,8 +64,7 @@ popIf(IfNode **ifBase)
 	return(ifn->if_Value);
 }
 
-int
-elseIf(IfNode **ifBase)
+int elseIf(IfNode **ifBase)
 {
     IfNode *ifn = *ifBase;
 

@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -18,7 +38,7 @@ typedef struct Process		    Process;
 
 Prototype long Execute_Command(char *, short);
 Prototype void InitCommand(void);
-Prototype long LoadSegLock(long, char *);
+Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
 BPTR SaveLock;
 char RootPath[512];
@@ -33,9 +53,12 @@ void ICExit(void)
 
 void InitCommand()
 {
-    SaveLock = CurrentDir(DupLock(((Process *)FindTask(NULL))->pr_CurrentDir));
+    BPTR path;
 
-    getcwd(RootPath, sizeof(RootPath));
+    path = DupLock(((Process *)FindTask(NULL))->pr_CurrentDir);
+    NameFromLock(path, RootPath, sizeof(RootPath));
+    SaveLock = CurrentDir(path);
+
     atexit(ICExit);
 }
 
@@ -159,9 +182,9 @@ long Execute_Command(char *cmd, short ignore)
 	 */
 
 	if (SysBase->LibNode.lib_Version >= 36 && proc->pr_CLI) {
-	    long seg;
+	    struct Segment *seg;
+	    BPTR seglist, lock = 0;
 	    long stack;
-	    long lock = 0;
 	    CLI *cli = (CLI *)BADDR(proc->pr_CLI);
 	    static char OldCmd[128];
 	    char dt[4];
@@ -184,18 +207,27 @@ long Execute_Command(char *cmd, short ignore)
 	    if (useSystem || (Running2_04() && GetVar(cmd, dt, 2, LV_ALIAS | GVF_LOCAL_ONLY) >= 0))
 		goto dosys;
 
-	    if ((seg = (long)FindSegment(cmd, 0L, 0)) || (seg = (long)FindSegment(cmd, 0L, 1))) {
+	    Forbid();
+	    if (seg = FindSegment(cmd, 0L, DOSFALSE))
+	    {
+		seg->seg_UC++;
+	    }
+	    else if (seg = FindSegment(cmd, 0L, 1))
+	    {
+		if (seg->seg_UC != CMD_INTERNAL)
+		    seg = 0;
+	    }
+	    Permit();
+
+	    if (seg) {
 		dbprintf(("A cmd = '%s' stack = %d\n", cmdArgs, stack));
-		err = RunCommand(((long *)seg)[2], stack, cmdArgs, strlen(cmdArgs));
-	    } else if ((lock = _SearchPath(cmd)) && (seg = LoadSegLock(lock, ""))) {
+		err = RunCommand(seg->seg_Seg, stack, cmdArgs, strlen(cmdArgs));
+		if (seg->seg_UC > 0)
+		    seg->seg_UC--;
+	    } else if ((lock = _SearchPath(cmd)) && (seglist = LoadSegLock(lock, ""))) {
 		dbprintf(("B\n"));
-		err = RunCommand(seg, stack, cmdArgs, strlen(cmdArgs));
-		UnLoadSeg(seg);
-	    } else if ((lock = Lock("dcc:bin", SHARED_LOCK)) && (seg = LoadSegLock(lock, cmd))) {
-		dbprintf(("C %08x\n", seg));
-		dbprintf(("CMD= %s", cmdArgs));
-		err = RunCommand(seg, 8192, cmdArgs, strlen(cmdArgs));
-		UnLoadSeg(seg);
+		err = RunCommand(seglist, stack, cmdArgs, strlen(cmdArgs));
+		UnLoadSeg(seglist);
 	    } else {
 dosys:
 		dbprintf(("D\n"));
@@ -223,10 +255,10 @@ dosys:
 }
 
 
-long LoadSegLock(long lock, char *cmd)
+BPTR LoadSegLock(BPTR lock, char *cmd)
 {
-    long oldLock;
-    long seg;
+    BPTR oldLock;
+    BPTR seg;
 
     oldLock = CurrentDir(lock);
     seg = LoadSeg(cmd);

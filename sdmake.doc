@@ -324,6 +324,14 @@
 
 	Include another DMakefile.  Note that the filename is not quoted
 
+    .leftislabel
+
+        Indicates that the lhs of following dependancies are made up names, and
+        any existing flie/dir that happends to use that name will be ignored.
+
+    .leftisfile
+        Indicates that the lhs of following dependancies are real files/dirs.
+
     .ifdef varname
 
 	If the variable exists
