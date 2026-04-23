@@ -24,7 +24,7 @@ Prototype short SomeWork;
 
 Prototype long Execute_Command(char *, short);
 Prototype void InitCommand(void);
-Prototype long LoadSegLock(long, char *);
+Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
 /* cmdlist.c            */
 

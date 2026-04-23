@@ -16,6 +16,8 @@ depend.o: depend.c defs.h tokens.h sdmake-protos.h
 
 path.o: path.c defs.h tokens.h sdmake-protos.h
 
+cond.o: cond.c defs.h tokens.h sdmake-protos.h
+
 cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h
 
 run.o: run.c defs.h tokens.h sdmake-protos.h
@@ -23,8 +25,6 @@ run.o: run.c defs.h tokens.h sdmake-protos.h
 main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h
 
 var.o: var.c defs.h tokens.h sdmake-protos.h
-
-subs.o: subs.c defs.h tokens.h sdmake-protos.h
 
 parse.o: parse.c defs.h tokens.h sdmake-protos.h
 
