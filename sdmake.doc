@@ -20,12 +20,12 @@
     rather NIOA - Not Invented On Amiga.
 
     Generally you simply run 'SDMake' and have a list of dependancies in
-    your 'DMakefile' which SDMake then executes.  The DMakefile may contain
+    your 'SDMakefile' which SDMake then executes.  The SDMakefile may contain
     four different kinds of lines:
 
     (1) COMMENTS -- Any line beginning with a '#' is a comment and ignored
 
-    # This DMakefile generates an executable for fubar, the compiler
+    # This SDMakefile generates an executable for fubar, the compiler
     # options are as follows ...
 
     (2) ASSIGNMENTS -- Any line of the form <SYMBOL> = ...  is considered
@@ -172,7 +172,7 @@
     to create your destination file list.
 
     This capability allows you to specify your source files EXACTLY ONCE
-    in the DMakefile and then use the file munging capability to convert
+    in the SDMakefile and then use the file munging capability to convert
     them to the object file list, etc...
 
     You can embed variables within variables as with the following example
@@ -192,7 +192,7 @@
     wildcard.  These are considered dummies and are equivalent to %N where
     N is incremented from 1..9 for each '?' or '*' encountered.
 
-    You can use this capability anywhere in the DMakefile.  Another common
+    You can use this capability anywhere in the SDMakefile.  Another common
     thing to do is restrict your link line to include only the object files
     and skip the headers:
 
@@ -297,13 +297,13 @@
 	fubar.o : fubar.c
 	    cc -c fubar.c -o fubar.o
 
-			    DMAKEFILE SPECIAL VARIABLES
+			   SDMAKEFILE SPECIAL VARIABLES
 
-    SDMake has one special variable to make it easier for a DMakefile to
+    SDMake has one special variable to make it easier for a SDMakefile to
     know where in the directory hierarchy it stands relative to the 
     current directory (where the original dxmake was run).  $(TOPDIR) is
-    empty relative to the DMakefile in the current directory where 
-    the dxmake program is run.  If a DMakefile has an ".include"
+    empty relative to the SDMakefile in the current directory where
+    the dxmake program is run.  If a SDMakefile has an ".include"
     directive the directory prefix specified in that directive becomes the
     new $(TOPDIR) for processing of that include file.  Nested .include
     directives (if not absolute) append their path prefix to the
@@ -313,16 +313,16 @@
     Since you know where this file resides in your source hierarchy you can
     construct paths to things like object and bin directories.
 
-    For example, this allows you to create a master DMakefile.inc at the
+    For example, this allows you to create a master SDMakefile.inc at the
     top of your project hiearchy with all the targets and sophistication 
-    required to control your project.  Individual DMakefile's within the
+    required to control your project.  Individual SDMakefile's within the
     project hierarchy would then set up a few VAR='s and .include the master.
 
-			      DMAKEFILE DIRECTIVES
+			      SDMAKEFILE DIRECTIVES
 
     .include filename
 
-	Include another DMakefile.  Note that the filename is not quoted
+	Include another SDMakefile.  Note that the filename is not quoted
 
     .leftislabel
 
