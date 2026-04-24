@@ -66,6 +66,7 @@
 #include <exec/nodes.h>
 #include <exec/lists.h>
 #include "lists.h"
+#include "poolmem.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,9 +80,6 @@
 #include <proto/dos.h>
 #include <proto/utility.h>
 #define Running2_04() (SysBase->LibNode.lib_Version >= 37)
-
-#define OSVERMIN 0
-#define OSVERMAX 999
 
 typedef struct Node Node;
 typedef struct List List;

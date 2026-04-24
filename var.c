@@ -58,7 +58,8 @@ Var *MakeVariable(char *name, char type)
 	    return(var);
 	}
     }
-    var = malloc(sizeof(Var) + strlen(name) + 1);
+    if (!(var = PAlloc(sizeof(Var) + strlen(name) + 1)))
+	MemErr();
     clrmem(var, sizeof(Var));
 
     var->var_Node.ln_Name = (char *)(var + 1);
@@ -93,13 +94,14 @@ Var *FindVariable(char *name, char type)
 	    if (GetVar(name, (char *)&ptr, 2, 0) >= 0)
 	    {
 		len = IoErr();
-		ptr = malloc(len + 1);
+		if (!(ptr = PAlloc(len + 1)))
+		    MemErr();
 		if (GetVar(name, ptr, len + 1, 0) >= 0)
 		{
 		    var = MakeVariable(name, '0');
 		    AppendVariable(var, ptr, strlen(ptr));
 		}
-		free(ptr);
+		PFree(ptr, len + 1);
 	    }
 	}
 	else
@@ -116,14 +118,16 @@ Var *FindVariable(char *name, char type)
 		    Seek(fh, 0L, 1);
 		    if ((size = Seek(fh, 0L, -1)) >= 0)
 		    {
-			char *ptr = malloc(size + 1);
+			char *ptr;
 
+			if (!(ptr = PAlloc(size + 1)))
+			    MemErr();
 			Read(fh, ptr, size);
 			ptr[size] = 0;
 
 			var = MakeVariable(name, '0');
 			AppendVariable(var, ptr, strlen(ptr));
-			free(ptr);
+			PFree(ptr, size + 1);
 		    }
 		    Close(fh);
 		}

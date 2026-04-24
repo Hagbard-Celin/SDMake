@@ -1,0 +1,44 @@
+		; INCLUDE "lvo/exec_lib.i"
+		section text,CODE
+
+;
+; Function to do AllocVecPooled(Pool,memSize)
+;
+_AllocVecPooled:
+		addq.l	#4,d0		; Get space for tracking
+		move.l	d0,-(sp)	; Save the size
+                IF OSVERMIN >= 39
+		jsr	_LVOAllocPooled(a6)	; Call pool...
+                ELSE
+		jsr	_AsmAllocPooled	 ; Call pool...
+                ENDC
+		move.l	(sp)+,d1	; Get size back...
+		tst.l	d0		; Check for error
+		beq.s	avp_fail	; If NULL, failed!
+		move.l	d0,a0		; Get pointer...
+		move.l	d1,(a0)+	; Store size
+		move.l	a0,d0		; Get result
+avp_fail:	rts			; return
+
+;
+; Function to do FreeVecPooled(pool,memory)
+;
+_FreeVecPooled:	move.l	-(a1),d0	; Get size / ajust pointer
+                IF OSVERMIN >= 39
+		jmp	_LVOFreePooled(a6)
+                ELSE
+		jmp	_AsmFreePooled
+                ENDC
+
+		xdef	_AllocVecPooled
+		xdef	_FreeVecPooled
+                IF OSVERMIN >= 39
+                _LVOAllocPooled equ -708
+                _LVOFreePooled equ -714
+                ELSE
+		xref	_AsmAllocPooled
+		xref	_AsmFreePooled
+                ENDC
+
+		END
+

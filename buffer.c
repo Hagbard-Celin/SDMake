@@ -21,7 +21,10 @@ char *AllocPathBuffer()
     Node *node;
 
     if ((node = RemHead(&PathBufList)) == NULL)
-	node = malloc(PBUFSIZE);
+    {
+	if (!(node = PAlloc(PBUFSIZE)))
+	    error(FATAL, "memory allocation failed");
+    }
     return((char *)node);
 }
 

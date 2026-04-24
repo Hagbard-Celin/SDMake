@@ -92,6 +92,7 @@ Prototype long LineNo;
 extern short	QuietOpt;
 extern STRPTR	OnError;
 
+WORD SymBufLen;
 char SpecialChar[256];
 char SChars[] = { ":=()\n\\\" \t\r\014" };
 char SymBuf[256];
@@ -144,13 +145,14 @@ void ParseFile(STRPTR fileName)
 	CopyCmdList(&var->var_CmdList, &list);
 	CopyCmdList(&var->var_CmdList, &topdirList);
 	len = CmdListSize(&list);
-	tfileName = malloc(len + strlen(fileName) + 1);
+	if (!(tfileName = PAllocVec(len + strlen(fileName) + 1)))
+	    error(FATAL, "memory allocation failed");
 	CopyCmdListBuf(&list, tfileName);
 	strcpy(tfileName + len, fileName);
 
 	if ((fi = fopen(tfileName, "r")) == NULL)
 	    error(FATAL, "Unable to open %s", tfileName);
-	free(tfileName);
+	PFreeVec(tfileName);
     }
     FileName = strdup(fileName);
     Fi = fi;
@@ -208,7 +210,8 @@ void ParseFile(STRPTR fileName)
 			    };
 			    CopyCmdList(&var->var_CmdList, &CmdList);
 			    maxl = CmdListSize(&CmdList) + 1;
-			    data = malloc(maxl);
+			    if (!(data = PAlloc(maxl)))
+				error(FATAL, "memory allocation failed");
 			    CopyCmdListBuf(&CmdList, data);
 			    if (Running2_04())
 			    {
@@ -228,7 +231,7 @@ void ParseFile(STRPTR fileName)
 				    UnLock(CurrentDir(old));
 				}
 			    }
-			    free(data);
+			    PFree(data, maxl);
 			}
 		    }
 		} else if (ifTrue && strcmp(SymBuf, ".include") == 0) {
@@ -240,9 +243,11 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
 			error(FATAL, "Expected a symbol for .include!");
-		    path = strdup(SymBuf);
+		    if (!(path = PAllocVec(SymBufLen + 1)))
+			error(FATAL, "memory allocation failed");
+		    strcpy(path, SymBuf);
 		    ParseFile(path);
-		    free(path);
+		    PFreeVec(path);
 
 		    LineNo = saveLine;
 		    Fi = saveFi;
@@ -373,8 +378,10 @@ void ParseFile(STRPTR fileName)
 		    if (t != TokSym)
 			error(FATAL, "Expected a symbol for .onerror!");
 		    if (OnError)
-			free(OnError);
-		    OnError = strdup(SymBuf);
+			PFreeVec(OnError);
+		    if (!(OnError = PAllocVec(SymBufLen + 1)))
+			error(FATAL, "memory allocation failed");
+		    strcpy(OnError, SymBuf);
 		} else if (ifTrue && strcmp(SymBuf, ".leftislabel") == 0) {
 		    printf("Setting left dummy\n");
 		    lefttype &= ~LT_MASK;
@@ -530,14 +537,21 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
      */
 
     {
-	char *buf = malloc(CmdListSize(&tmpList) + 1);
+	ULONG len;
+	char *buf;
+
+	len = CmdListSize(&tmpList) + 1;
+
+	if (!(buf = PAlloc(len)))
+	    error(FATAL, "memory allocation failed");
+
 	CopyCmdListBuf(&tmpList, buf);
 	if (newVar) {
 	    ExpandVariable(buf, &tmpList);
 	    var = MakeVariable(varName, type);
 	    AppendCmdList(&tmpList, &var->var_CmdList);
 	}
-	free(buf);
+	PFree(buf, len);
     }
     return(GetElement(1, NULL));
 }
@@ -552,10 +566,13 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     DepRef  *rhs;
     List    lhsList;
     List    rhsList;
-    List    *cmdList = malloc(sizeof(List));
+    List    *cmdList;
     long    nlhs = 0;
     long    nrhs = 0;
     short   ncol = 0;
+
+    if (!(cmdList = PAlloc(sizeof(List))))
+	error(FATAL, "memory allocation failed");
 
     NewList(cmdList);
     NewList(&lhsList);
@@ -731,24 +748,24 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		    IncorporateDependency(lhs, rhs, cmdList);
 	    }
 	    IncorporateDependency(lhs, NULL, cmdList);
-	    free(lhs);
+	    PFree(lhs, sizeof(DepRef));
 	}
     } else if (nlhs == 1) {
 	lhs = (DepRef *)RemHead(&lhsList);
 	while ((rhs = (DepRef *)RemHead(&rhsList)) != NULL)
 	    IncorporateDependency(lhs, rhs, cmdList);
 	IncorporateDependency(lhs, NULL, cmdList);
-	free(lhs);
+	PFree(lhs, sizeof(DepRef));
     } else if (nrhs == 1) {
 	rhs = (DepRef *)RemHead(&rhsList);
 	while ((lhs = (DepRef *)RemHead(&lhsList)) != NULL) {
 	    IncorporateDependency(lhs, rhs, cmdList);
-	    free(lhs);
+	    PFree(lhs, sizeof(DepRef));
 	}
     } else if (nlhs == nrhs) {
 	while ((lhs = (DepRef *)RemHead(&lhsList)) && (rhs = (DepRef *)RemHead(&rhsList))) {
 	    IncorporateDependency(lhs, rhs, cmdList);
-	    free(lhs);
+	    PFree(lhs, sizeof(DepRef));
 	}
     } else {
 	error(FATAL, "%d items on the left, %d on the right of colon!", nlhs, nrhs);
@@ -767,7 +784,7 @@ token_t GetElement(int ifTrue, int *expansion)
     short c;
 
 top:
-    if (PopCmdListSym(&CmdList, SymBuf, sizeof(SymBuf)) == 0) {
+    if (SymBufLen = PopCmdListSym(&CmdList, SymBuf, sizeof(SymBuf))) {
 	if (expansion)
 	    *expansion = 1;
 	return(TokSym);
@@ -1278,7 +1295,8 @@ STRPTR ExpandVariable(ubyte *buf, List *list)
     }
     if (keepInList == 0) {
 	if (tmpListValid) {
-	    buf = malloc(CmdListSize(list) + 1);
+	    if (!(buf = PAllocVec(CmdListSize(list) + 1)))
+		    error(FATAL, "memory allocation failed");
 	    CopyCmdListBuf(list, buf);
 	}
     }

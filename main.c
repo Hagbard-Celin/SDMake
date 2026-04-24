@@ -83,6 +83,7 @@ void InitStuff(void);
 const char *SkipAss(const char *);
 struct IntuiText *ITextOf(char *);
 
+Prototype void MemErr(void);
 Prototype List	DoList;
 Prototype short DDebug;
 Prototype short CacheLevel;
@@ -93,9 +94,11 @@ Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
+Prototype APTR  MemPool;
 
 List	DoList;
 STRPTR	OnError;
+APTR    MemPool;
 short	DDebug;
 short	CacheLevel;
 short	NoRunOpt;
@@ -138,6 +141,8 @@ void myexit(void)
 	CurrentDir(XSaveLock);
 	XSaveLockValid = 0;
     }
+
+    PDelete();
 }
 
 
@@ -166,7 +171,10 @@ void wbmain(struct WBStartup *wbs)
 		char *ptr = dob->do_ToolTypes[j];
 
 		if (strnicmp(ptr, "FILE=", 5) == 0) {
-		    XFileName = strdup(SkipAss(ptr));
+		    const char *xptr = SkipAss(ptr);
+		    if (!(XFileName = PAlloc(strlen(xptr) + 1)))
+			MemErr();
+		    strcpy(XFileName, xptr);
 		    FileSpecified = 1;
 		} else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
 		    NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
@@ -370,6 +378,12 @@ int main(ULONG argc, char *argv[])
     return 0;
 }
 
+void MemErr(void)
+{
+    printf("Fatal error: memory allocation failed");
+    exit(20);
+}
+
 void InitStuff()
 {
     static int Initialized;
@@ -377,6 +391,7 @@ void InitStuff()
     atexit(myexit);
     if (Initialized == 0) {
 	Initialized = 1;
+	MemPool = PCreate(8192, 384);
 	NewList(&DoList);
 	InitCommand();
 	InitCmdList();

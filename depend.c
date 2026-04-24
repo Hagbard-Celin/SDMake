@@ -93,7 +93,8 @@ DepRef *CreateDepRef(List *list, CONST_STRPTR name)
 	    break;
     }
     if (dep == NULL) {
-	dep = malloc(sizeof(DepNode) + strlen(name) + 1);
+	if (!(dep = PAlloc(sizeof(DepNode) + strlen(name) + 1)))
+	    MemErr();
 	clrmem(dep, sizeof(DepNode));
 	dep->dn_Node.ln_Name = (char *)(dep + 1);
 	NewList(&dep->dn_DepCmdList);
@@ -101,7 +102,8 @@ DepRef *CreateDepRef(List *list, CONST_STRPTR name)
 	AddTail(&DepList, &dep->dn_Node);
     }
 
-    ref = malloc(sizeof(DepRef));
+    if (!(ref = PAlloc(sizeof(DepRef))))
+	MemErr();
     clrmem(ref, sizeof(DepRef));
 
     ref->rn_Node.ln_Name = dep->dn_Node.ln_Name;
@@ -113,7 +115,10 @@ DepRef *CreateDepRef(List *list, CONST_STRPTR name)
 
 DepRef *DupDepRef(DepRef *ref0)
 {
-    DepRef *ref = malloc(sizeof(DepRef));
+    DepRef *ref;
+
+    if (!(ref = PAlloc(sizeof(DepRef))))
+	MemErr();
 
     clrmem(ref, sizeof(DepRef));
     ref->rn_Node.ln_Name = ref0->rn_Node.ln_Name;
@@ -136,7 +141,8 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
 	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node);
     }
     if (depCmdList == NULL) {
-	depCmdList = malloc(sizeof(DepCmdList));
+	if (!(depCmdList = PAlloc(sizeof(DepCmdList))))
+	    MemErr();
 	clrmem(depCmdList, sizeof(DepCmdList));
 	NewList(&depCmdList->dc_RhsList);
 	depCmdList->dc_CmdList = cmdList;
@@ -197,7 +203,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    {
 	        if (Examine(tmplock, fib))
 	        {
-		    if (parent->dn_Info = malloc(sizeof(FileInfo)))
+		    if (parent->dn_Info = PAlloc(sizeof(FileInfo)))
 	            {
 			parent->dn_Info->size = fib->fib_Size;
 			parent->dn_Info->type = fib->fib_DirEntryType;
@@ -251,7 +257,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    {
 	        if (Examine(tmplock, fib))
 	        {
-		    if (lhsDep->dn_Info = malloc(sizeof(FileInfo)))
+		    if (lhsDep->dn_Info = PAlloc(sizeof(FileInfo)))
 	            {
 			lhsDep->dn_Info->size = fib->fib_Size;
 			lhsDep->dn_Info->type = fib->fib_DirEntryType;

@@ -20,45 +20,60 @@
 #include <fctype.h>
 
 Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
-Prototype void StrToLower(STRPTR string);
+Prototype STRPTR StrToLower(CONST_STRPTR string, ULONG len);
 
 
 BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string)
 {
     STRPTR Find, String;
+    ULONG findlen, stringlen;
     BOOL ret = FALSE;
 
-    if (!find || !string)
+    if (!find || !string ||
+	!(findlen = strlen(find)) ||
+	!(stringlen = strlen(string)))
+    {
 	return 0;
+    }
 
-    Find = strdup(find);
-    String = strdup(string);
+    Find = StrToLower(find, findlen);
+    String = StrToLower(string, stringlen);
 
     if (strstr(string, find))
 	ret = TRUE;
 
-    free(Find);
-    free(String);
+    PFree(Find, findlen + 1);
+    PFree(String, stringlen + 1);
     return ret;
 }
 
-void StrToLower(STRPTR string)
+STRPTR StrToLower(CONST_STRPTR string, ULONG len)
 {
-    if (!string || !string[0])
-	return;
+    STRPTR newstr, newptr;
 
+    if (!string || !len)
+	return 0;
+
+    if (!(newstr = PAlloc(len + 1)))
+	MemErr();
+
+    newptr = newstr;
     if (Running2_04())
     {
 	do
 	{
-	    *string = ToLower((ULONG)*string);
+	    *newptr = ToLower((ULONG)*string);
+	    newptr++;
 	} while (*++string);
     }
     else
     {
 	do
 	{
-	    *string = tolower(*string);
+	    *newptr = tolower(*string);
+	    newptr++;
 	} while (*++string);
     }
+    *newptr = 0;
+    return newstr;
 }

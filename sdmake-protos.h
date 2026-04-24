@@ -13,6 +13,7 @@ Prototype int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMa
 
 /* main.c               */
 
+Prototype void MemErr(void);
 Prototype List	DoList;
 Prototype short DDebug;
 Prototype short CacheLevel;
@@ -23,6 +24,7 @@ Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
+Prototype APTR  MemPool;
 
 /* run.c                */
 
@@ -40,7 +42,7 @@ Prototype void PutCmdListLen(List *list, char *buf, LONG len);
 Prototype void CopyCmdList(List *, List *);
 Prototype void FreeCmdList(List *);
 Prototype void AppendCmdList(List *, List *);
-Prototype int  PopCmdListSym(List *, char *, long);
+Prototype WORD PopCmdListSym(List *, char *, WORD);
 Prototype int  PopCmdListChar(List *);
 Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
@@ -107,7 +109,7 @@ Prototype int elseIf(IfNode **ifBase);
 /* string.c             */
 
 Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
-Prototype void StrToLower(STRPTR string);
+Prototype STRPTR StrToLower(CONST_STRPTR string, ULONG len);
 
 /* parserevh.c          */
 

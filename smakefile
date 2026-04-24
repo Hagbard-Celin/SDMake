@@ -1,7 +1,7 @@
 
-OBJS= depend.o cmdlist.o run.o string.o main.o var.o parse.o cond.o convert.o \
-      gethead.o getpred.o gettail.o buffer.o path.o console.o system13.o \
-      parserevh.o
+OBJS= depend.o cmdlist.o run.o poolmem.o string.o main.o var.o parse.o cond.o \
+      convert.o gethead.o getpred.o gettail.o buffer.o path.o console.o \
+      system13.o parserevh.o
 
 bin/sdmake: $(OBJS)
    sc link to bin/sdmake with <<
@@ -13,29 +13,29 @@ clean:
    -delete bin/sdmake
 
 
-depend.o: depend.c defs.h tokens.h sdmake-protos.h
+depend.o: depend.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-path.o: path.c defs.h tokens.h sdmake-protos.h
+path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-cond.o: cond.c defs.h tokens.h sdmake-protos.h
+cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h
+parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h
+cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-string.o: string.c defs.h tokens.h sdmake-protos.h
+string.o: string.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-run.o: run.c defs.h tokens.h sdmake-protos.h
+run.o: run.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h
+main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
 
-var.o: var.c defs.h tokens.h sdmake-protos.h
+var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-parse.o: parse.c defs.h tokens.h sdmake-protos.h
+parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-convert.o: convert.c defs.h tokens.h sdmake-protos.h
+convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-buffer.o: buffer.c defs.h tokens.h sdmake-protos.h
+buffer.o: buffer.c defs.h tokens.h sdmake-protos.h poolmem.h
 
 
 

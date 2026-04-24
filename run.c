@@ -402,7 +402,8 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    ++ci;
 	cmd[i] = 0;
 
-	cmdArgs = malloc(strlen(cmd + ci) + 3);
+	if (!(cmdArgs = PAllocVec(strlen(cmd + ci) + 3)))
+	    MemErr();
 	sprintf(cmdArgs, "%s\n", cmd + ci);
 	fflush(stdout);
 
@@ -475,7 +476,7 @@ dosys:
 	    cmd[i] = c;
 	    err = system13(cmd);
 	}
-	free(cmdArgs);
+	PFreeVec(cmdArgs);
 	if (err)
 	{
 	    printf("Exit code %d %s\n", err, (ignore) ? "(Ignored)":"");

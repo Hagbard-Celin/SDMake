@@ -75,7 +75,7 @@ Prototype void PutCmdListLen(List *list, char *buf, LONG len);
 Prototype void CopyCmdList(List *, List *);
 Prototype void FreeCmdList(List *);
 Prototype void AppendCmdList(List *, List *);
-Prototype int  PopCmdListSym(List *, char *, long);
+Prototype WORD PopCmdListSym(List *, char *, WORD);
 Prototype int  PopCmdListChar(List *);
 Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
@@ -100,7 +100,8 @@ void PutCmdListChar(List *list, char c)
 
     if ((node = (CmdNode *)GetTail(list)) == NULL || (node->cn_Idx == node->cn_Max)) {
 	if ((node = (CmdNode *)RemHead(&CmdFreeList)) == NULL) {
-	    node = malloc(sizeof(CmdNode) + 64);
+	    if (!(node = PAlloc(sizeof(CmdNode) + 64)))
+		MemErr();
 	    node->cn_Node.ln_Name = (char *)(node + 1);
 	    node->cn_Max = 64;
 	}
@@ -150,7 +151,8 @@ void CopyCmdList(List *fromList, List *toList)
 
 	for (n = 0; n < from->cn_Idx; ) {
 	    if ((copy = (CmdNode *)RemHead(&CmdFreeList)) == NULL) {
-		copy = malloc(sizeof(CmdNode) + 64);
+		if (!(copy = PAlloc(sizeof(CmdNode) + 64)))
+		    MemErr();
 		copy->cn_Max = 64;
 		copy->cn_Node.ln_Name = (char *)(copy + 1);
 	    }
@@ -188,10 +190,10 @@ void AppendCmdList(List *fromList, List *toList)
  *  pop a symbol (symbols are separated by white space)
  */
 
-int PopCmdListSym(List *cmdList, char *buf, long max)
+WORD PopCmdListSym(List *cmdList, char *buf, WORD max)
 {
     short c;
-    short i = 0;
+    WORD i = 0;
 
     --max;
 
@@ -203,7 +205,7 @@ int PopCmdListSym(List *cmdList, char *buf, long max)
     }
     buf[i] = 0;
 
-    return((i) ? 0 : -1);
+    return(i);
 }
 
 int PopCmdListChar(List *cmdList)
@@ -401,9 +403,9 @@ void CopyCmdListConvert(List *fromList, List *toList, char *srcMat, char *dstMat
 	WildConvert(CmdTmp1, toList, srcMat, dstMat);
     }
     if (srcMat != orgsrc)
-	free(srcMat);
+	PFreeVec(srcMat);
     if (dstMat != orgdst)
-	free(dstMat);
+	PFreeVec(dstMat);
 }
 
 /*
@@ -480,7 +482,8 @@ long ExecuteCmdList(DepNode *dep, List *list)
 
 	    if (n >= sizeof(CmdTmp1) - 2) {	/*  avoid malloc    */
 		allocated = 1;
-		cmd = (char *)malloc(n + 2);
+		if (!(cmd = (char *)PAllocVec(n + 2)))
+		    error(FATAL, "memory allocation failed");
 	    } else {
 		allocated = 0;
 		cmd = CmdTmp1;
@@ -535,7 +538,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		}
 	    }
 	    if (allocated)
-		free(cmd);
+		PFreeVec(cmd);
 	}
 
 	if (cmdIfBase != NULL)

@@ -39,8 +39,10 @@ Prototype int elseIf(IfNode **ifBase);
 
 int pushIf(IfNode **ifBase, int value)
 {
-    IfNode *ifn = malloc(sizeof(IfNode));
+    IfNode *ifn;
 
+    if (!(ifn = PAlloc(sizeof(IfNode))))
+	MemErr();
     clrmem(ifn, sizeof(IfNode));
     ifn->if_Next = *ifBase;
     *ifBase = ifn;
@@ -57,7 +59,7 @@ int popIf(IfNode **ifBase)
     IfNode *ifn = *ifBase;
 
     *ifBase = ifn->if_Next;
-    free(ifn);
+    PFree(ifn, sizeof(IfNode));
     if ((ifn = *ifBase) == NULL)
 	return(1);
     else
