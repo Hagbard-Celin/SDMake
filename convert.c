@@ -12,7 +12,7 @@
 
 #define MAXLEVELS   10
 
-Prototype int  WildConvert(char *, char *, char *, char *);
+Prototype int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat);
 
 /*
  *  Run srcBuf through the srcMat pattern matcher and if it matches
@@ -20,10 +20,10 @@ Prototype int  WildConvert(char *, char *, char *, char *);
  */
 
 
-int WildConvert(char *srcBuf, char *dstBuf, char *srcMat, char *dstMat)
+int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat)
 {
-    short r = 0;
     long i;
+    short r = 0;
     static short Index;
     static short SubLen[MAXLEVELS];
     static char *SubStr[MAXLEVELS];
@@ -78,8 +78,12 @@ int WildConvert(char *srcBuf, char *dstBuf, char *srcMat, char *dstMat)
 	break;
     }
     if (r == 0 && dstMat) {
+	List tmplist;
+	List *targetlist = dstList;
 	short k = 0;
 	short n = -1;
+
+	NewList(&tmplist);
 
 	while (*dstMat) {
 	    switch(*dstMat) {
@@ -93,17 +97,27 @@ int WildConvert(char *srcBuf, char *dstBuf, char *srcMat, char *dstMat)
 		    n = k++;
 
 		if (n >= 0 && n < MAXLEVELS) {
-		    movmem(SubStr[n], dstBuf, SubLen[n]);
-		    dstBuf += SubLen[n];
+		    PutCmdListLen(targetlist, SubStr[n], SubLen[n]);
 		}
 		break;
+	    case '\'':
+		if (targetlist == dstList)
+		{
+		    targetlist = &tmplist;
+		    break;
+		}
+		else
+		{
+		    ExpandVariableList(&tmplist, dstList);
+		    targetlist = dstList;
+		    break;
+		}
 	    default:
-		*dstBuf++ = *dstMat;
+		PutCmdListChar(targetlist, *dstMat);
 		break;
 	    }
 	    ++dstMat;
 	}
-	*dstBuf = 0;
     }
     db4printf((" r = %d\n", r));
     return(r);

@@ -9,7 +9,7 @@ Prototype void FreePathBuffer(char *);
 
 /* convert.c            */
 
-Prototype int  WildConvert(char *, char *, char *, char *);
+Prototype int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat);
 
 /* main.c               */
 
@@ -36,6 +36,7 @@ Prototype void InitCmdList(void);
 Prototype void PutCmdListChar(List *, char);
 Prototype void InsCmdListChar(List *, char);
 Prototype void PutCmdListSym(List *, char *, short *);
+Prototype void PutCmdListLen(List *list, char *buf, LONG len);
 Prototype void CopyCmdList(List *, List *);
 Prototype void FreeCmdList(List *);
 Prototype void AppendCmdList(List *, List *);
@@ -68,7 +69,9 @@ Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
 Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
+Prototype void ParseVariableList(List *srcList, List *dstList, short c0);
 Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
+Prototype void ExpandVariableList(List *srclist, List *list);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype token_t GetToken(void);
 Prototype void expect(token_t, token_t);

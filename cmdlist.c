@@ -71,6 +71,7 @@
 Prototype void InitCmdList(void);
 Prototype void PutCmdListChar(List *, char);
 Prototype void PutCmdListSym(List *, char *, short *);
+Prototype void PutCmdListLen(List *list, char *buf, LONG len);
 Prototype void CopyCmdList(List *, List *);
 Prototype void FreeCmdList(List *);
 Prototype void AppendCmdList(List *, List *);
@@ -111,6 +112,15 @@ void PutCmdListChar(List *list, char c)
     node->cn_Node.ln_Name[node->cn_Idx++] = c;
 }
 
+void PutCmdListLen(List *list, char *buf, LONG len)
+{
+    if (*buf && len) {
+	while (len--) {
+	    PutCmdListChar(list, *buf);
+	    ++buf;
+	}
+    }
+}
 void PutCmdListSym(List *list, char *buf, short *pspace)
 {
     if (*buf) {
@@ -192,6 +202,7 @@ int PopCmdListSym(List *cmdList, char *buf, long max)
 	c = PopCmdListChar(cmdList);
     }
     buf[i] = 0;
+
     return((i) ? 0 : -1);
 }
 
@@ -358,6 +369,8 @@ void CopyCmdListConvert(List *fromList, List *toList, char *srcMat, char *dstMat
 {
     List tmpList;
     short space = 0;
+    char *orgsrc = srcMat;
+    char *orgdst = dstMat;
 
     dbprintf(("fromlist %08lx copyconvert '%s' -> '%s'\n", GetHead(fromList), srcMat, dstMat));
     srcMat = ExpandVariable(srcMat, NULL);
@@ -383,11 +396,15 @@ void CopyCmdListConvert(List *fromList, List *toList, char *srcMat, char *dstMat
 
     while (PopCmdListSym(&tmpList, CmdTmp1, sizeof(CmdTmp1)) == 0)
     {
-	if (WildConvert(CmdTmp1, CmdTmp2, srcMat, dstMat) == 0)
-	{
-	    PutCmdListSym(toList, CmdTmp2, &space);
-	}
+	if (space)
+	    PutCmdListChar(toList, ' ');
+	space = 1;
+	WildConvert(CmdTmp1, toList, srcMat, dstMat);
     }
+    if (srcMat != orgsrc)
+	free(srcMat);
+    if (dstMat != orgdst)
+	free(dstMat);
 }
 
 /*
