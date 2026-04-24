@@ -867,7 +867,11 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
      */
 
     while ((c = *buf++) && !SpecialChar[c])
+    {
 	altBuf[i++] = c;
+	if (i >= PBUFSIZE)
+	    error(FATAL, "Symbol overflow: %s", altBuf);
+    }
     altBuf[i] = 0;
 
     var = FindVariable(altBuf, c0);
@@ -885,7 +889,7 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	return(buf);
     }
     if (c != ':')
-	error(FATAL, "Bad variable specification after name");
+	error(FATAL, "Bad variable specification after name %x", c);
 
     /*
      *	source operation
@@ -896,7 +900,11 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     if (c == '\"') {
 	i = 0;
 	while ((c = *buf++) && c != '\"')
+	{
 	    symBuf[i++] = c;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
 	if (c == '\"')
 	    c = *buf++;
     } else {
@@ -904,6 +912,8 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	while (c && c != ')' && c != ':') {
 	    symBuf[i++] = c;
 	    c = *buf++;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
 	}
     }
 
@@ -929,7 +939,11 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     if (c == '\"') {
 	i = 0;
 	while ((c = *buf++) && c != '\"')
+	{
 	    symBuf[i++] = c;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
 	if (c == '\"')
 	    c = *buf++;
     } else {
@@ -937,6 +951,8 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	while (c && c != ')' && c != ':') {
 	    symBuf[i++] = c;
 	    c = *buf++;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
 	}
     }
     symBuf[i] = 0;
