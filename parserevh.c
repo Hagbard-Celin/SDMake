@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "defs.h"
+
+#define VAR_NUM 1
+#define VAR_VAR -1
+
+Prototype WORD ParseRevInclude(STRPTR includefile);
+
+static WORD GetVerRev(STRPTR define);
+
+WORD ParseRevInclude(STRPTR includefile)
+{
+#if OSVERMIN < 47 && OSVERMAX >= 47
+    if (DOSBase->dl_lib.lib_Version >= 47)
+    {
+#endif
+#if OSVERMAX >= 47
+	BPTR revfile;
+
+	if (revfile = Open(includefile, MODE_OLDFILE))
+	{
+	    TEXT line[128];
+
+	    while (FGets(revfile, line, 128))
+	    {
+		//printf("Got line: %s \n", line);
+		if (!(strncmp(line, "#define", 7 )))
+		    GetVerRev(line + 8);
+	    }
+
+
+	    Close(revfile);
+	}
+	else
+	    error(FATAL, "Unable to open %s", revfile);
+#endif
+#if OSVERMIN < 47 && OSVERMAX >= 47
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 47
+	FILE *revfile;
+
+	if (revfile = fopen(includefile, "r"))
+	{
+	    TEXT line[128];
+
+	    while (fgets(line, 128, revfile))
+	    {
+		//printf("Got line: %s \n", line);
+		if (!(strncmp(line, "#define", 7 )))
+		    GetVerRev(line + 8);
+	    }
+
+
+	    fclose(revfile);
+	}
+	else
+	    error(FATAL, "Unable to open %s", revfile);
+#endif
+#if OSVERMIN < 47 && OSVERMAX >= 47
+    }
+#endif
+    return 1;
+}
+
+static WORD GetVerRev(STRPTR define)
+{
+    STRPTR varname;
+    WORD verch, revch;
+
+    verch = revch = 0;
+    
+    while (*define && (*define == ' ' || *define == '\t'))
+	define++;
+
+    if (!define[0] || *define == '\n')
+	return 0;
+
+    varname = define;
+
+    while (*define && *define != ' ' && *define != '\n' && *define != '\t')
+    {
+	if (verch < 3 && revch < 3)
+	{
+	    if (*define == 'R')
+	    {
+		if (verch == 2)
+		    verch++;
+		else
+		if (!revch)
+		    revch++;
+		else
+		    verch = revch = 0;
+	    }
+	    else
+	    if (*define == 'E')
+	    {
+		if (verch == 1)
+		    verch++;
+		else
+		if (revch == 1)
+		    revch++;
+		else
+		    verch = revch = 0;
+	    }
+	    else
+	    if (*define == 'V')
+	    {
+		if (!verch)
+		    verch++;
+		else
+		if (revch == 2)
+		    revch++;
+		else
+		    verch = revch = 0;
+	    }
+	}
+
+	define++;
+    }
+
+    if (!verch && !revch)
+	return 0;
+
+    *define = 0;
+
+    while (*++define && (*define == ' ' || *define == '\t'));
+
+    if (!define[0] || *define == '\n')
+	return 0;
+
+    {
+	LONG len = strlen(define);
+	Var *var;
+	WORD type = 0;
+
+	if (define[len - 1] == '\n')
+	    define[len-- - 1] = 0;
+	
+	if (*define >= '0' && *define <= '9')
+	    type = VAR_NUM;
+	else
+	if (*define >= 'A' && *define <= 'Z')
+	    type = VAR_VAR;
+
+	if (!type)
+	    return 0;
+
+	var = MakeVariable(varname, '$');
+	
+	if (type == VAR_NUM)
+	    AppendVariable(var, define, len);
+	else
+	{
+	    Var *defvar;
+	    List tmplist;
+	    TEXT tmpbuf[32];
+
+	    NewList(&tmplist);
+
+	    if (defvar = FindVariable(define, '$'))
+	    {
+		if (CmdListSize(&defvar->var_CmdList) < sizeof(tmpbuf))
+	        {
+		    CopyCmdList(&defvar->var_CmdList, &tmplist);
+		    CopyCmdListBuf(&tmplist, tmpbuf);
+		    AppendVariable(var, tmpbuf, strlen(tmpbuf));
+	        }
+	        else
+	        {
+		    error(FATAL, "Overflow!");
+	        }
+	    }
+	    else
+		error(FATAL, "No Var!");
+
+	}
+    }
+    return 1;
+}

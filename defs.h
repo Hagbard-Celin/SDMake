@@ -77,7 +77,11 @@
 #include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/utility.h>
 #define Running2_04() (SysBase->LibNode.lib_Version >= 37)
+
+#define OSVERMIN 0
+#define OSVERMAX 999
 
 typedef struct Node Node;
 typedef struct List List;

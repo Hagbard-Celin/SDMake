@@ -230,10 +230,39 @@
 
     Under 1.3 everything is run with Execute().
 
-    A command line starting with "cd" internally chdir dxmake.
+    A command line starting with "cd" internally chdir SDMake.
 
-    Commands may be prefixed.  The "@" prefix tells dxmake not to echo
-    the command line before it executes it.  The "-" prefix tells dxmake
+    A command line starting with "if", "else" or "endif" calls internal
+    commands.
+    The internal if command has these options:
+
+        if eq arg1 arg2
+
+            If arg1 is equal to arg2
+
+        if gt arg1 arg2
+
+            If ar1 is greater than arg2
+
+        if in string1 string2
+
+            If string1 is a substring of string2
+
+        if exists file
+
+            If the file exists
+
+        if defined variable
+
+            If the variable is defined
+
+    The internal commasnds "else" and "endif" take no arguments.
+
+    A command line starting with "makedir" calls the internal makedir,
+    it takes one argument which is the name of the directory to create.
+
+    Commands may be prefixed.  The "@" prefix tells SDMake not to echo
+    the command line before it executes it.  The "-" prefix tells SDMake
     to ignore any error exit.
 
 	all :
@@ -301,9 +330,9 @@
 
     SDMake has one special variable to make it easier for a SDMakefile to
     know where in the directory hierarchy it stands relative to the 
-    current directory (where the original dxmake was run).  $(TOPDIR) is
+    current directory (where the original SDMake was run).  $(TOPDIR) is
     empty relative to the SDMakefile in the current directory where
-    the dxmake program is run.  If a SDMakefile has an ".include"
+    the SDMake program is run.  If a SDMakefile has an ".include"
     directive the directory prefix specified in that directive becomes the
     new $(TOPDIR) for processing of that include file.  Nested .include
     directives (if not absolute) append their path prefix to the
@@ -324,6 +353,11 @@
 
 	Include another SDMakefile.  Note that the filename is not quoted
 
+    .revheader filename
+
+        Reads .h file and parse any "#define" whose name contains REV or VER
+        into variables.
+
     .leftislabel
 
         Indicates that the lhs of following dependancies are made up names, and
@@ -340,6 +374,22 @@
     .ifdef varname
 
 	If the variable exists
+
+    .ifexists filname
+
+        If the file exists
+
+    .ifeq symbol1 symbol2
+
+        If symbol1 is equal to symbol2
+
+    .ifgt symbol1 symbol2
+
+        If symbol1 is greater than symbol2
+
+    .ifin symbol symbol(s)
+
+        If symbol is a substring of symbol(s)
 
     .else
     .endif

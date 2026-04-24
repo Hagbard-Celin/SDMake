@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -292,6 +312,8 @@ long ExecuteCmdList(DepNode *dep, List *list)
     List tmpDst;
     short c;
     long r = 0;
+    IfNode *cmdIfBase = NULL;
+    LONG cmdIfTrue = 1;
 
     NewList(&tmpSrc);
     NewList(&tmpDst);
@@ -372,9 +394,14 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		cmd[n] = 0;
 
 		if (quiet == 0)
+		{
 		    printf("    %s\n", cmd);
+		    if (cmdIfTrue)
+			printf("\n");
+		}
+
 		if (NoRunOpt == 0 && cmd[0] != '#') {
-		    r = Execute_Command(cmd, ignore);
+		    r = Execute_Command(cmd, ignore, &cmdIfBase, &cmdIfTrue);
 		    SomeWork = 1;
 		    if (r < 0)
 			r = 20;
@@ -385,6 +412,10 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    if (allocated)
 		free(cmd);
 	}
+
+	if (cmdIfBase != NULL)
+	    error(FATAL, "missing endif(s) in command list for %s", dep->dn_Node.ln_Name);
+
     }
     return(r);
 }

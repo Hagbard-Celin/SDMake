@@ -1,7 +1,8 @@
 PROJECT= SDMake
 DIR= 
-SRCS= depend.c cmdlist.c run.c main.c var.c subs.c parse.c convert.c \
-gethead.a getpred.a gettail.a buffer.c path.c console.c system13.c
+SRCS= depend.c cmdlist.c run.c main.c var.c parse.c cond.c convert.c \
+gethead.a getpred.a gettail.a buffer.c path.c console.c system13.c \
+parserevh.c
 HDRS= defs.h tokens.h
 EXTRAS= sdmake.doc
 PDEFAULT= 

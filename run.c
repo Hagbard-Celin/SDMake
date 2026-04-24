@@ -36,7 +36,7 @@
 typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
-Prototype long Execute_Command(char *, short);
+Prototype long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
 Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
@@ -66,7 +66,7 @@ void InitCommand()
  *  cmd[-1] is valid space and, in fact, must be long word aligned!
  */
 
-long Execute_Command(char *cmd, short ignore)
+long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue)
 {
     register char *ptr;
 
@@ -78,73 +78,274 @@ long Execute_Command(char *cmd, short ignore)
      *	Internal MakeDir because AmigaDOS 2.04's MakeDir is unreliable
      *	with RunCommand() (it can crash)
      *
-     *	Internal CD because we special case it
+     *	Internal CD, IF, ELSE and ENDIF because we special case it
      */
 
-    if (ptr - cmd == 7 && strnicmp(cmd, "makedir", 7) == 0) {
-	long lock;
-	short err = 0;
+    {
+	LONG cmdlen = ptr - cmd;
 
-	while (*ptr == ' ' || *ptr == '\t')
-	    ++ptr;
-	if (lock = CreateDir(ptr))
-	    UnLock(lock);
-	else {
-	    printf("Unable to makedir %s\n", ptr);
-	    err = 20;
-	}
-	return((ignore) ? 0 : err);
-    } else
-    if (ptr - cmd == 6 && strnicmp(cmd, "fwrite", 6) == 0) {
-	char *t;
-	BPTR fh;
-	short err = 0;
+	if (cmdlen == 5 && strnicmp(cmd, "endif", 5) == 0) {
+	    LONG isif = *cmdIfTrue;
 
-	while (*ptr == ' ' || *ptr == '\t')
-	    ++ptr;
-	for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
-	if (*t) *t++ = '\0';
-	if (fh = Open(ptr, MODE_NEWFILE)) {
-	    int len;
-	    len = strlen(t);
-	    for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
-	    t[len] = '\n';
-	    Write(fh, t, len+1);
-	    t[len] = '\0';
-	    Close(fh);
-	    err = 0;
-	}
-	else
+	    //if (!(*cmdIfTrue))
+	    //	  printf("\n");
+	    *cmdIfTrue = popIf(cmdIfBase);
+	    if (!isif)
+	    {
+		if (!(*cmdIfTrue))
+		    printf(" (Skipped by if-condition)\n");
+		else
+		    printf("\n");
+	    }
+
+	    return 0;
+	} else
+	if (cmdlen == 4 && strnicmp(cmd, "else", 4) == 0) {
+	    LONG isif = *cmdIfTrue;
+
+	    //if (!(*cmdIfTrue))
+	    //	  printf("\n");
+	    *cmdIfTrue = elseIf(cmdIfBase);
+
+	    if (!isif)
+	    {
+	        if (!(*cmdIfTrue))
+		    printf(" (Skipped by if-condition)\n");
+	        else
+		    printf("\n");
+	    }
+
+	    return 0;
+	} else
+	if (cmdlen == 2)
 	{
-	    printf("Unable to write %s\n", ptr);
-	    err = 20;
-	}
-       return((ignore) ? 0 : err);
-    } else
-    if (ptr - cmd == 2 && strnicmp(cmd, "cd", 2) == 0) {
-	long lock;
-	short err = 0;
+	    if (strnicmp(cmd, "if", 2) == 0)
+	    {
+	        char *t;
+	        short err = 0;
+		WORD notfound = 1;
 
-	while (*ptr == ' ' || *ptr == '\t')
-	    ++ptr;
-	{
-	    short len = strlen(ptr);	/*  XXX HACK HACK */
-	    if (len && ptr[len-1] == '\n')
-		ptr[len-1] = 0;
-	}
+	        while (*ptr == ' ' || *ptr == '\t')
+	            ++ptr;
+	        if (*ptr)
+	        {
+		    LONG arglen;
 
-	if (*ptr == 0)
-	    lock = DupLock(SaveLock);
-	else
-	    lock = Lock(ptr, SHARED_LOCK);
-	if (lock)
-	    UnLock(CurrentDir(lock));
-	else {
-	    printf("Unable to cd %s\n", ptr);
-	    err = 20;
-	}
+		    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
 
-	return((ignore) ? 0 : err);
+		    arglen = t - ptr;
+
+		    if (arglen == 2)
+		    {
+			WORD in, gt;
+
+			if ((in = strnicmp(ptr, "eq", 2)) == 0 ||
+			    (gt = strnicmp(ptr, "in", 2)) == 0 ||
+			    strnicmp(ptr, "gt", 2) == 0)
+			{
+			    if (*cmdIfTrue)
+			    {
+			        ptr = t;
+
+			        while (*ptr == ' ' || *ptr == '\t')
+			            ++ptr;
+
+			        if (*ptr)
+			        {
+				    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
+				    arglen = t - ptr;
+
+				    if (*t)
+				    {
+					*t = 0;
+
+					do ++t; while (*t == ' ' || *t == '\t');
+
+					if (*t)
+					{
+					    WORD result = 0;
+
+					    notfound = 0;
+
+					    if (in)
+					    {
+						if (gt)
+						    result = (atol(ptr) > atol(t));
+						else
+						    result = StriInStr(ptr, t);
+					    }
+					    else
+					    {
+						if (strlen(t) == arglen)
+						{
+						    if (!(strnicmp(ptr, t, arglen)))
+							result = 1;
+						}
+					    }
+
+					    if (result) {
+					        *cmdIfTrue = pushIf(cmdIfBase, 1);
+					    } else {
+					        *cmdIfTrue = pushIf(cmdIfBase, 0);
+					    }
+					    return 0;
+					}
+				    }
+			        }
+			    }
+			    else
+				*cmdIfTrue = pushIf(cmdIfBase, 0);
+			}
+		    }
+		    if (arglen == 6)
+		    {
+			if (strnicmp(ptr, "exists", 6) == 0)
+			{
+			    if (*cmdIfTrue)
+			    {
+			        ptr = t;
+
+
+			        while (*ptr == ' ' || *ptr == '\t')
+			            ++ptr;
+
+			        if (*ptr)
+			        {
+				    BPTR lock;
+
+				    notfound = 0;
+
+			            if (lock = Lock(ptr, ACCESS_READ))
+			            {
+			                UnLock(lock);
+				        *cmdIfTrue = pushIf(cmdIfBase, 1);
+			            }
+			            else
+			            {
+				        *cmdIfTrue = pushIf(cmdIfBase, 0);
+			            }
+				    return 0;
+			        }
+			    }
+			    else
+				*cmdIfTrue = pushIf(cmdIfBase, 0);
+			}
+		    }
+		    if (arglen == 7)
+		    {
+			if (strnicmp(ptr, "defined", 7) == 0)
+			{
+			    if (*cmdIfTrue)
+			    {
+			        ptr = t;
+
+			        while (*ptr == ' ' || *ptr == '\t')
+			            ++ptr;
+
+			        if (*ptr)
+			        {
+				    notfound = 0;
+
+				    if (FindVariable(ptr, '$')) {
+				        *cmdIfTrue = pushIf(cmdIfBase, 1);
+				    } else {
+				        *cmdIfTrue = pushIf(cmdIfBase, 0);
+				    }
+				    return 0;
+			        }
+			    }
+			    else
+				*cmdIfTrue = pushIf(cmdIfBase, 0);
+			}
+		    }
+	        }
+
+		if (*cmdIfTrue)
+	        {
+		    if (notfound)
+		    {
+			printf("Internal command if: Wrong number of arguments\n");
+			err = 20;
+		    }
+	        }
+		else
+		    printf(" (Skipped by if-condition)\n");
+
+	        return(err);
+	    } else
+	    if (!(*cmdIfTrue)) {
+		printf(" (Skipped by if-condition)\n");
+		return 0;
+	    } else
+	    if (strnicmp(cmd, "cd", 2) == 0) {
+	        long lock;
+	        short err = 0;
+
+	        while (*ptr == ' ' || *ptr == '\t')
+	            ++ptr;
+	        {
+	            short len = strlen(ptr);    /*  XXX HACK HACK */
+	            if (len && ptr[len-1] == '\n')
+		        ptr[len-1] = 0;
+	        }
+
+	        if (*ptr == 0)
+	            lock = DupLock(SaveLock);
+	        else
+	            lock = Lock(ptr, SHARED_LOCK);
+	        if (lock)
+	            UnLock(CurrentDir(lock));
+	        else {
+	            printf("Unable to cd %s\n", ptr);
+	            err = 20;
+	        }
+	        return((ignore) ? 0 : err);
+	    }
+	} else
+	if (!(*cmdIfTrue)) {
+	    printf(" (Skipped by if-condition)\n");
+	    return 0;
+	} else
+	if (cmdlen == 7 && strnicmp(cmd, "makedir", 7) == 0) {
+	    long lock;
+	    short err = 0;
+
+	    while (*ptr == ' ' || *ptr == '\t')
+	        ++ptr;
+	    if (lock = CreateDir(ptr))
+	        UnLock(lock);
+	    else {
+	        printf("Unable to makedir %s\n", ptr);
+	        err = 20;
+	    }
+	    return((ignore) ? 0 : err);
+	} else
+	if (cmdlen == 6 && strnicmp(cmd, "fwrite", 6) == 0) {
+	    char *t;
+	    BPTR fh;
+	    short err = 0;
+
+	    while (*ptr == ' ' || *ptr == '\t')
+	        ++ptr;
+	    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
+	    if (*t) *t++ = '\0';
+	    if (fh = Open(ptr, MODE_NEWFILE)) {
+	        int len;
+	        len = strlen(t);
+	        for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
+	        t[len] = '\n';
+	        Write(fh, t, len+1);
+	        t[len] = '\0';
+	        Close(fh);
+	        err = 0;
+	    }
+	    else
+	    {
+	        printf("Unable to write %s\n", ptr);
+	        err = 20;
+	    }
+	   return((ignore) ? 0 : err);
+	}
     }
 
     /*
@@ -212,7 +413,7 @@ long Execute_Command(char *cmd, short ignore)
 	    {
 		seg->seg_UC++;
 	    }
-	    else if (seg = FindSegment(cmd, 0L, 1))
+	    else if (seg = FindSegment(cmd, 0L, DOSTRUE))
 	    {
 		if (seg->seg_UC != CMD_INTERNAL)
 		    seg = 0;

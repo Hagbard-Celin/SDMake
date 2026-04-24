@@ -259,6 +259,38 @@ int realmain(int ac, char **av)
     (void)MakeVariable("TOPDIR", '$');
 
     {
+	Var *var;
+	TEXT osver[5];
+
+	sprintf(osver, "%d", SysBase->LibNode.lib_Version);
+
+	var = MakeVariable("HOST_OSVER", '$');
+	AppendVariable(var, osver, strlen(osver));
+    }
+
+    {
+	struct DateTime buildtime;
+	TEXT date[LEN_DATSTRING], time[LEN_DATSTRING];
+
+	buildtime.dat_Format = FORMAT_CDN;
+	buildtime.dat_Flags = 0;
+	buildtime.dat_StrDay = 0;
+	buildtime.dat_StrDate = date;
+	buildtime.dat_StrTime = time;
+
+	DateStamp(&buildtime.dat_Stamp);
+	if (DateToStr(&buildtime))
+	{
+	    Var *var;
+
+	    var = MakeVariable("BUILDDATE", '$');
+	    AppendVariable(var, date, strlen(date));
+	    var = MakeVariable("BUILDTIME", '$');
+	    AppendVariable(var, time, strlen(time));
+	}
+    }
+
+    {
 	DepRef *node;
 
 	ParseFile(XFileName);

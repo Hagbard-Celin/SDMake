@@ -22,7 +22,7 @@ Prototype short SomeWork;
 
 /* run.c                */
 
-Prototype long Execute_Command(char *, short);
+Prototype long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
 Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
@@ -95,3 +95,12 @@ Prototype BOOL OpenConsole(const char *str);
 Prototype int pushIf(IfNode **ifBase, int value);
 Prototype int popIf(IfNode **ifBase);
 Prototype int elseIf(IfNode **ifBase);
+
+/* string.c             */
+
+Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
+Prototype void StrToLower(STRPTR string);
+
+/* parserevh.c          */
+
+Prototype WORD ParseRevInclude(STRPTR includefile);

@@ -1,6 +1,7 @@
 
-OBJS= depend.o cmdlist.o run.o main.o var.o parse.o cond.o convert.o \
-      gethead.o getpred.o gettail.o buffer.o path.o console.o system13.o
+OBJS= depend.o cmdlist.o run.o string.o main.o var.o parse.o cond.o convert.o \
+      gethead.o getpred.o gettail.o buffer.o path.o console.o system13.o \
+      parserevh.o
 
 bin/sdmake: $(OBJS)
    sc link to bin/sdmake with <<
@@ -18,7 +19,11 @@ path.o: path.c defs.h tokens.h sdmake-protos.h
 
 cond.o: cond.c defs.h tokens.h sdmake-protos.h
 
+parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h
+
 cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h
+
+string.o: string.c defs.h tokens.h sdmake-protos.h
 
 run.o: run.c defs.h tokens.h sdmake-protos.h
 

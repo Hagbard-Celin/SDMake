@@ -247,10 +247,72 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
 			error(FATAL, "Expected newline after .include filename");
+		} else if (ifTrue && strcmp(SymBuf, ".revheader") == 0) {
+		    t = GetElement(ifTrue, &expansion);
+		    if (t != TokSym)
+			error(FATAL, "Expected a symbol for .revhheader!");
+		    ParseRevInclude(SymBuf);
+		    t = GetElement(ifTrue, &expansion);
+		    if (t != TokNewLine)
+			error(FATAL, "Expected newline after .revheader filename");
 		} else if (strcmp(SymBuf, ".else") == 0) {
 		    if (ifBase == NULL)
 			error(FATAL, ".else without .if*");
 		    ifTrue = elseIf(&ifBase);
+		} else if (strcmp(SymBuf, ".ifeq") == 0) {
+		    if (ifTrue) {
+			STRPTR firstword;
+
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifeq!");
+			firstword = strdup(SymBuf);
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a second symbol for .ifeq!");
+			if (stricmp(SymBuf, firstword) == 0)
+			    ifTrue = pushIf(&ifBase, 1);
+			else
+			    ifTrue = pushIf(&ifBase, 0);
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
+		} else if (strcmp(SymBuf, ".ifgt") == 0) {
+		    if (ifTrue) {
+			LONG firstvalue;
+
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifgt!");
+			firstvalue = atol(SymBuf);
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a second symbol for .ifgt!");
+			if (firstvalue > atol(SymBuf))
+			    ifTrue = pushIf(&ifBase, 1);
+			else
+			    ifTrue = pushIf(&ifBase, 0);
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
+		} else if (strcmp(SymBuf, ".ifin") == 0) {
+		    if (ifTrue) {
+			STRPTR searchword;
+
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifin!");
+			searchword = strdup(SymBuf);
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a second symbol for .ifin!");
+			if (stricmp(searchword, SymBuf))
+			    ifTrue = pushIf(&ifBase, 1);
+			else
+			    ifTrue = pushIf(&ifBase, 0);
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
 		} else if (strcmp(SymBuf, ".ifdef") == 0) {
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
@@ -264,13 +326,13 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".iffile") == 0) {
+		} else if (strcmp(SymBuf, ".ifexists") == 0) {
 		    if (ifTrue) {
 			BPTR tmplock;
 
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .iffile!");
+			    error(FATAL, "Expected a symbol for .ifexists!");
 
 			if (tmplock = Lock(SymBuf, ACCESS_READ))
 			{
