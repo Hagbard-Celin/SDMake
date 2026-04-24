@@ -1172,7 +1172,6 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 void ExpandVariableList(List *srclist, List *list)
 {
     short c, c1;
-    short n = 0;
     static int Levels;
 
     if (++Levels == 20)
@@ -1197,7 +1196,6 @@ void ExpandVariableList(List *srclist, List *list)
 	        do
 	        {
 		    PutCmdListChar(list, c);
-		    n++;
 	        }
 		while (c != '\'' && (c = PopCmdListChar(srclist)) != EOF);
 		if (c == EOF)

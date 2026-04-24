@@ -137,7 +137,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 
 		    if (arglen == 2)
 		    {
-			WORD in, gt;
+			WORD in, gt = 0;
 
 			if ((in = strnicmp(ptr, "eq", 2)) == 0 ||
 			    (gt = strnicmp(ptr, "in", 2)) == 0 ||
@@ -327,7 +327,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    {
 	        char *t;
 	        BPTR fh;
-	        short err = 0;
+	        short err;
 
 		if (!mode)
 		    mode = MODE_NEWFILE;
@@ -380,8 +380,8 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	short i;
 	short ci;
 	short c;
-	short err = 0;
-	short useSystem = 0;
+	short err;
+	short useSystem;
 	Process *proc = (Process *)FindTask(NULL);
 	char *cmdArgs;
 
