@@ -36,7 +36,7 @@
 typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
-Prototype long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue);
+Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
 Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
@@ -66,7 +66,7 @@ void InitCommand()
  *  cmd[-1] is valid space and, in fact, must be long word aligned!
  */
 
-long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue)
+long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue)
 {
     register char *ptr;
 
@@ -90,7 +90,7 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 	    //if (!(*cmdIfTrue))
 	    //	  printf("\n");
 	    *cmdIfTrue = popIf(cmdIfBase);
-	    if (!isif)
+	    if (quiet == 0 && !isif)
 	    {
 		if (!(*cmdIfTrue))
 		    printf(" (Skipped by if-condition)\n");
@@ -107,7 +107,7 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 	    //	  printf("\n");
 	    *cmdIfTrue = elseIf(cmdIfBase);
 
-	    if (!isif)
+	    if (quiet == 0 && !isif)
 	    {
 	        if (!(*cmdIfTrue))
 		    printf(" (Skipped by if-condition)\n");
@@ -268,13 +268,14 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 			err = 20;
 		    }
 	        }
-		else
+		else if (quiet == 0)
 		    printf(" (Skipped by if-condition)\n");
 
 	        return(err);
 	    } else
 	    if (!(*cmdIfTrue)) {
-		printf(" (Skipped by if-condition)\n");
+		if (quiet == 0)
+		    printf(" (Skipped by if-condition)\n");
 		return 0;
 	    } else
 	    if (strnicmp(cmd, "cd", 2) == 0) {
@@ -303,7 +304,8 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 	    }
 	} else
 	if (!(*cmdIfTrue)) {
-	    printf(" (Skipped by if-condition)\n");
+	    if (quiet == 0)
+		printf(" (Skipped by if-condition)\n");
 	    return 0;
 	} else
 	if (cmdlen == 7 && strnicmp(cmd, "makedir", 7) == 0) {

@@ -26,7 +26,7 @@ Prototype short SomeWork;
 
 /* run.c                */
 
-Prototype long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTrue);
+Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
 Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 

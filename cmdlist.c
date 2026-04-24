@@ -514,7 +514,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		}
 
 		if (NoRunOpt == 0 && cmd[0] != '#') {
-		    r = Execute_Command(cmd, ignore, &cmdIfBase, &cmdIfTrue);
+		    r = Execute_Command(cmd, ignore, quiet, &cmdIfBase, &cmdIfTrue);
 		    SomeWork = 1;
 		    if (r == -42)
 		    {
@@ -530,7 +530,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		{
 		    if (NoRunOpt && cmd[0] != '#')
 			SomeWork = 1;
-		    if (!cmdIfTrue)
+		    if (quiet == 0 && !cmdIfTrue)
 			printf("\n");
 		}
 	    }
