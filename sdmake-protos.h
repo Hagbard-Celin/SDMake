@@ -17,6 +17,8 @@ Prototype List	DoList;
 Prototype short DDebug;
 Prototype short CacheLevel;
 Prototype short NoRunOpt;
+Prototype short QuietOpt;
+Prototype short QuietCmd;
 Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
@@ -43,6 +45,7 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype long CmdListSizeNewLine(List *);
+Prototype long CmdListSizeCommand(List *list);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 

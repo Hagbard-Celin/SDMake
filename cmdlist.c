@@ -80,6 +80,7 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype long CmdListSizeNewLine(List *);
+Prototype long CmdListSizeCommand(List *list);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 
@@ -208,6 +209,32 @@ int PopCmdListChar(List *cmdList)
     return(c);
 }
 
+void CopyCmdListBufLen(List *list, char *buf, LONG len)
+{
+    CmdNode *node;
+
+    while ((node = (CmdNode *)RemHead(list)) != NULL) {
+	LONG nodelen = node->cn_Idx - node->cn_RIndex;
+	LONG copylen;
+
+	if (nodelen < len)
+	    copylen = nodelen;
+	else
+	    copylen = len;
+
+	movmem(node->cn_Node.ln_Name + node->cn_RIndex, buf, copylen);
+	buf += copylen;
+	len -= copylen;
+	if (copylen < nodelen) {
+	    node->cn_RIndex += copylen;
+	    AddHead(list, &node->cn_Node);
+	    break;
+	}
+	AddTail(&CmdFreeList, &node->cn_Node);
+    }
+    buf[0] = 0;
+}
+
 void CopyCmdListBuf(List *list, char *buf)
 {
     CmdNode *node;
@@ -245,6 +272,69 @@ long CmdListSize(List *list)
 
     for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node))
 	n += node->cn_Idx - node->cn_RIndex;
+    return(n);
+}
+
+long CmdListSizeCommand(List *list)
+{
+    CmdNode *node;
+    long n = 0;
+    long i;
+    WORD twolt = 0;
+    WORD threelt = 0;
+    WORD newline = 0;
+
+    for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node)) {
+
+	for (i = node->cn_RIndex; i < node->cn_Idx; ++i)
+	{
+	    //printf("SizeCommand i: %ld node->cn_Node.ln_Name[i]: %c \n", n, node->cn_Node.ln_Name[i]);
+	    if (twolt < 2)
+	    {
+		if (node->cn_Node.ln_Name[i] == '<')
+		    twolt++;
+		else
+		{
+		    twolt = 0;
+
+		    if (node->cn_Node.ln_Name[i] == '\n')
+		        break;
+		}
+	    }
+	    else
+	    {
+		if (newline)
+		{
+		    if (threelt < 3)
+		    {
+			if (node->cn_Node.ln_Name[i] == '<')
+			    ++threelt;
+			else
+			{
+			    threelt = 0;
+			    if (node->cn_Node.ln_Name[i] != '\n')
+				newline = 0;
+			}
+		    }
+		    else
+		    {
+			if (node->cn_Node.ln_Name[i] == '\n')
+			{
+			    break;
+			}
+			newline = threelt = 0;
+		    }
+		}
+		if (node->cn_Node.ln_Name[i] == '\n')
+		    newline = 1;
+	    }
+	}
+
+	n += i - node->cn_RIndex;
+	if (i != node->cn_Idx)
+	    break;
+    }
+    //printf("SizeCommand returning   %ld \n", n);
     return(n);
 }
 
@@ -311,6 +401,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
     List tmpSrc;
     List tmpDst;
     short c;
+    short withfail = 0;
     long r = 0;
     IfNode *cmdIfBase = NULL;
     LONG cmdIfTrue = 1;
@@ -362,11 +453,14 @@ long ExecuteCmdList(DepNode *dep, List *list)
     {
 	long n;
 
-	while (r <= EXIT_CONTINUE && (n = CmdListSizeNewLine(&tmpDst))) {
+	while (r <= EXIT_CONTINUE && (n = CmdListSizeCommand(&tmpDst))) {
 	    short allocated;
 	    short quiet = 0;
 	    short ignore= 0;
 	    char *cmd;
+
+	    if (QuietCmd)
+		quiet = 1;
 
 	    if (n >= sizeof(CmdTmp1) - 2) {	/*  avoid malloc    */
 		allocated = 1;
@@ -388,14 +482,17 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		--n;
 	    }
 	    cmd[0] = c;
-	    CopyCmdListNewLineBuf(&tmpDst, cmd + 1);
+	    CopyCmdListBufLen(&tmpDst, cmd + 1, n);
 
 	    if (c) {
 		cmd[n] = 0;
 
+		if (cmd[--n] == '<' && cmd[--n] == '<' && cmd[--n] == '<' && cmd[--n] == '\n')
+		    cmd[n] = 0;
+
 		if (quiet == 0)
 		{
-		    printf("    %s\n", cmd);
+		    printf("    %s", cmd);
 		    if (cmdIfTrue)
 			printf("\n");
 		}
@@ -403,10 +500,22 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		if (NoRunOpt == 0 && cmd[0] != '#') {
 		    r = Execute_Command(cmd, ignore, &cmdIfBase, &cmdIfTrue);
 		    SomeWork = 1;
+		    if (r == -42)
+		    {
+			withfail = 1;
+			r = 0;
+		    }
 		    if (r < 0)
 			r = 20;
 		    if (ExitCode < r)
 			ExitCode = r;
+		}
+		else
+		{
+		    if (NoRunOpt && cmd[0] != '#')
+			SomeWork = 1;
+		    if (!cmdIfTrue)
+			printf("\n");
 		}
 	    }
 	    if (allocated)
@@ -417,5 +526,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    error(FATAL, "missing endif(s) in command list for %s", dep->dn_Node.ln_Name);
 
     }
+    if (withfail)
+	return (-1);
     return(r);
 }
