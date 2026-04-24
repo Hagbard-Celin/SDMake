@@ -251,8 +251,9 @@ void CopyCmdListBuf(List *list, char *buf)
     CmdNode *node;
 
     while ((node = (CmdNode *)RemHead(list)) != NULL) {
-	movmem(node->cn_Node.ln_Name + node->cn_RIndex, buf, node->cn_Idx - node->cn_RIndex);
-	buf += node->cn_Idx;
+	LONG nodelen = node->cn_Idx - node->cn_RIndex;
+	movmem(node->cn_Node.ln_Name + node->cn_RIndex, buf, nodelen);
+	buf += nodelen;
 	AddTail(&CmdFreeList, &node->cn_Node);
     }
     buf[0] = 0;
@@ -299,7 +300,6 @@ long CmdListSizeCommand(List *list)
 
 	for (i = node->cn_RIndex; i < node->cn_Idx; ++i)
 	{
-	    //printf("SizeCommand i: %ld node->cn_Node.ln_Name[i]: %c \n", n, node->cn_Node.ln_Name[i]);
 	    if (twolt < 2)
 	    {
 		if (node->cn_Node.ln_Name[i] == '<')
@@ -345,7 +345,6 @@ long CmdListSizeCommand(List *list)
 	if (i != node->cn_Idx)
 	    break;
     }
-    //printf("SizeCommand returning   %ld \n", n);
     return(n);
 }
 
