@@ -1358,13 +1358,32 @@ token_t GetToken()
 	    /* fall through */
 	default:
 	    SymBuf[0] = c;
+	    {
+		WORD gotcol = 0;
 
-	    for (i = 1; i < sizeof(SymBuf) - 1 && (c = getc(Fi)) != EOF; ++i) {
-		if (SpecialChar[c]) {
-		    ungetc(c, Fi);
-		    break;
+		for (i = 1; i < sizeof(SymBuf) - 1 && (c = getc(Fi)) != EOF; ++i) {
+		    if (gotcol)
+		    {
+			if (SpecialChar[c])
+			{
+			    fseek(Fi, -2, SEEK_CUR);
+			    i--;
+			    break;
+			}
+			else
+			    gotcol = 0;
+		    }
+		    else if (SpecialChar[c]) {
+			if (c == ':')
+			    gotcol = 1;
+			else
+			{
+			    ungetc(c, Fi);
+			    break;
+			}
+		    }
+		    SymBuf[i] = c;
 		}
-		SymBuf[i] = c;
 	    }
 	    SymBuf[i] = 0;
 	    if (i == sizeof(SymBuf) - 1)
