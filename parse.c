@@ -276,6 +276,9 @@ void ParseFile(STRPTR fileName)
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
+			t = GetElement(ifTrue, &expansion);
+		        if (t != TokNewLine)
+			    error(FATAL, "Expected newline after .ifeq second argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -294,6 +297,9 @@ void ParseFile(STRPTR fileName)
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
+			t = GetElement(ifTrue, &expansion);
+		        if (t != TokNewLine)
+			    error(FATAL, "Expected newline after .ifgt second argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -331,6 +337,9 @@ void ParseFile(STRPTR fileName)
 			} else {
 			    ifTrue = pushIf(&ifBase, 0);
 			}
+			t = GetElement(ifTrue, &expansion);
+		        if (t != TokNewLine)
+			    error(FATAL, "Expected newline after .ifdef variable-name");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -349,6 +358,9 @@ void ParseFile(STRPTR fileName)
 			} else {
 			    ifTrue = pushIf(&ifBase, 0);
 			}
+			t = GetElement(ifTrue, &expansion);
+		        if (t != TokNewLine)
+			    error(FATAL, "Expected newline after .iffile filename");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
