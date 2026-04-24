@@ -1369,7 +1369,6 @@ void error(short type, CONST_STRPTR ctl, ...)
     puts("");
     if (ExitAry[type])
     {
-	QuietOpt = 1;
 	exit(20);
     }
 }
