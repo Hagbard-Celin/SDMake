@@ -320,40 +320,55 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 	    }
 	    return((ignore) ? 0 : err);
 	} else
-	if (cmdlen == 6 && strnicmp(cmd, "fwrite", 6) == 0) {
-	    char *t;
-	    BPTR fh;
-	    short err = 0;
+	if (cmdlen == 6) {
+	    LONG mode;
 
-	    while (*ptr == ' ' || *ptr == '\t')
-	        ++ptr;
-	    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
-	    if (*t) *t++ = '\0';
-	    if (fh = Open(ptr, MODE_NEWFILE)) {
-	        int len;
-	        len = strlen(t);
-
-		if (strnicmp(t, "<<\n", 3) == 0)
-		{
-		    t += 3;
-		    len -= 3;
-		}
-		else
-		    for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
-
-	        t[len] = '\n';
-	        Write(fh, t, len+1);
-	        t[len] = '\0';
-
-	        Close(fh);
-	        err = 0;
-	    }
-	    else
+	    if ((mode = strnicmp(cmd, "fwrite", 6)) == 0 ||
+	    strnicmp(cmd, "fappnd", 6) == 0)
 	    {
-	        printf("Unable to write %s\n", ptr);
-	        err = 20;
+	        char *t;
+	        BPTR fh;
+	        short err = 0;
+
+		if (!mode)
+		    mode = MODE_NEWFILE;
+		else
+		    mode = MODE_OLDFILE;
+
+	        while (*ptr == ' ' || *ptr == '\t')
+	            ++ptr;
+	        for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
+	        if (*t) *t++ = '\0';
+		if (fh = Open(ptr, mode)) {
+	            int len;
+
+		    if (mode == MODE_OLDFILE)
+			Seek(fh, 0, OFFSET_END);
+
+	            len = strlen(t);
+
+		    if (strnicmp(t, "<<\n", 3) == 0)
+		    {
+		        t += 3;
+		        len -= 3;
+		    }
+		    else
+		        for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
+
+	            t[len] = '\n';
+	            Write(fh, t, len+1);
+	            t[len] = '\0';
+
+	            Close(fh);
+	            err = 0;
+	        }
+	        else
+	        {
+	            printf("Unable to write %s\n", ptr);
+	            err = 20;
+	        }
+		return((ignore) ? 0 : err);
 	    }
-	   return((ignore) ? 0 : err);
 	}
     }
 
