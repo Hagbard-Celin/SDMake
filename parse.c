@@ -265,16 +265,14 @@ void ParseFile(STRPTR fileName)
 		    ifTrue = elseIf(&ifBase);
 		} else if (strcmp(SymBuf, ".ifeq") == 0) {
 		    if (ifTrue) {
-			STRPTR firstword;
-
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .ifeq!");
-			firstword = strdup(SymBuf);
+			strcpy(AltBuf2, SymBuf);
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a second symbol for .ifeq!");
-			if (stricmp(SymBuf, firstword) == 0)
+			if (stricmp(SymBuf, AltBuf2) == 0)
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
@@ -301,16 +299,14 @@ void ParseFile(STRPTR fileName)
 		    }
 		} else if (strcmp(SymBuf, ".ifin") == 0) {
 		    if (ifTrue) {
-			STRPTR searchword;
-
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .ifin!");
-			searchword = strdup(SymBuf);
+			strcpy(AltBuf2, SymBuf);
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a second symbol for .ifin!");
-			if (stricmp(searchword, SymBuf))
+			if (strstr(SymBuf, AltBuf2))
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
