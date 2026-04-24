@@ -222,7 +222,7 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 	}
     }
 
-    if (lhsDep->dn_Flags & DNF_LEFT_VIRTUAL)
+    if (lhsDep->dn_Flags & (DNF_LEFT_VIRTUAL|DNF_LEFT_GROUP))
 	lhsStRes = -1;
     else
     {
