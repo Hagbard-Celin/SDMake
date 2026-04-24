@@ -679,19 +679,6 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			else
 			{
 			    threelt = 0;
-			    if (c == '#')
-			    {
-				while ((c = getc(Fi)) != EOF) {
-				    if (c == '\n') {
-					++LineNo;
-					c = getc(Fi);
-					if (c == '#')
-					    continue;
-					break;
-				    }
-				}
-
-			    }
 			    if (c != '\n')
 				newline = 0;
 			}
