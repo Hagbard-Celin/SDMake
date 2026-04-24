@@ -299,6 +299,7 @@ void ParseFile(STRPTR fileName)
 		    }
 		} else if (strcmp(SymBuf, ".ifin") == 0) {
 		    if (ifTrue) {
+			STRPTR found = 0;
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a symbol for .ifin!");
@@ -306,10 +307,17 @@ void ParseFile(STRPTR fileName)
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
 			    error(FATAL, "Expected a second symbol for .ifin!");
-			if (strstr(SymBuf, AltBuf2))
+			do
+			{
+			    if (!found)
+				found = strstr(SymBuf, AltBuf2);
+			} while ((t = GetElement(ifTrue, &expansion)) == TokSym);
+			if (found)
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
+			if (t != TokNewLine)
+			    error(FATAL, "Expected newline after .ifin last argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
