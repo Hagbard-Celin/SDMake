@@ -227,11 +227,14 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
     {
 	if (lhsDep->dn_Flags&DNF_LEFT_GROUP)
 	{
-	    if (!parent || !(lhsDep->dn_Info = parent->dn_Info))
+	    if (!parent || (!(lhsDep->dn_Info = parent->dn_Info) && !(parent->dn_Flags&DNF_LEFT_NOTFOUND)))
 	    {
-	        printf("Error: The group %s has no real-file parent\n", parent->dn_Node.ln_Name);
+		printf("Error: The group %s has no real-file parent\n", lhsDep->dn_Node.ln_Name);
 	        return(DN_FAILED);
 	    }
+
+	    if (parent && parent->dn_Flags&DNF_LEFT_NOTFOUND)
+		lhsDep->dn_Flags |= DNF_LEFT_NOTFOUND;
 	}
 	lhsStRes = -1;
     }
@@ -268,7 +271,10 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	        }
 	    }
 	    else
+	    {
 	        lhsStRes = -1;
+		lhsDep->dn_Flags |= DNF_LEFT_NOTFOUND;
+	    }
 	}
     }
 

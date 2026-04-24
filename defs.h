@@ -149,6 +149,7 @@ typedef struct DepNode {
 //#define DNF_LEFT_VIRTUAL (1<<1)
 #define DNF_DID_RUN       (1<<3)
 #define DNF_RIGHT_CHANGED (1<<4)
+#define DNF_LEFT_NOTFOUND (1<<5)
 
 #define DCF_IGNORED_FAIL (1<<0)
 
