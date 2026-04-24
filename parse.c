@@ -326,13 +326,13 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".ifexists") == 0) {
+		} else if (strcmp(SymBuf, ".iffile") == 0) {
 		    if (ifTrue) {
 			BPTR tmplock;
 
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifexists!");
+			    error(FATAL, "Expected a symbol for .iffile!");
 
 			if (tmplock = Lock(SymBuf, ACCESS_READ))
 			{
