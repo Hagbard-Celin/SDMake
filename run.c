@@ -188,7 +188,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 					    } else {
 					        *cmdIfTrue = pushIf(cmdIfBase, 0);
 					    }
-					    return 0;
 					}
 				    }
 			        }
@@ -224,7 +223,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			            {
 				        *cmdIfTrue = pushIf(cmdIfBase, 0);
 			            }
-				    return 0;
 			        }
 			    }
 			    else
@@ -251,7 +249,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 				    } else {
 				        *cmdIfTrue = pushIf(cmdIfBase, 0);
 				    }
-				    return 0;
 			        }
 			    }
 			    else
