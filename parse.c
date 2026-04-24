@@ -610,9 +610,12 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			ws = 0;
 			continue;
 		    }
-		    if (c == '.' && blankLine && ws == 0) {
-			ungetc(c, Fi);
-			break;
+		    if (blankLine && ws == 0) {
+			if (c != ' ' && c != '\t')
+			{
+			    ungetc(c, Fi);
+			    break;
+			}
 		    }
 
 		    switch(c) {
@@ -667,8 +670,10 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		    else
 		    {
 			if (c == '\n')
+			{
 			    twolt = 0;
-
+			    ++LineNo;
+			}
 			newline = threelt = 0;
 		    }
 		}
@@ -678,7 +683,10 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		    if (twolt)
 			newline = 1;
 		    else
+		    {
 			blankLine = 1;
+			ws = 0;
+		    }
 
 		    ++LineNo;
 		}
