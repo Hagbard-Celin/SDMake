@@ -177,9 +177,8 @@ void ParseFile(STRPTR fileName)
 	case TokSym:
 	    strcpy(AltBuf2, SymBuf);
 
-	    if (expansion == 0 && SymBuf[0] == '.' &&
-		SymBuf[1] != '.' && SymBuf[1] != '/'
-	    ) {
+	    if (expansion == 0 && SymBuf[0] == '.')
+	    {
 		if (ifTrue && strcmp(SymBuf, ".export") == 0) {
 		    char *data;
 		    Var *var;
