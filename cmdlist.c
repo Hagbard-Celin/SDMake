@@ -375,6 +375,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		    printf("    %s\n", cmd);
 		if (NoRunOpt == 0 && cmd[0] != '#') {
 		    r = Execute_Command(cmd, ignore);
+		    SomeWork = 1;
 		    if (r < 0)
 			r = 20;
 		    if (ExitCode < r)

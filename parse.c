@@ -87,6 +87,9 @@ Prototype void error(short type, CONST_STRPTR ctl, ...);
 Prototype char SymBuf[256];
 Prototype long LineNo;
 
+extern short	QuietOpt;
+extern STRPTR	OnError;
+
 char SpecialChar[256];
 char SChars[] = { ":=()\n\\\" \t\r\014" };
 char SymBuf[256];
@@ -290,6 +293,13 @@ void ParseFile(STRPTR fileName)
 		} else if (strcmp(SymBuf, ".leftisfile") == 0) {
 		    printf("UnSetting virtualleft\n");
 		    virtualleft = 0;
+		} else if (ifTrue && strcmp(SymBuf, ".onerror") == 0) {
+		    t = GetElement(ifTrue, &expansion);
+		    if (t != TokSym)
+			error(FATAL, "Expected a symbol for .onerror!");
+		    if (OnError)
+			free(OnError);
+		    OnError = strdup(SymBuf);
 		} else if (ifTrue) {
 		    error(FATAL, "unknown '.' directive");
 		}
@@ -1031,6 +1041,9 @@ void error(short type, CONST_STRPTR ctl, ...)
     va_end(va);
     puts("");
     if (ExitAry[type])
+    {
+	QuietOpt = 1;
 	exit(20);
+    }
 }
 

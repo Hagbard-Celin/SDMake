@@ -448,7 +448,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		    PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
 		}
 	    }
-	    SomeWork = 1;
+
 	    if (ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > EXIT_CONTINUE)
 		xr = DN_FAILED;
 	}

@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2026 Hagbard Celine
+ *
+ * This file is part of SDMake.
+ *
+ * SDmake is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Sdmake is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SDmake. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
  *    (c)Copyright 1992-1997 Obvious Implementations Corp.  Redistribution and
  *    use is allowed under the terms of the DICE-LICENSE FILE,
  *    DICE-LICENSE.TXT.
@@ -71,6 +91,7 @@ Prototype short	DoAll;
 Prototype short SomeWork;
 
 List	DoList;
+STRPTR	OnError;
 short	DDebug;
 short	NoRunOpt;
 short	QuietOpt;
@@ -85,10 +106,12 @@ short	ExitCode;
 
 void myexit(void)
 {
-    if (SomeWork)
-       printf("SDMAKE Done.\n");
-    else {
-	   if (QuietOpt == 0)printf("All Targets up to date.\n");
+    if (QuietOpt == 0)
+    {
+	if (SomeWork)
+	    printf("SDMAKE Done.\n");
+	else
+	    printf("All Targets up to date.\n");
     }
 
     if (XSaveLockValid) {
@@ -218,6 +241,7 @@ int realmain(int ac, char **av)
 	    break;
 	case 'h':
 	default:
+	    QuietOpt = 1;
 	    help(1);
 	}
     }
@@ -254,6 +278,11 @@ int realmain(int ac, char **av)
 
 	    if ((r = ExecuteDependency(NULL, node)) < 0)
 	    {
+		if (OnError)
+		{
+		    node = CreateDepRef(NULL, OnError);
+		    ExecuteDependency(NULL, node);
+		}
 		break;
 	    }
 	}

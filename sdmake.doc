@@ -330,7 +330,12 @@
         any existing flie/dir that happends to use that name will be ignored.
 
     .leftisfile
+
         Indicates that the lhs of following dependancies are real files/dirs.
+
+    .onerror target
+
+        Select a target to be run on failure.
 
     .ifdef varname
 
