@@ -73,7 +73,7 @@
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
 Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
-Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft);
+Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
 Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);
@@ -125,7 +125,7 @@ void ParseFile(STRPTR fileName)
     int ifTrue = 1;
     int expansion;
     List topdirList;
-    UWORD virtualleft = 0;
+    UWORD lefttype = 0;
 
     NewList(&topdirList);
 
@@ -160,6 +160,8 @@ void ParseFile(STRPTR fileName)
     {
 	const char *p;
 
+	if (QuietOpt == 0)
+	    printf("fileName: %s\n", fileName);
 	if ((p = strrchr(fileName, '/')) != NULL) {
 		Var *var = FindVariable("TOPDIR", '$');
 		AppendVariable(var, fileName, p - fileName + 1);
@@ -348,12 +350,6 @@ void ParseFile(STRPTR fileName)
 		    if (ifBase == NULL)
 			error(FATAL, ".endif without .if");
 		    ifTrue = popIf(&ifBase);
-		} else if (strcmp(SymBuf, ".leftislabel") == 0) {
-		    printf("Setting virtualleft\n");
-		    virtualleft = 1;
-		} else if (strcmp(SymBuf, ".leftisfile") == 0) {
-		    printf("UnSetting virtualleft\n");
-		    virtualleft = 0;
 		} else if (ifTrue && strcmp(SymBuf, ".onerror") == 0) {
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
@@ -361,6 +357,18 @@ void ParseFile(STRPTR fileName)
 		    if (OnError)
 			free(OnError);
 		    OnError = strdup(SymBuf);
+		} else if (ifTrue && strcmp(SymBuf, ".leftislabel") == 0) {
+		    printf("Setting left dummy\n");
+		    lefttype &= ~LT_MASK;
+		    lefttype |= LT_DUMMY;
+		} else if (ifTrue && strcmp(SymBuf, ".leftisgroup") == 0) {
+		    printf("Setting left group\n");
+		    lefttype &= ~LT_MASK;
+		    lefttype |= LT_GROUP;
+		} else if (ifTrue && strcmp(SymBuf, ".leftisfile") == 0) {
+		    printf("Setting left file\n");
+		    lefttype &= ~LT_MASK;
+		    lefttype |= LT_FILE;
 		} else if (ifTrue) {
 		    error(FATAL, "unknown '.' directive");
 		}
@@ -395,7 +403,7 @@ void ParseFile(STRPTR fileName)
 	    } else if (t == TokEq) {
 		t = ParseAssignment(AltBuf2, t, 0, '$');
 	    } else {
-		t = ParseDependency(AltBuf2, t, virtualleft);
+		t = ParseDependency(AltBuf2, t, lefttype);
 	    }
 	    break;
 	case TokColon:
@@ -407,7 +415,7 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		continue;
 	    }
-	    t = ParseDependency(NULL, t, virtualleft);
+	    t = ParseDependency(NULL, t, lefttype);
 	    break;
 	default:
 	    /*
@@ -520,7 +528,7 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
  *  Parse a dependency
  */
 
-token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft)
+token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 {
     DepRef  *lhs;
     DepRef  *rhs;
@@ -538,15 +546,19 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft)
     if (firstSym) {
 	++nlhs;
 	lhs = CreateDepRef(&lhsList, firstSym);
-	if (virtualleft)
+	if (lefttype == LT_DUMMY)
 	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_VIRTUAL;
+	else if (lefttype == LT_GROUP)
+	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_GROUP;
     }
 
     while (t != TokColon) {
 	expect(t, TokSym);
 	lhs = CreateDepRef(&lhsList, SymBuf);
-	if (virtualleft)
+	if (lefttype == LT_DUMMY)
 	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_VIRTUAL;
+	else if (lefttype == LT_GROUP)
+	    lhs->rn_Dep->dn_Flags |= DNF_LEFT_GROUP;
 	++nlhs;
 	t = GetElement(1, NULL);
     }

@@ -15,7 +15,9 @@ Prototype int  WildConvert(char *, char *, char *, char *);
 
 Prototype List	DoList;
 Prototype short DDebug;
+Prototype short CacheLevel;
 Prototype short NoRunOpt;
+Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
@@ -51,7 +53,7 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int	  ExecuteDependency(DepNode *parent, DepRef *lhs);
+Prototype int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs);
 Prototype List DepList;
 
 /* parse.c              */
@@ -59,7 +61,7 @@ Prototype List DepList;
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
 Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
-Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD virtualleft);
+Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
 Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
 Prototype void	  ParseVariable(List *, short);

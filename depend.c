@@ -72,7 +72,7 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int	  ExecuteDependency(DepNode *parent, DepRef *lhs);
+Prototype int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs);
 
 Prototype List DepList;
 
@@ -162,17 +162,17 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
  *  of its own dependancies (which is why we call it lhs).
  */
 
-int ExecuteDependency(DepNode *parent, DepRef *lhs)
+int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 {
     DepNode *lhsDep = lhs->rn_Dep;
+    DepNode *compare = 0;
     DepRef *rhsRef;
     DepCmdList *depCmdList;
+    int ignorederr = lhsDep->dn_Ignored;
     int index = 0;
     int parStRes;
     int lhsStRes;
     int runCmds = 0;
-    //struct stat parSt;
-    //struct stat lhsSt;
     FileInfo parent_info;
     FileInfo lefthand_info;
     int yr = DN_NOCHANGE;
@@ -193,7 +193,18 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	BPTR tmplock;
 	D_S(struct FileInfoBlock, fib);
 
-	if (tmplock = Lock(parent->dn_Node.ln_Name, ACCESS_READ))
+	if (parent->dn_Flags & DNF_LEFT_GROUP)
+	{
+	    if (!(compare = group_parent))
+	    {
+		printf("Error: The group %s has no real-file parent\n", parent->dn_Node.ln_Name);
+		return(DN_FAILED);
+	    }
+	}
+	else
+	    compare = parent;
+
+	if (tmplock = Lock(compare->dn_Node.ln_Name, ACCESS_READ))
 	{
 	    if (Examine(tmplock, fib))
 	    {
@@ -237,23 +248,54 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      *  If this lhs has no dependancies, compare the parent file against
      *  the file represented by this lhs to calculate the return value.
      */
-    if (GetHead(&lhsDep->dn_DepCmdList) == NULL) {
-	if (DoAll)
-	    return(DN_CHANGED);
+    {
+	WORD ignoreright = 0;
 
-	if (parent == NULL)	/* XXX */
-	    return(DN_CHANGED);
-
-	if (lhsStRes < 0) {
-	    printf("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
-	    return(DN_FAILED);
+	if (CacheLevel >= 0 && lhsDep->dn_Flags&DNF_DID_RUN && !ignorederr)
+	{
+	    const char *name = parent ? parent->dn_Node.ln_Name : "?";
+	    ignoreright = 1;
+	    dbprintf(("%*.*sSkipping lhs=%s (0x%p) parStRes=%d(%s) r=%d\n",
+		tab, tab, "", lhsDep->dn_Node.ln_Name, lhsDep, parStRes,
+		name, lhsDep->dn_Result));
 	}
-	if (parStRes < 0)
-	    return(DN_CHANGED);
 
-	if (CompareDates(&parent_info.datestamp, &lefthand_info.datestamp) < 0)
-	    return(DN_NOCHANGE);
-	return(DN_CHANGED);
+	if (GetHead(&lhsDep->dn_DepCmdList) == NULL || ignoreright) {
+	    int ret = DN_NOCHANGE;
+	    if (DoAll)
+		ret = DN_CHANGED;
+	    else
+	    if (parent == NULL)	    /* XXX */
+		ret = DN_CHANGED;
+	    else
+	    if (lhsStRes < 0) {
+	        printf("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
+		ret = DN_FAILED;
+	    }
+	    else
+	    if (parStRes < 0)
+		ret = DN_CHANGED;
+	    else
+	    if (CompareDates(&parent_info.datestamp, &lefthand_info.datestamp) < 0)
+		ret = DN_NOCHANGE;
+	    else
+		ret = DN_CHANGED;
+
+	    if (CacheLevel >= 0)
+	    {
+		if (lhsDep->dn_Flags&DNF_DID_RUN)
+	        {
+		    if (lhsDep->dn_Flags&DNF_RIGHT_CHANGED && ret > lhsDep->dn_Result)
+		        ret = lhsDep->dn_Result;
+	        }
+		else
+		    lhsDep->dn_Result = ret;
+
+		lhsDep->dn_Flags |= DNF_DID_RUN;
+	    }
+
+	    return(ret);
+	}
     }
 
     /*
@@ -317,7 +359,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		 * Run the dependancy
 		 */
 		tab += 4;
-		r = ExecuteDependency(lhsDep, rhsRef);
+		r = ExecuteDependency(compare, lhsDep, rhsRef);
 		tab -= 4;
 	    }
 
@@ -350,6 +392,10 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	     * will end up not running target2's command list due to target1
 	     * having caused objectX to resolve.
 	     */
+
+	    if (CacheLevel >= 0 && r >=  DN_NOCHANGE_TOUCH)
+		lhsDep->dn_Flags |= DNF_RIGHT_CHANGED;
+
 
 	    if (parStRes == 0 &&
 		r >= DN_NOCHANGE_TOUCH &&
@@ -427,33 +473,62 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	DepRef  *rhsRef;
 	int xr = DN_CHANGED;
 
-	if (GetHead(depCmdList->dc_CmdList) != NULL) {
-	    Var *var;
+	if (!(lhsDep->dn_Flags&DNF_DID_RUN) ||
+	    (!CacheLevel && depCmdList->dc_Flags&DCF_IGNORED_FAIL))
+	{
+	    if (GetHead(depCmdList->dc_CmdList) != NULL) {
+	        Var *var;
+		LONG cmdret;
 
-	    dbprintf(("%*.*sRUNCMDLIST \"%s\" index=%d\n",
-		tab, tab, "",
-		lhsDep->dn_Node.ln_Name, index));
+		if (!CacheLevel && depCmdList->dc_Flags&DCF_IGNORED_FAIL)
+		    lhsDep->dn_Ignored--;
 
-	    if ((var = MakeVariable("left", '%')) != NULL) {
-		PutCmdListSym(&var->var_CmdList, lhsDep->dn_Node.ln_Name, NULL);
-	    }
-	    if ((var = MakeVariable("right", '%')) != NULL) {
-		short space = 0;
+	        dbprintf(("%*.*sRUNCMDLIST \"%s\" index=%d\n",
+		    tab, tab, "",
+		    lhsDep->dn_Node.ln_Name, index));
 
-		for (
-		    rhsRef = (DepRef *)GetHead(&depCmdList->dc_RhsList);
-		    rhsRef;
-		    rhsRef = (DepRef *)GetSucc(&rhsRef->rn_Node)
-		) {
-		    PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
+	        if ((var = MakeVariable("left", '%')) != NULL) {
+		    PutCmdListSym(&var->var_CmdList, lhsDep->dn_Node.ln_Name, NULL);
+	        }
+	        if ((var = MakeVariable("right", '%')) != NULL) {
+		    short space = 0;
+
+		    for (
+		        rhsRef = (DepRef *)GetHead(&depCmdList->dc_RhsList);
+		        rhsRef;
+		        rhsRef = (DepRef *)GetSucc(&rhsRef->rn_Node)
+		    ) {
+		        PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
+		    }
+	        }
+	        //SomeWork = 1;
+	        if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > EXIT_CONTINUE)
+		    xr = DN_FAILED;
+
+		if (!CacheLevel)
+		{
+		    if (cmdret == -1)
+		    {
+		        lhsDep->dn_Ignored++;
+		        depCmdList->dc_Flags |= DCF_IGNORED_FAIL;
+		    }
+		    else
+		    if (depCmdList->dc_Flags&DCF_IGNORED_FAIL)
+		        depCmdList->dc_Flags &= ~DCF_IGNORED_FAIL;
 		}
 	    }
 
-	    if (ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > EXIT_CONTINUE)
-		xr = DN_FAILED;
+	    //if (lhsDep->dn_Flags&DNF_IGNORED_FAIL && !lhsDep->dn_Ignored)
+	    //	  lhsDep->dn_Flags &= ~DNF_IGNORED_FAIL;
+	    if (lhsDep->dn_Result > xr)
+	        lhsDep->dn_Result = xr;
 	}
-	if (lhsDep->dn_Result > xr)
-	    lhsDep->dn_Result = xr;
+	else
+	{
+	    dbprintf(("%*.*sSkipping RUNCMDLIST \"%s\" (0x%p) index=%d DID_RUN: %ld List IGNORED_FAIL: %ld\n",
+		tab, tab, "",
+		lhsDep->dn_Node.ln_Name, lhsDep, index, lhsDep->dn_Flags&DNF_DID_RUN, depCmdList->dc_Flags&DCF_IGNORED_FAIL));
+	}
     }
 
     /*
@@ -517,6 +592,17 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	(lhsDep->dn_Flags & DNF_VIRTUAL) == 0
     ) {
 	yr = DN_CHANGED;
+    }
+
+    if (CacheLevel >= 0)
+	lhsDep->dn_Flags |= DNF_DID_RUN;
+
+    if (!CacheLevel && parent)
+    {
+	if (ignorederr < lhsDep->dn_Ignored)
+	    parent->dn_Ignored += lhsDep->dn_Ignored - ignorederr;
+	else if (ignorederr > lhsDep->dn_Ignored)
+	    parent->dn_Ignored -= ignorederr - lhsDep->dn_Ignored;
     }
 
     /*

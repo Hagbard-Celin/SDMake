@@ -85,7 +85,11 @@ struct IntuiText *ITextOf(char *);
 
 Prototype List	DoList;
 Prototype short DDebug;
+Prototype short CacheLevel;
 Prototype short NoRunOpt;
+Prototype short QuietOpt;
+Prototype short QuietCmd;
+Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
@@ -93,8 +97,11 @@ Prototype short SomeWork;
 List	DoList;
 STRPTR	OnError;
 short	DDebug;
+short	CacheLevel;
 short	NoRunOpt;
+short	CheckTarget;
 short	QuietOpt;
+short	QuietCmd;
 short	DoAll;
 short   SomeWork;
 short	XSaveLockValid;
@@ -106,12 +113,25 @@ short	ExitCode;
 
 void myexit(void)
 {
-    if (QuietOpt == 0)
+    if (ExitCode < 20)
     {
-	if (SomeWork)
-	    printf("SDMAKE Done.\n");
-	else
-	    printf("All Targets up to date.\n");
+	if (QuietOpt == 0)
+	{
+	    if (CheckTarget)
+	    {
+	        if (SomeWork)
+		    printf("0\n");
+	        else
+		    printf("1\n");
+	    }
+	    else
+	    {
+	        if (SomeWork)
+	            printf("SDMAKE Done.\n");
+	        else
+	            printf("All Targets up to date.\n");
+	    }
+	}
     }
 
     if (XSaveLockValid) {
@@ -216,6 +236,11 @@ int realmain(int ac, char **av)
 	case 'f':
 	    XFileName = (*ptr) ? ptr : av[++i];
 	    break;
+	case 'Q':
+	    QuietOpt = 1;
+	case 'q':
+	    CheckTarget	= 1;
+	    QuietCmd = 1;
 	case 'n':
 	    NoRunOpt = 1;
 	    break;
@@ -234,9 +259,14 @@ int realmain(int ac, char **av)
 	case 'd':
 	    DDebug = (*ptr) ? atoi(ptr) : 1;
 	    break;
+	case 'c':
+	    CacheLevel = (*ptr) ? atoi(ptr) - 1 : 0;
+	    break;
+	case 's':
+	    QuietCmd = 1;
 	case 'a':
 	    DoAll = 1;
-	case 'q':
+	case 'S':
 	    QuietOpt = 1;
 	    break;
 	case 'h':
@@ -308,12 +338,12 @@ int realmain(int ac, char **av)
 		break;
 	    }
 
-	    if ((r = ExecuteDependency(NULL, node)) < 0)
+	    if ((r = ExecuteDependency(NULL, NULL, node)) < 0)
 	    {
 		if (OnError)
 		{
 		    node = CreateDepRef(NULL, OnError);
-		    ExecuteDependency(NULL, node);
+		    ExecuteDependency(NULL, NULL, node);
 		}
 		break;
 	    }
@@ -321,6 +351,8 @@ int realmain(int ac, char **av)
     }
     if (r < 0 && ExitCode < 20)
 	ExitCode = 20;
+    if (CheckTarget && !SomeWork)
+	ExitCode = 5;
     return(ExitCode);
 }
 

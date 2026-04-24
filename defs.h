@@ -132,16 +132,28 @@ typedef struct DepNode {
     short   dn_Symbolic;
     short   dn_Flags;
     int	    dn_Result;
+    int	    dn_Ignored;
 } DepNode;
 
-#define DNF_VIRTUAL	0x0001	/* virtual lhs - has no command list */
-#define DNF_LEFT_VIRTUAL (1<<1)
+#define DNF_VIRTUAL	  (1<<0)  /* virtual lhs - has no command list */
+#define DNF_LEFT_VIRTUAL  (1<<1)
+#define DNF_LEFT_GROUP    (1<<2)
+//#define DNF_VIRTUAL	  0x0001  /* virtual lhs - has no command list */
+//#define DNF_LEFT_VIRTUAL (1<<1)
+#define DNF_DID_RUN       (1<<3)
+#define DNF_RIGHT_CHANGED (1<<4)
+
+#define DCF_IGNORED_FAIL (1<<0)
 
 #define DN_FAILED		-1
 #define DN_CHANGED 		0
 #define DN_NOCHANGE_TOUCH	1
 #define DN_NOCHANGE		2
 
+#define LT_FILE  0
+#define LT_DUMMY 1
+#define LT_GROUP 2
+#define LT_MASK  3
 
 typedef struct DepRef  {
     Node    rn_Node;
@@ -152,6 +164,7 @@ typedef struct DepCmdList {
     Node    dc_Node;		/*  greater link node	*/
     List    dc_RhsList; 	/*  right hand side(s)	*/
     List    *dc_CmdList;	 /*  command buf list	 */
+    short   dc_Flags;
 } DepCmdList;
 
 #define NT_CMDEOL   0x01

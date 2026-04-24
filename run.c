@@ -448,9 +448,11 @@ dosys:
 	}
 	free(cmdArgs);
 	if (err)
+	{
 	    printf("Exit code %d %s\n", err, (ignore) ? "(Ignored)":"");
-	if (ignore)
-	    return(0);
+	    if (ignore)
+		return(-42);
+	}
 	return(err);
     }
 }
