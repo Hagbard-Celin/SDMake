@@ -72,7 +72,7 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs);
+Prototype int ExecuteDependency(DepNode *parent, DepRef *lhs);
 
 Prototype List DepList;
 
@@ -162,10 +162,9 @@ void IncorporateDependency(DepRef *lhs, DepRef *rhs, List *cmdList)
  *  of its own dependancies (which is why we call it lhs).
  */
 
-int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
+int ExecuteDependency(DepNode *parent, DepRef *lhs)
 {
     DepNode *lhsDep = lhs->rn_Dep;
-    DepNode *compare = 0;
     DepRef *rhsRef;
     DepCmdList *depCmdList;
     int ignorederr = lhsDep->dn_Ignored;
@@ -173,8 +172,6 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
     int parStRes;
     int lhsStRes;
     int runCmds = 0;
-    FileInfo parent_info;
-    FileInfo lefthand_info;
     int yr = DN_NOCHANGE;
     static int tab;
 
@@ -186,62 +183,93 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
     if (parent == NULL || parent->dn_Flags & DNF_LEFT_VIRTUAL)
     {
 	parStRes = -1;
-	clrmem(&parent_info, sizeof(parent_info));
     }
     else
     {
-	BPTR tmplock;
-	D_S(struct FileInfoBlock, fib);
-
-	if (parent->dn_Flags & DNF_LEFT_GROUP)
-	{
-	    if (!(compare = group_parent))
-	    {
-		printf("Error: The group %s has no real-file parent\n", parent->dn_Node.ln_Name);
-		return(DN_FAILED);
-	    }
-	}
-	else
-	    compare = parent;
-
-	if (tmplock = Lock(compare->dn_Node.ln_Name, ACCESS_READ))
-	{
-	    if (Examine(tmplock, fib))
-	    {
-		parent_info.size = fib->fib_Size;
-		parent_info.type = fib->fib_DirEntryType;
-		parent_info.datestamp = fib->fib_Date;
-	    }
+	if (parent->dn_Info)
 	    parStRes = 0;
-	    UnLock(tmplock);
-	}
 	else
 	{
-	    parStRes = -1;
-	    clrmem(&parent_info, sizeof(parent_info));
+	    BPTR tmplock;
+	    D_S(struct FileInfoBlock, fib);
+
+	    if (tmplock = Lock(parent->dn_Node.ln_Name, ACCESS_READ))
+	    {
+	        if (Examine(tmplock, fib))
+	        {
+		    if (parent->dn_Info = malloc(sizeof(FileInfo)))
+	            {
+			parent->dn_Info->size = fib->fib_Size;
+			parent->dn_Info->type = fib->fib_DirEntryType;
+			parent->dn_Info->datestamp = fib->fib_Date;
+		    }
+		    parStRes = 0;
+	        }
+	        else
+		    parStRes = -1;
+
+	        UnLock(tmplock);
+
+		if (!parent->dn_Info)
+	        {
+		    printf("Error: malloc() failure\n");
+		    return(DN_FAILED);
+	        }
+	    }
+	    else
+	    {
+	        parStRes = -1;
+	    }
 	}
     }
 
     if (lhsDep->dn_Flags & (DNF_LEFT_VIRTUAL|DNF_LEFT_GROUP))
+    {
+	if (lhsDep->dn_Flags&DNF_LEFT_GROUP)
+	{
+	    if (!parent || !(lhsDep->dn_Info = parent->dn_Info))
+	    {
+	        printf("Error: The group %s has no real-file parent\n", parent->dn_Node.ln_Name);
+	        return(DN_FAILED);
+	    }
+	}
 	lhsStRes = -1;
+    }
     else
     {
-	BPTR tmplock;
-	D_S(struct FileInfoBlock, fib);
-
-	if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
-	{
-	    if (Examine(tmplock, fib))
-	    {
-		lefthand_info.size = fib->fib_Size;
-		lefthand_info.type = fib->fib_DirEntryType;
-		lefthand_info.datestamp = fib->fib_Date;
-	    }
+	if (lhsDep->dn_Info)
 	    lhsStRes = 0;
-	    UnLock(tmplock);
-	}
 	else
-	    lhsStRes = -1;
+	{
+	    BPTR tmplock;
+	    D_S(struct FileInfoBlock, fib);
+
+	    if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
+	    {
+	        if (Examine(tmplock, fib))
+	        {
+		    if (lhsDep->dn_Info = malloc(sizeof(FileInfo)))
+	            {
+			lhsDep->dn_Info->size = fib->fib_Size;
+			lhsDep->dn_Info->type = fib->fib_DirEntryType;
+			lhsDep->dn_Info->datestamp = fib->fib_Date;
+	            }
+		    lhsStRes = 0;
+	        }
+	        else
+	            lhsStRes = -1;
+
+	        UnLock(tmplock);
+
+		if (!lhsDep->dn_Info)
+	        {
+		    printf("Error: malloc() failure\n");
+		    return(DN_FAILED);
+	        }
+	    }
+	    else
+	        lhsStRes = -1;
+	}
     }
 
     /*
@@ -276,7 +304,7 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 	    if (parStRes < 0)
 		ret = DN_CHANGED;
 	    else
-	    if (CompareDates(&parent_info.datestamp, &lefthand_info.datestamp) < 0)
+	    if (CompareDates(&parent->dn_Info->datestamp, &lhsDep->dn_Info->datestamp) < 0)
 		ret = DN_NOCHANGE;
 	    else
 		ret = DN_CHANGED;
@@ -359,7 +387,7 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 		 * Run the dependancy
 		 */
 		tab += 4;
-		r = ExecuteDependency(compare, lhsDep, rhsRef);
+		r = ExecuteDependency(lhsDep, rhsRef);
 		tab -= 4;
 	    }
 
@@ -408,10 +436,13 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 		{
 		    if (Examine(tmplock, fib))
 		    {
-			if (CompareDates(&parent_info.datestamp, &fib->fib_Date) > 0)
+			if (CompareDates(&parent->dn_Info->datestamp, &fib->fib_Date) > 0)
 			    if (fib->fib_DirEntryType < 0)
 				yr = DN_CHANGED;
 
+			    lhsDep->dn_Info->size = fib->fib_Size;
+			    lhsDep->dn_Info->type = fib->fib_DirEntryType;
+			    lhsDep->dn_Info->datestamp = fib->fib_Date;
 		    }
 		    UnLock(tmplock);
 		} else {
@@ -546,12 +577,20 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 
 	if (tmplock = Lock(lhsDep->dn_Node.ln_Name, ACCESS_READ))
 	{
-	    if ((Examine(tmplock, fib)) &&
-		(CompareDates(&lefthand_info.datestamp, &fib->fib_Date) == 0) &&
-		lefthand_info.size == fib->fib_Size)
+	    if (Examine(tmplock, fib))
 	    {
-		printf("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
-		lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
+		if ((CompareDates(&lhsDep->dn_Info->datestamp, &fib->fib_Date) == 0) &&
+		lhsDep->dn_Info->size == fib->fib_Size)
+		{
+		    printf("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
+		    lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
+		}
+		else
+		{
+		    lhsDep->dn_Info->size = fib->fib_Size;
+		    lhsDep->dn_Info->type = fib->fib_DirEntryType;
+		    lhsDep->dn_Info->datestamp = fib->fib_Date;
+		}
 	    }
 	    UnLock(tmplock);
 	}
@@ -580,6 +619,7 @@ int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs)
 	printf("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
 	DateStamp(&ds);
 	SetFileDate(lhsDep->dn_Node.ln_Name , &ds);
+	lhsDep->dn_Info->datestamp = ds;
     }
 
     /*

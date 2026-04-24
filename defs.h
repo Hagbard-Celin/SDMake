@@ -118,6 +118,14 @@ typedef unsigned short uword;
 #define db3printf(x)
 #define db4printf(x)
 #endif
+
+typedef struct FileInfo
+{
+    ULONG size;
+    LONG type;
+    struct DateStamp datestamp;
+} FileInfo;
+
 /*
  *  A DepNode collects an entire left hand side symbol
  *  A DepCmdList collects one of possibly several groups for a DepNode
@@ -126,13 +134,12 @@ typedef unsigned short uword;
  */
 
 typedef struct DepNode {
-    Node    dn_Node;
-    List    dn_DepCmdList;	/*  list of lists   */
-/*    time_t  dn_Time;*/
-    short   dn_Symbolic;
-    short   dn_Flags;
-    int	    dn_Result;
-    int	    dn_Ignored;
+    Node     dn_Node;
+    List     dn_DepCmdList;	 /*  list of lists   */
+    WORD     dn_Flags;
+    WORD     dn_Result;
+    LONG     dn_Ignored;
+    FileInfo *dn_Info;
 } DepNode;
 
 #define DNF_VIRTUAL	  (1<<0)  /* virtual lhs - has no command list */
@@ -185,13 +192,6 @@ typedef struct IfNode {
     struct IfNode *if_Next;
     int		if_Value;
 } IfNode;
-
-typedef struct FileInfo
-{
-    ULONG size;
-    LONG type;
-    struct DateStamp datestamp;
-} FileInfo;
 
 #include "tokens.h"
 #include "sdmake-protos.h"

@@ -57,7 +57,7 @@ Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
-Prototype int ExecuteDependency(DepNode *group_parent, DepNode *parent, DepRef *lhs);
+Prototype int ExecuteDependency(DepNode *parent, DepRef *lhs);
 Prototype List DepList;
 
 /* parse.c              */

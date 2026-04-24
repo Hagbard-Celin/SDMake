@@ -338,12 +338,12 @@ int realmain(int ac, char **av)
 		break;
 	    }
 
-	    if ((r = ExecuteDependency(NULL, NULL, node)) < 0)
+	    if ((r = ExecuteDependency(NULL, node)) < 0)
 	    {
 		if (OnError)
 		{
 		    node = CreateDepRef(NULL, OnError);
-		    ExecuteDependency(NULL, NULL, node);
+		    ExecuteDependency(NULL, node);
 		}
 		break;
 	    }
