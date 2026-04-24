@@ -87,8 +87,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	if (cmdlen == 5 && strnicmp(cmd, "endif", 5) == 0) {
 	    LONG isif = *cmdIfTrue;
 
-	    //if (!(*cmdIfTrue))
-	    //	  printf("\n");
 	    *cmdIfTrue = popIf(cmdIfBase);
 	    if (quiet == 0 && !isif)
 	    {
@@ -103,8 +101,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	if (cmdlen == 4 && strnicmp(cmd, "else", 4) == 0) {
 	    LONG isif = *cmdIfTrue;
 
-	    //if (!(*cmdIfTrue))
-	    //	  printf("\n");
 	    *cmdIfTrue = elseIf(cmdIfBase);
 
 	    if (quiet == 0 && !isif)
@@ -193,7 +189,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			        }
 			    }
 			    else
+			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
+				if (quiet == 0)
+				    printf(" (Skipped by if-condition)\n");
+			    }
 			}
 		    }
 		    if (arglen == 6)
@@ -226,7 +226,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			        }
 			    }
 			    else
+			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
+				if (quiet == 0)
+				    printf(" (Skipped by if-condition)\n");
+			    }
 			}
 		    }
 		    if (arglen == 7)
@@ -252,7 +256,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			        }
 			    }
 			    else
+			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
+				if (quiet == 0)
+				    printf(" (Skipped by if-condition)\n");
+			    }
 			}
 		    }
 	        }
@@ -265,8 +273,6 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			err = 20;
 		    }
 	        }
-		else if (quiet == 0)
-		    printf(" (Skipped by if-condition)\n");
 
 	        return(err);
 	    } else
