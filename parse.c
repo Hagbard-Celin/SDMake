@@ -583,54 +583,105 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	short c;
 	short blankLine = 1;
 	short ws = 0;		/*  white space skip	*/
+	WORD twolt = 0;
+	WORD threelt = 0;
+	WORD newline = 0;
 
 	while ((c = getc(Fi)) != EOF) {
-	    if (c == '\n') {
-		++LineNo;
-		if (blankLine)
-		    break;
-		PutCmdListChar(cmdList, '\n');
-		blankLine = 1;
-		ws = 0;
-		continue;
-	    }
-	    if (c == '.' && blankLine && ws == 0) {
-		ungetc(c, Fi);
-		break;
-	    }
+	    if (twolt < 2)
+	    {
+		if (c == '<')
+		{
+		    twolt++;
+		    PutCmdListChar(cmdList, c);
+		}
+		else
+		{
+		    twolt = 0;
 
-	    switch(c) {
-	    case ' ':
-	    case '\t':
-		if (blankLine) {    /*	remove all but one ws after nl */
-		    ws = 1;
-		    continue;
+		    if (c == '\n') {
+			++LineNo;
+			if (blankLine)
+			    break;
+			PutCmdListChar(cmdList, '\n');
+			blankLine = 1;
+			ws = 0;
+			continue;
+		    }
+		    if (c == '.' && blankLine && ws == 0) {
+			ungetc(c, Fi);
+			break;
+		    }
+
+		    switch(c) {
+		    case ' ':
+		    case '\t':
+			if (blankLine) {    /*	remove all but one ws after nl */
+			    ws = 1;
+			    continue;
+			}
+			PutCmdListChar(cmdList, c);
+			break;
+		    case '\\':
+			if (ws) {
+			    PutCmdListChar(cmdList, ' ');
+			    ws = 0;
+			}
+			c = getc(Fi);
+			if (c == '\n') {
+			    blankLine = 1;
+			    ++LineNo;
+			    continue;
+			}
+			PutCmdListChar(cmdList, '\\');
+			PutCmdListChar(cmdList, c);
+			break;
+		    default:
+			if (ws) {
+			    PutCmdListChar(cmdList, ' ');
+			    ws = 0;
+			}
+			PutCmdListChar(cmdList, c);
+			break;
+		    }
 		}
-		PutCmdListChar(cmdList, c);
-		break;
-	    case '\\':
-		if (ws) {
-		    PutCmdListChar(cmdList, ' ');
-		    ws = 0;
-		}
-		c = getc(Fi);
-		if (c == '\n') {
-		    blankLine = 1;
-		    ++LineNo;
-		    continue;
-		}
-		PutCmdListChar(cmdList, '\\');
-		PutCmdListChar(cmdList, c);
-		break;
-	    default:
-		if (ws) {
-		    PutCmdListChar(cmdList, ' ');
-		    ws = 0;
-		}
-		PutCmdListChar(cmdList, c);
-		break;
+	        blankLine = 0;
 	    }
-	    blankLine = 0;
+	    else
+	    {
+		if (newline)
+		{
+		    if (threelt < 3)
+		    {
+			if (c == '<')
+			    ++threelt;
+			else
+			{
+			    threelt = 0;
+			    if (c != '\n')
+				newline = 0;
+			}
+		    }
+		    else
+		    {
+			if (c == '\n')
+			    twolt = 0;
+
+			newline = threelt = 0;
+		    }
+		}
+
+		if (c == '\n')
+		{
+		    if (twolt)
+			newline = 1;
+		    else
+			blankLine = 1;
+
+		    ++LineNo;
+		}
+		PutCmdListChar(cmdList, c);
+	    }
 	}
     }
     dbprintf(("parse: %d : %d\n", nlhs, nrhs));

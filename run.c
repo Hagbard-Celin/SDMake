@@ -332,10 +332,19 @@ long Execute_Command(char *cmd, short ignore, IfNode **cmdIfBase, LONG *cmdIfTru
 	    if (fh = Open(ptr, MODE_NEWFILE)) {
 	        int len;
 	        len = strlen(t);
-	        for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
+
+		if (strnicmp(t, "<<\n", 3) == 0)
+		{
+		    t += 3;
+		    len -= 3;
+		}
+		else
+		    for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
+
 	        t[len] = '\n';
 	        Write(fh, t, len+1);
 	        t[len] = '\0';
+
 	        Close(fh);
 	        err = 0;
 	    }
