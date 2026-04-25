@@ -14,6 +14,9 @@
 
 Prototype int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat);
 
+static void ExpandVariableList(List *srclist, List *list);
+static void ParseVariableList(List *srcList, List *dstList, short c0);
+
 /*
  *  Run srcBuf through the srcMat pattern matcher and if it matches
  *  convert it via dstMat into dstBuf, else dstBuf \0 len.
@@ -121,6 +124,171 @@ int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat)
     }
     db4printf((" r = %d\n", r));
     return(r);
+}
+
+static void ExpandVariableList(List *srclist, List *list)
+{
+    short c, c1;
+    static int Levels;
+
+    if (++Levels == 20)
+	error(FATAL, "Too many levels of variable recursion");
+
+    c = PopCmdListChar(srclist);
+    while (c != EOF) {
+	if (c == '$' || c == '%') {
+	    if ((c1 = PopCmdListChar(srclist)) == '(') {
+		ParseVariableList(srclist, list,  c);
+	    } else if (c1 == c) {
+		PutCmdListChar(list, c);
+	    } else {
+		PutCmdListChar(list, c);
+		c = c1;
+		continue;
+	    }
+	} else if (c == '\'') {
+	    PutCmdListChar(list, c);
+	    if (c = PopCmdListChar(srclist))
+	    {
+	        do
+	        {
+		    PutCmdListChar(list, c);
+	        }
+		while (c != '\'' && (c = PopCmdListChar(srclist)) != EOF);
+		if (c == EOF)
+		    break;
+	    }
+	} else {
+	    PutCmdListChar(list, c);
+	}
+	c = PopCmdListChar(srclist);
+    }
+    --Levels;
+    return;
+}
+
+/*
+ *  Since this is recursively called we have to save/restore our temporary
+ *  bufferse (SymBuf & AltBuf).  the buf pointer may itself be pointing
+ *  into these but we are ok since it is guarenteed >= our copy destination
+ *  as we index through it.
+ */
+
+
+static void ParseVariableList(List *srcList, List *dstList, short c0)
+{
+    short c;
+    short i = 0;
+    Var *var;
+    char *symBuf = AllocPathBuffer();
+    char *altBuf = AllocPathBuffer();
+
+    /*
+     *	variable name
+     */
+
+    while ((c = PopCmdListChar(srcList)) != EOF && !SpecialChar[c])
+    {
+	altBuf[i++] = c;
+	if (i >= PBUFSIZE)
+	    error(FATAL, "Symbol overflow: %s", altBuf);
+    }
+    altBuf[i] = 0;
+    dbprintf(("%s finding var altBuf: %s\n", __FUNC__, altBuf));
+
+    var = FindVariable(altBuf, c0);
+    if (var == NULL)
+	error(FATAL, "Variable %s does not exist", altBuf);
+
+    /*
+     *	now, handle modifiers
+     */
+
+    if (c == ')') {
+	CopyCmdList(&var->var_CmdList, dstList);
+	FreePathBuffer(symBuf);
+	FreePathBuffer(altBuf);
+	return;
+    }
+    if (c != ':')
+	error(FATAL, "Bad variable specification after name %x", c);
+
+    /*
+     *	source operation
+     */
+
+    c = PopCmdListChar(srcList);
+
+    if (c == '\"') {
+	i = 0;
+	while ((c = PopCmdListChar(srcList)) && c != '\"' && c != EOF)
+	{
+	    symBuf[i++] = c;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
+	if (c == '\"')
+	    c = PopCmdListChar(srcList);
+    } else {
+	i = 0;
+	while (c && c != ')' && c != ':' && c != EOF) {
+	    symBuf[i++] = c;
+	    c = PopCmdListChar(srcList);
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
+    }
+
+    symBuf[i] = 0;
+    strcpy(altBuf, symBuf);
+
+    /*
+     *	destination operation
+     */
+
+    if (c == ')') {
+	dbprintf(("File: %s Line: %ld Func: %s CopyConvert to %s %s (%s) %08lx\n", __FILE__, __LINE__, __FUNC__, altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
+	CopyCmdListConvert(&var->var_CmdList, dstList, altBuf, symBuf);
+	FreePathBuffer(symBuf);
+	FreePathBuffer(altBuf);
+	return;
+    }
+
+    if (c != ':')
+	error(FATAL, "Bad variable replacement spec: %c", c);
+
+    c = PopCmdListChar(srcList);
+
+    if (c == '\"') {
+	i = 0;
+	while ((c = PopCmdListChar(srcList)) != EOF && c != '\"')
+	{
+	    symBuf[i++] = c;
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
+	if (c == '\"')
+	    c = PopCmdListChar(srcList);
+    } else {
+	i = 0;
+	while (c && c != ')' && c != ':' && c != EOF) {
+	    symBuf[i++] = c;
+	    c = PopCmdListChar(srcList);
+	    if (i >= PBUFSIZE)
+		error(FATAL, "Symbol overflow: %s", symBuf);
+	}
+    }
+    symBuf[i] = 0;
+
+    if (c != ')')
+	error(FATAL, "Bad variable replacement spec: %c", c);
+
+    dbprintf(("File: %s Line: %ld Func: %s CopyConvert to %s %s (%s) %08lx\n", __FILE__, __LINE__, __FUNC__, altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
+
+    CopyCmdListConvert(&var->var_CmdList, dstList, altBuf, symBuf);
+    FreePathBuffer(symBuf);
+    FreePathBuffer(altBuf);
+    return;
 }
 
 

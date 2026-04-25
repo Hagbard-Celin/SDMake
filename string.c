@@ -20,7 +20,7 @@
 #include <fctype.h>
 
 Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
-Prototype STRPTR StrToLower(CONST_STRPTR string, ULONG len);
+static STRPTR StrToLower(CONST_STRPTR string, ULONG len);
 
 
 BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string)
@@ -47,7 +47,7 @@ BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string)
     return ret;
 }
 
-STRPTR StrToLower(CONST_STRPTR string, ULONG len)
+static STRPTR StrToLower(CONST_STRPTR string, ULONG len)
 {
     STRPTR newstr, newptr;
 

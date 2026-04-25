@@ -81,9 +81,10 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype long CmdListSizeNewLine(List *);
-Prototype long CmdListSizeCommand(List *list);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
+
+static long CmdListSizeCommand(List *list);
 
 List CmdFreeList;
 __aligned char CmdTmp1[256];
@@ -289,7 +290,7 @@ long CmdListSize(List *list)
     return(n);
 }
 
-long CmdListSizeCommand(List *list)
+static long CmdListSizeCommand(List *list)
 {
     CmdNode *node;
     long n = 0;

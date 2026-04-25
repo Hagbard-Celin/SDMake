@@ -79,7 +79,7 @@ int main(ULONG argc, char *argv[]);
 void wbmain(struct WBStartup *wbs);
 int realmain(int ac, char **av);
 void help(int);
-void InitStuff(void);
+static void InitStuff(void);
 const char *SkipAss(const char *);
 struct IntuiText *ITextOf(char *);
 
@@ -388,7 +388,7 @@ void MemErr(void)
     exit(20);
 }
 
-void InitStuff()
+static void InitStuff()
 {
     static int Initialized;
 

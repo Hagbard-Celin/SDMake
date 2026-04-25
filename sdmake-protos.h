@@ -30,13 +30,11 @@ Prototype APTR  MemPool;
 
 Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
-Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
 
 /* cmdlist.c            */
 
 Prototype void InitCmdList(void);
 Prototype void PutCmdListChar(List *, char);
-Prototype void InsCmdListChar(List *, char);
 Prototype void PutCmdListSym(List *, char *, short *);
 Prototype void PutCmdListLen(List *list, char *buf, LONG len);
 Prototype void CopyCmdList(List *, List *);
@@ -48,7 +46,6 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype long CmdListSizeNewLine(List *);
-Prototype long CmdListSizeCommand(List *list);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 
@@ -66,20 +63,12 @@ Prototype List DepList;
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
-Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
-Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
-Prototype void	  ParseVariable(List *, short);
-Prototype void ParseVariableList(List *srcList, List *dstList, short c0);
-Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
-Prototype void ExpandVariableList(List *srclist, List *list);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
-Prototype token_t GetToken(void);
-Prototype void expect(token_t, token_t);
 Prototype void error(short type, CONST_STRPTR ctl, ...);
 Prototype char SymBuf[256];
 Prototype long LineNo;
+Prototype char SpecialChar[256];
 
 /* var.c                */
 
@@ -109,7 +98,6 @@ Prototype int elseIf(IfNode **ifBase);
 /* string.c             */
 
 Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
-Prototype STRPTR StrToLower(CONST_STRPTR string, ULONG len);
 
 /* parserevh.c          */
 

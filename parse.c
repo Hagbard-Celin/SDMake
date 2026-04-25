@@ -72,25 +72,25 @@
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
-Prototype token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
-Prototype token_t GetElement(int ifTrue, int *expansion);
 Prototype token_t XGetElement(void);
-Prototype void	  ParseVariable(List *, short);
-Prototype void ParseVariableList(List *srcList, List *dstList, short c0);
-Prototype STRPTR ParseVariableBuf(List *, STRPTR, short);
-Prototype void ExpandVariableList(List *srclist, List *list);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
-Prototype token_t GetToken(void);
-Prototype void expect(token_t, token_t);
 Prototype void error(short type, CONST_STRPTR ctl, ...);
 
 
 Prototype char SymBuf[256];
 Prototype long LineNo;
+Prototype char SpecialChar[256];
 
 extern short	QuietOpt;
 extern STRPTR	OnError;
+
+static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type);
+static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype);
+static token_t GetElement(int ifTrue, int *expansion);
+static void    ParseVariable(List *, short);
+static STRPTR ParseVariableBuf(List *, STRPTR, short);
+static token_t GetToken(void);
+static void expect(token_t, token_t);
 
 WORD SymBufLen;
 char SpecialChar[256];
@@ -487,7 +487,7 @@ void ParseFile(STRPTR fileName)
  *  t contains TokEq, ignore
  */
 
-token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
+static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 {
     Var *var;
     int newVar = 0;
@@ -573,7 +573,7 @@ token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
  *  Parse a dependency
  */
 
-token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
+static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 {
     DepRef  *lhs;
     DepRef  *rhs;
@@ -790,7 +790,7 @@ token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
  *  GetElement()    - return a token after variable/replace parsing
  */
 
-token_t GetElement(int ifTrue, int *expansion)
+static token_t GetElement(int ifTrue, int *expansion)
 {
     static List CmdList = { (Node *)&CmdList.lh_Tail, NULL, (Node *)&CmdList.lh_Head };
     token_t t;
@@ -869,7 +869,7 @@ swi:
  *
  */
 
-void ParseVariable(List *cmdList, short c0)
+static void ParseVariable(List *cmdList, short c0)
 {
     short c;
     short i = 0;
@@ -960,131 +960,7 @@ void ParseVariable(List *cmdList, short c0)
  */
 
 
-void ParseVariableList(List *srcList, List *dstList, short c0)
-{
-    short c;
-    short i = 0;
-    Var *var;
-    char *symBuf = AllocPathBuffer();
-    char *altBuf = AllocPathBuffer();
-
-    /*
-     *	variable name
-     */
-
-    while ((c = PopCmdListChar(srcList)) != EOF && !SpecialChar[c])
-    {
-	altBuf[i++] = c;
-	if (i >= PBUFSIZE)
-	    error(FATAL, "Symbol overflow: %s", altBuf);
-    }
-    altBuf[i] = 0;
-    dbprintf(("%s finding var altBuf: %s\n", __FUNC__, altBuf));
-
-    var = FindVariable(altBuf, c0);
-    if (var == NULL)
-	error(FATAL, "Variable %s does not exist", altBuf);
-
-    /*
-     *	now, handle modifiers
-     */
-
-    if (c == ')') {
-	CopyCmdList(&var->var_CmdList, dstList);
-	FreePathBuffer(symBuf);
-	FreePathBuffer(altBuf);
-	return;
-    }
-    if (c != ':')
-	error(FATAL, "Bad variable specification after name %x", c);
-
-    /*
-     *	source operation
-     */
-
-    c = PopCmdListChar(srcList);
-
-    if (c == '\"') {
-	i = 0;
-	while ((c = PopCmdListChar(srcList)) && c != '\"' && c != EOF)
-	{
-	    symBuf[i++] = c;
-	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
-	}
-	if (c == '\"')
-	    c = PopCmdListChar(srcList);
-    } else {
-	i = 0;
-	while (c && c != ')' && c != ':' && c != EOF) {
-	    symBuf[i++] = c;
-	    c = PopCmdListChar(srcList);
-	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
-	}
-    }
-
-    symBuf[i] = 0;
-    strcpy(altBuf, symBuf);
-
-    /*
-     *	destination operation
-     */
-
-    if (c == ')') {
-	dbprintf(("File: %s Line: %ld Func: %s CopyConvert to %s %s (%s) %08lx\n", __FILE__, __LINE__, __FUNC__, altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
-	CopyCmdListConvert(&var->var_CmdList, dstList, altBuf, symBuf);
-	FreePathBuffer(symBuf);
-	FreePathBuffer(altBuf);
-	return;
-    }
-
-    if (c != ':')
-	error(FATAL, "Bad variable replacement spec: %c", c);
-
-    c = PopCmdListChar(srcList);
-
-    if (c == '\"') {
-	i = 0;
-	while ((c = PopCmdListChar(srcList)) != EOF && c != '\"')
-	{
-	    symBuf[i++] = c;
-	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
-	}
-	if (c == '\"')
-	    c = PopCmdListChar(srcList);
-    } else {
-	i = 0;
-	while (c && c != ')' && c != ':' && c != EOF) {
-	    symBuf[i++] = c;
-	    c = PopCmdListChar(srcList);
-	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
-	}
-    }
-    symBuf[i] = 0;
-
-    if (c != ')')
-	error(FATAL, "Bad variable replacement spec: %c", c);
-
-    dbprintf(("File: %s Line: %ld Func: %s CopyConvert to %s %s (%s) %08lx\n", __FILE__, __LINE__, __FUNC__, altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
-
-    CopyCmdListConvert(&var->var_CmdList, dstList, altBuf, symBuf);
-    FreePathBuffer(symBuf);
-    FreePathBuffer(altBuf);
-    return;
-}
-
-/*
- *  Since this is recursively called we have to save/restore our temporary
- *  bufferse (SymBuf & AltBuf).  the buf pointer may itself be pointing
- *  into these but we are ok since it is guarenteed >= our copy destination
- *  as we index through it.
- */
-
-
-STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
+static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 {
     short c;
     short i = 0;
@@ -1199,47 +1075,6 @@ STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     return(buf);
 }
 
-void ExpandVariableList(List *srclist, List *list)
-{
-    short c, c1;
-    static int Levels;
-
-    if (++Levels == 20)
-	error(FATAL, "Too many levels of variable recursion");
-
-    c = PopCmdListChar(srclist);
-    while (c != EOF) {
-	if (c == '$' || c == '%') {
-	    if ((c1 = PopCmdListChar(srclist)) == '(') {
-		ParseVariableList(srclist, list,  c);
-	    } else if (c1 == c) {
-		PutCmdListChar(list, c);
-	    } else {
-		PutCmdListChar(list, c);
-		c = c1;
-		continue;
-	    }
-	} else if (c == '\'') {
-	    PutCmdListChar(list, c);
-	    if (c = PopCmdListChar(srclist))
-	    {
-	        do
-	        {
-		    PutCmdListChar(list, c);
-	        }
-		while (c != '\'' && (c = PopCmdListChar(srclist)) != EOF);
-		if (c == EOF)
-		    break;
-	    }
-	} else {
-	    PutCmdListChar(list, c);
-	}
-	c = PopCmdListChar(srclist);
-    }
-    --Levels;
-    return;
-}
-
 STRPTR ExpandVariable(ubyte *buf, List *list)
 {
     short c;
@@ -1323,7 +1158,7 @@ STRPTR ExpandVariable(ubyte *buf, List *list)
  */
 
 
-token_t GetToken()
+static token_t GetToken()
 {
     short c;
     short i;
@@ -1423,7 +1258,7 @@ token_t GetToken()
     }
 }
 
-void expect(token_t tgot, token_t twant)
+static void expect(token_t tgot, token_t twant)
 {
     if (tgot != twant)
 	error(FATAL, "Unexpected token");

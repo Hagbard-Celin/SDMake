@@ -38,7 +38,8 @@ typedef struct Process		    Process;
 
 Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
 Prototype void InitCommand(void);
-Prototype BPTR LoadSegLock(BPTR lock, char *cmd);
+
+static BPTR LoadSegLock(BPTR lock, char *cmd);
 
 BPTR SaveLock;
 char RootPath[512];
@@ -488,7 +489,7 @@ dosys:
 }
 
 
-BPTR LoadSegLock(BPTR lock, char *cmd)
+static BPTR LoadSegLock(BPTR lock, char *cmd)
 {
     BPTR oldLock;
     BPTR seg;
