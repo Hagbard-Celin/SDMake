@@ -113,6 +113,7 @@ char     version[] = VERSTAG "\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
+struct Library *UtilityBase = 0;
 
 void myexit(void)
 {
@@ -143,6 +144,8 @@ void myexit(void)
     }
 
     PDelete();
+    if (UtilityBase)
+	CloseLibrary(UtilityBase);
 }
 
 
@@ -310,7 +313,11 @@ int realmain(int ac, char **av)
 	AppendVariable(var, osver, strlen(osver));
     }
 
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
     {
+#endif
+#if OSVERMAX >= 36
 	struct DateTime buildtime;
 	TEXT date[LEN_DATSTRING], time[LEN_DATSTRING];
 
@@ -321,7 +328,7 @@ int realmain(int ac, char **av)
 	buildtime.dat_StrTime = time;
 
 	DateStamp(&buildtime.dat_Stamp);
-	if (DateToStr(&buildtime))
+	DateToStr(&buildtime);
 	{
 	    Var *var;
 
@@ -330,7 +337,34 @@ int realmain(int ac, char **av)
 	    var = MakeVariable("BUILDTIME", '$');
 	    AppendVariable(var, time, strlen(time));
 	}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
     }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	time_t buildt;
+	struct tm *buildtime;
+	TEXT datestr[9], timestr[9];
+
+	time(&buildt);
+	buildtime = localtime(&buildt);
+	strftime(datestr, sizeof(datestr), "%d-%m-%y", buildtime);
+	strftime(timestr, sizeof(timestr), "%H:%M:%S", buildtime);
+
+	{
+	    Var *var;
+
+	    var = MakeVariable("BUILDDATE", '$');
+	    AppendVariable(var, datestr, strlen(datestr));
+	    var = MakeVariable("BUILDTIME", '$');
+	    AppendVariable(var, timestr, strlen(timestr));
+	}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
 
     {
 	DepRef *node;

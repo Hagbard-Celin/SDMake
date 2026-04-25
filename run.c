@@ -57,8 +57,12 @@ void InitCommand()
     BPTR path;
 
     path = DupLock(((Process *)FindTask(NULL))->pr_CurrentDir);
-    NameFromLock(path, RootPath, sizeof(RootPath));
     SaveLock = CurrentDir(path);
+#if OSVERMIN >= 36
+    NameFromLock(path, RootPath, sizeof(RootPath));
+#else
+    getcwd(RootPath, sizeof(RootPath));
+#endif
 
     atexit(ICExit);
 }
