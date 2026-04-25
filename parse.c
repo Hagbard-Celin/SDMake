@@ -1407,6 +1407,7 @@ token_t GetToken()
 	    SymBuf[i] = 0;
 	    if (i == sizeof(SymBuf) - 1)
 		error(FATAL, "Symbol overflow: %s", SymBuf);
+	    SymBufLen = i;
 	    return(TokSym);
 	}
     }
