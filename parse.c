@@ -154,7 +154,10 @@ void ParseFile(STRPTR fileName)
 	    error(FATAL, "Unable to open %s", tfileName);
 	PFreeVec(tfileName);
     }
-    FileName = strdup(fileName);
+
+    if (!(FileName = PAlloc(strlen(fileName) + 1)))
+	MemErr();
+    strcpy(FileName, fileName);
     Fi = fi;
     LineNo = 1;
 

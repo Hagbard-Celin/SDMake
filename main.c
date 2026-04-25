@@ -164,7 +164,11 @@ void wbmain(struct WBStartup *wbs)
 	BPTR saveLock = CurrentDir((BPTR)wbs->sm_ArgList[i].wa_Lock);
 
 	if (i == wbs->sm_NumArgs - 1 && FileSpecified == 0)
-	    XFileName = strdup(wbs->sm_ArgList[i].wa_Name);
+	{
+	    if (!(XFileName = PAlloc(strlen(wbs->sm_ArgList[i].wa_Name) + 1)))
+		MemErr();
+	    strcpy(XFileName, wbs->sm_ArgList[i].wa_Name);
+	}
 
 	if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
 	    for (j = 0; dob->do_ToolTypes[j]; ++j) {
