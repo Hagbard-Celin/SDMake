@@ -78,9 +78,7 @@ Prototype void AppendCmdList(List *, List *);
 Prototype WORD PopCmdListSym(List *, char *, WORD);
 Prototype int  PopCmdListChar(List *);
 Prototype void CopyCmdListBuf(List *, char *);
-Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
-Prototype long CmdListSizeNewLine(List *);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 
@@ -262,24 +260,6 @@ void CopyCmdListBuf(List *list, char *buf)
     buf[0] = 0;
 }
 
-void CopyCmdListNewLineBuf(List *list, char *buf)
-{
-    CmdNode *node;
-    long i;
-
-    while ((node = (CmdNode *)RemHead(list)) != NULL) {
-	for (i = node->cn_RIndex; i < node->cn_Idx && node->cn_Node.ln_Name[i] != '\n'; ++i)
-	    *buf++ = node->cn_Node.ln_Name[i];
-	if (i != node->cn_Idx) {
-	    node->cn_RIndex = i + 1;
-	    AddHead(list, &node->cn_Node);
-	    break;
-	}
-	AddTail(&CmdFreeList, &node->cn_Node);
-    }
-    *buf = 0;
-}
-
 long CmdListSize(List *list)
 {
     CmdNode *node;
@@ -344,22 +324,6 @@ static long CmdListSizeCommand(List *list)
 	    }
 	}
 
-	n += i - node->cn_RIndex;
-	if (i != node->cn_Idx)
-	    break;
-    }
-    return(n);
-}
-
-long CmdListSizeNewLine(List *list)
-{
-    CmdNode *node;
-    long n = 0;
-    long i;
-
-    for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node)) {
-	for (i = node->cn_RIndex; i < node->cn_Idx && node->cn_Node.ln_Name[i] != '\n'; ++i)
-	    ;
 	n += i - node->cn_RIndex;
 	if (i != node->cn_Idx)
 	    break;

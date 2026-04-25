@@ -69,7 +69,6 @@
 
 Prototype void InitDep(void);
 Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
-Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
 Prototype int ExecuteDependency(DepNode *parent, DepRef *lhs);

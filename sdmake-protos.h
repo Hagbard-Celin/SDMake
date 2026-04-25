@@ -43,9 +43,7 @@ Prototype void AppendCmdList(List *, List *);
 Prototype WORD PopCmdListSym(List *, char *, WORD);
 Prototype int  PopCmdListChar(List *);
 Prototype void CopyCmdListBuf(List *, char *);
-Prototype void CopyCmdListNewLineBuf(List *, char *);
 Prototype long CmdListSize(List *);
-Prototype long CmdListSizeNewLine(List *);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 
@@ -53,7 +51,6 @@ Prototype long ExecuteCmdList(DepNode *, List *);
 
 Prototype void InitDep(void);
 Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
-Prototype DepCmdList *AllocDepCmdList(void);
 Prototype DepRef  *DupDepRef(DepRef *);
 Prototype void	  IncorporateDependency(DepRef *, DepRef *, List *);
 Prototype int ExecuteDependency(DepNode *parent, DepRef *lhs);
@@ -63,7 +60,6 @@ Prototype List DepList;
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t XGetElement(void);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype void error(short type, CONST_STRPTR ctl, ...);
 Prototype char SymBuf[256];

@@ -72,7 +72,6 @@
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
-Prototype token_t XGetElement(void);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
 Prototype void error(short type, CONST_STRPTR ctl, ...);
 
