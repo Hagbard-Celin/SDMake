@@ -187,7 +187,7 @@ void ParseFile(STRPTR fileName)
 
 	    if (expansion == 0 && SymBuf[0] == '.')
 	    {
-		if (ifTrue && strcmp(SymBuf, ".export") == 0) {
+		if (ifTrue && SymBufLen == 7 && strcmp(SymBuf, ".export") == 0) {
 		    char *data;
 		    Var *var;
 
@@ -246,7 +246,7 @@ void ParseFile(STRPTR fileName)
 			    PFree(data, maxl);
 			}
 		    }
-		} else if (ifTrue && strcmp(SymBuf, ".include") == 0) {
+		} else if (ifTrue && SymBufLen == 8 && strcmp(SymBuf, ".include") == 0) {
 		    FILE *saveFi = Fi;
 		    char *saveFileName = FileName;
 		    int saveLine = LineNo;
@@ -268,7 +268,7 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
 			error(FATAL, "Expected newline after .include filename");
-		} else if (ifTrue && strcmp(SymBuf, ".revheader") == 0) {
+		} else if (ifTrue && SymBufLen == 11 && strcmp(SymBuf, ".revhheader") == 0) {
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
 			error(FATAL, "Expected a symbol for .revhheader!");
@@ -276,11 +276,11 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
 			error(FATAL, "Expected newline after .revheader filename");
-		} else if (strcmp(SymBuf, ".else") == 0) {
+		} else if (SymBufLen == 5 && strcmp(SymBuf, ".else") == 0) {
 		    if (ifBase == NULL)
 			error(FATAL, ".else without .if*");
 		    ifTrue = elseIf(&ifBase);
-		} else if (strcmp(SymBuf, ".ifeq") == 0) {
+		} else if (SymBufLen == 5 && strcmp(SymBuf, ".ifeq") == 0) {
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
@@ -299,7 +299,7 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".ifgt") == 0) {
+		} else if (SymBufLen == 5 && strcmp(SymBuf, ".ifgt") == 0) {
 		    if (ifTrue) {
 			LONG firstvalue;
 
@@ -320,7 +320,7 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".ifin") == 0) {
+		} else if (SymBufLen == 5 && strcmp(SymBuf, ".ifin") == 0) {
 		    if (ifTrue) {
 			STRPTR found = 0;
 			t = GetElement(ifTrue, &expansion);
@@ -344,7 +344,7 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".ifdef") == 0) {
+		} else if (SymBufLen == 6 && strcmp(SymBuf, ".ifdef") == 0) {
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
@@ -360,7 +360,7 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".iffile") == 0) {
+		} else if (SymBufLen == 7 && strcmp(SymBuf, ".iffile") == 0) {
 		    if (ifTrue) {
 			BPTR tmplock;
 
@@ -381,7 +381,7 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
-		} else if (strcmp(SymBuf, ".endif") == 0) {
+		} else if (SymBufLen == 6 && strcmp(SymBuf, ".endif") == 0) {
 		    if (ifBase == NULL)
 			error(FATAL, ".endif without .if");
 		    ifTrue = popIf(&ifBase);
@@ -394,15 +394,15 @@ void ParseFile(STRPTR fileName)
 		    if (!(OnError = PAllocVec(SymBufLen + 1)))
 			error(FATAL, "memory allocation failed");
 		    strcpy(OnError, SymBuf);
-		} else if (ifTrue && strcmp(SymBuf, ".leftislabel") == 0) {
+		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftislabel") == 0) {
 		    printf("Setting left dummy\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_DUMMY;
-		} else if (ifTrue && strcmp(SymBuf, ".leftisgroup") == 0) {
+		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftisgroup") == 0) {
 		    printf("Setting left group\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_GROUP;
-		} else if (ifTrue && strcmp(SymBuf, ".leftisfile") == 0) {
+		} else if (ifTrue && SymBufLen == 11 && strcmp(SymBuf, ".leftisfile") == 0) {
 		    printf("Setting left file\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_FILE;
@@ -809,7 +809,7 @@ swi:
     switch(t) {
     case TokSym:
 	{
-	    WORD pos = strlen(SymBuf) - 1;
+	    WORD pos = SymBufLen - 1;
 
 	    if (SymBuf[pos] == '$')
 	    {
