@@ -395,7 +395,9 @@ static void InitStuff()
     atexit(myexit);
     if (Initialized == 0) {
 	Initialized = 1;
-	MemPool = PCreate(8192, 384);
+	if (!(MemPool = PCreate(8192, 384)))
+	    MemErr();
+	UtilityBase = OpenLibrary("utility.library", 37);
 	NewList(&DoList);
 	InitCommand();
 	InitCmdList();
