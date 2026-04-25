@@ -58,22 +58,32 @@ STRPTR StrToLower(CONST_STRPTR string, ULONG len)
 	MemErr();
 
     newptr = newstr;
+#if OSVERMIN < 37 && OSVERMAX >= 37
     if (Running2_04())
     {
+#endif
+#if OSVERMAX >= 37
 	do
 	{
 	    *newptr = ToLower((ULONG)*string);
 	    newptr++;
 	} while (*++string);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
     }
     else
     {
+#endif
+#if OSVERMIN < 37
 	do
 	{
 	    *newptr = tolower(*string);
 	    newptr++;
 	} while (*++string);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
     }
+#endif
     *newptr = 0;
     return newstr;
 }

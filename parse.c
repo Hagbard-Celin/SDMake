@@ -216,12 +216,19 @@ void ParseFile(STRPTR fileName)
 			    if (!(data = PAlloc(maxl)))
 				error(FATAL, "memory allocation failed");
 			    CopyCmdListBuf(&CmdList, data);
+#if OSVERMIN < 37 && OSVERMAX >= 37
 			    if (Running2_04())
 			    {
+#endif
+#if OSVERMAX >= 37
 				SetVar(SymBuf, data, -1, GVF_GLOBAL_ONLY);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
 			    }
 			    else
 			    {
+#endif
+#if OSVERMIN < 37
 				BPTR dir, file, old;
 				if (dir = Lock("ENV:", SHARED_LOCK))
 				{
@@ -233,7 +240,10 @@ void ParseFile(STRPTR fileName)
 				    }
 				    UnLock(CurrentDir(old));
 				}
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
 			    }
+#endif
 			    PFree(data, maxl);
 			}
 		    }
