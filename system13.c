@@ -51,9 +51,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BADDR(bptr)  ((void *)((long)(bptr) << 2))
-#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
-
 #define DOS_TRUE    (-1)
 #define DOS_FALSE   (0)
 
