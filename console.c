@@ -28,9 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
-#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
-
 #define DOS_TRUE    (-1)
 #define DOS_FALSE   (0)
 
@@ -85,7 +82,7 @@ BOOL OpenConsole(const char *str)
 
     _STD_opencon_exit();
     if (CustomCIS = Open(str, 1005)) {
-	fh = BTOC(CustomCIS);
+	fh = BADDR(CustomCIS);
 	if (fh->fh_Type) {
 	    r = TRUE;
 

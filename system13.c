@@ -51,7 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
+#define BADDR(bptr)  ((void *)((long)(bptr) << 2))
 #define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
 
 #define DOS_TRUE    (-1)
@@ -241,7 +241,7 @@ static long StartCommand(CONST_STRPTR buf)
 
 	if ((((Task *)PktPort.mp_Node.ln_Name)->tc_Node.ln_Type != NT_PROCESS || ((Process *)PktPort.mp_Node.ln_Name)->pr_CLI == NULL) && RemShellTask) {
 	    if (RemShellTask->tc_Node.ln_Type == NT_PROCESS && ((Process *)RemShellTask)->pr_CLI)
-		CopyWorkbenchPath(BTOC(((Process *)RemShellTask)->pr_CLI));
+		CopyWorkbenchPath(BADDR(((Process *)RemShellTask)->pr_CLI));
 	}
     }
 
@@ -252,7 +252,7 @@ static long StartCommand(CONST_STRPTR buf)
      */
 
     if (RemShellTask) {
-	CLI *cli = BTOC(((Process *)RemShellTask)->pr_CLI);
+	CLI *cli = BADDR(((Process *)RemShellTask)->pr_CLI);
 	if (cli)
 	    cli->cli_ReturnCode = 10;
     }
@@ -364,7 +364,7 @@ long __asm _sys13SoftInt(register __a1 long a4)
 		Process *proc = pkt->dp_Port->mp_SigTask;
 
 		if (proc->pr_Task.tc_Node.ln_Type == NT_PROCESS && proc->pr_CLI) {
-		    CLI *cli = BTOC(proc->pr_CLI);
+		    CLI *cli = BADDR(proc->pr_CLI);
 
 		    if (cli->cli_Module == NULL) {
 			if (CmdStatus == 1) {
@@ -390,14 +390,14 @@ long __asm _sys13SoftInt(register __a1 long a4)
 
 	    if (CmdStatus == 1 && TermFlag == 0) {
 		Process *proc = (Process *)PktPort.mp_Node.ln_Name;
-		CLI *remCli = BTOC(((Process *)pkt->dp_Port->mp_SigTask)->pr_CLI);
+		CLI *remCli = BADDR(((Process *)pkt->dp_Port->mp_SigTask)->pr_CLI);
 
 		if (remCli && remCli->cli_Module) {
 		    if (proc->pr_Task.tc_Node.ln_Type == NT_PROCESS && proc->pr_COS) {
 			/*
 			 *  forward the packet
 			 */
-			PutMsg(((FileHandle *)BTOC(proc->pr_COS))->fh_Type, msg);
+			PutMsg(((FileHandle *)BADDR(proc->pr_COS))->fh_Type, msg);
 			continue;
 		    }
 		}
@@ -408,7 +408,7 @@ long __asm _sys13SoftInt(register __a1 long a4)
 	case ACTION_FINDINPUT:
 	case ACTION_FINDOUTPUT:
 	    {
-		FileHandle *fh = BTOC(pkt->dp_Arg1);
+		FileHandle *fh = BADDR(pkt->dp_Arg1);
 		fh->fh_Arg1 = pkt->dp_Arg1;
 		fh->fh_Port = (MsgPort *)DOS_TRUE;
 		pkt->dp_Res1 = DOS_TRUE;
@@ -531,8 +531,8 @@ void CopyWorkbenchPath(CLI *dcli)
     Process *sproc;
 
     if ((sproc = (struct Process *)FindTask("Workbench")) && sproc->pr_Task.tc_Node.ln_Type == NT_PROCESS) {
-	if (scli = BTOC(sproc->pr_CLI)) {
-	    for (lls = BTOC(scli->cli_CommandDir); lls; lls = BTOC(lls->NextPath)) {
+	if (scli = BADDR(sproc->pr_CLI)) {
+	    for (lls = BADDR(scli->cli_CommandDir); lls; lls = BADDR(lls->NextPath)) {
 		BPTR lock;
 		LockList *ll;
 		LockList **llast = (LockList **)&dcli->cli_CommandDir;

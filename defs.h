@@ -104,8 +104,6 @@ typedef unsigned short uword;
 
 
 #define clrmem(d,n)	  memset(d,0,n)
-#define BTOC(bptr, type)  ((type *)((long)(bptr) << 2))
-#define CTOB(cptr)  ((BPTR)((unsigned long)(cptr) >> 2))
 
 #if USE_DEBUG
 #define dbprintf(x)  { if (DDebug) printf x;}

@@ -9,6 +9,7 @@
  *  Search the path for a command name
  */
 
+#include <dos/dos.h>
 #include <exec/types.h>
 #include <exec/execbase.h>
 #include <libraries/dos.h>
@@ -36,10 +37,10 @@ long _SearchPath(char *cmd)
 
     if (SysBase->ThisTask->tc_Node.ln_Type != NT_PROCESS)
 	return(0);
-    if ((cli = BTOC(((Process *)SysBase->ThisTask)->pr_CLI, CLI)) == NULL)
+    if ((cli = (CLI *)BADDR(((Process *)SysBase->ThisTask)->pr_CLI)) == NULL)
 	return(0);
 
-    ll = BTOC(cli->cli_CommandDir, LockList);
+    ll = (LockList *)BADDR(cli->cli_CommandDir);
 
     while (ll) {
 	if (ll->PathLock) {
@@ -52,7 +53,7 @@ long _SearchPath(char *cmd)
 	    }
 	    CurrentDir(oldLock);
 	}
-	ll = BTOC(ll->NextPath, LockList);
+	ll = (LockList *)BADDR(ll->NextPath);
     }
     return(0);
 }
