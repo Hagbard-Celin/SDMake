@@ -115,6 +115,14 @@ short	FileSpecified = 0;
 short	ExitCode;
 struct Library *UtilityBase = 0;
 
+void xmyexit(void)
+{
+    if (XSaveLockValid) {
+	CurrentDir(XSaveLock);
+	XSaveLockValid = 0;
+    }
+}
+
 void myexit(void)
 {
     if (ExitCode < 20)
@@ -220,6 +228,7 @@ void wbmain(struct WBStartup *wbs)
 
     XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
     XSaveLockValid = 1;
+    atexit(xmyexit);
 
     if (abortIt == 0)
 	realmain(1, NULL);
@@ -429,11 +438,11 @@ static void InitStuff()
 {
     static int Initialized;
 
-    atexit(myexit);
     if (Initialized == 0) {
 	Initialized = 1;
 	if (!(MemPool = PCreate(8192, 384)))
 	    MemErr();
+	atexit(myexit);
 	UtilityBase = OpenLibrary("utility.library", 37);
 	NewList(&DoList);
 	InitCommand();
