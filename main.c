@@ -146,11 +146,6 @@ void myexit(void)
 	}
     }
 
-    if (XSaveLockValid) {
-	CurrentDir(XSaveLock);
-	XSaveLockValid = 0;
-    }
-
     PDelete();
     if (UtilityBase)
 	CloseLibrary(UtilityBase);
