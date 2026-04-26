@@ -360,7 +360,7 @@ void CopyCmdListConvert(List *fromList, List *toList, char *srcMat, char *dstMat
      *	run each symbol through the conversion
      */
 
-    while (PopCmdListSym(&tmpList, CmdTmp1, sizeof(CmdTmp1)) == 0)
+    while (PopCmdListSym(&tmpList, CmdTmp1, sizeof(CmdTmp1)))
     {
 	if (space)
 	    PutCmdListChar(toList, ' ');
