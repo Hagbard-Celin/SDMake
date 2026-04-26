@@ -174,39 +174,42 @@ void wbmain(struct WBStartup *wbs)
 	}
 
 	if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
-	    for (j = 0; dob->do_ToolTypes[j]; ++j) {
-		char *ptr = dob->do_ToolTypes[j];
+	    if (dob->do_ToolTypes)
+	    {
+	        for (j = 0; dob->do_ToolTypes[j]; ++j) {
+		    char *ptr = dob->do_ToolTypes[j];
 
-		if (strnicmp(ptr, "FILE=", 5) == 0) {
-		    const char *xptr = SkipAss(ptr);
-		    if (!(XFileName = PAlloc(strlen(xptr) + 1)))
-			MemErr();
-		    strcpy(XFileName, xptr);
-		    FileSpecified = 1;
-		} else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
-		    NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
-		} else if (strnicmp(ptr, "TARGET=", 7) == 0) {
-		    CreateDepRef(&DoList, SkipAss(ptr));
-		} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
-		    QuietOpt = strtol(SkipAss(ptr), NULL, 0);
-		} else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
-		    DDebug = strtol(SkipAss(ptr), NULL, 0);
-		} else if (strnicmp(ptr, "CONSOLE=", 8) == 0) {
-		    OpenConsole(SkipAss(ptr)); /*  lib/misc.h  */
-		} else {
-		    char buf[64];
+		    if (strnicmp(ptr, "FILE=", 5) == 0) {
+		        const char *xptr = SkipAss(ptr);
+		        if (!(XFileName = PAlloc(strlen(xptr) + 1)))
+			    MemErr();
+		        strcpy(XFileName, xptr);
+		        FileSpecified = 1;
+		    } else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
+		        NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
+		    } else if (strnicmp(ptr, "TARGET=", 7) == 0) {
+		        CreateDepRef(&DoList, SkipAss(ptr));
+		    } else if (strnicmp(ptr, "QUIET=", 6) == 0) {
+		        QuietOpt = strtol(SkipAss(ptr), NULL, 0);
+		    } else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
+		        DDebug = strtol(SkipAss(ptr), NULL, 0);
+		    } else if (strnicmp(ptr, "CONSOLE=", 8) == 0) {
+		        OpenConsole(SkipAss(ptr)); /*  lib/misc.h  */
+		    } else {
+		        char buf[64];
 
-		    sprintf(buf, "Bad ToolType: %s", ptr);
-		    switch(AutoRequest(NULL, ITextOf(ptr), ITextOf("Ignore"), ITextOf("Abort"), 0, 0, 300, 40)) {
-		    case 1:
-			break;
-		    case 0:
-			abortIt = 1;
-			break;
+		        sprintf(buf, "Bad ToolType: %s", ptr);
+		        switch(AutoRequest(NULL, ITextOf(ptr), ITextOf("Ignore"), ITextOf("Abort"), 0, 0, 300, 40)) {
+		        case 1:
+			    break;
+		        case 0:
+			    abortIt = 1;
+			    break;
+		        }
 		    }
-		}
-		if (abortIt)
-		    break;
+		    if (abortIt)
+		        break;
+	        }
 	    }
 	    FreeDiskObject(dob);
 	}
