@@ -510,6 +510,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    error(FATAL, "missing endif(s) in command list for %s", dep->dn_Node.ln_Name);
 
     }
+
     if (withfail)
 	return (-1);
     return(r);

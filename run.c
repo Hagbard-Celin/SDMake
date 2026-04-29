@@ -471,8 +471,10 @@ dosys:
 		/*err = system13(cmd);*/
 		err = SystemTagList(cmd, tags);
 	    }
+
 	    if (cli)
 		SetProgramName(OldCmd);
+
 	    if (lock)
 		UnLock(lock);
 	} else
@@ -481,7 +483,9 @@ dosys:
 	    cmd[i] = c;
 	    err = system13(cmd);
 	}
+
 	PFreeVec(cmdArgs);
+
 	if (err)
 	{
 	    PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
