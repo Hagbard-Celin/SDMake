@@ -543,6 +543,7 @@ int main(ULONG argc, char *argv[])
 #if OSVERMIN < 36
 		OpenConsole(console?console:"con:10/10/400/150/SDMake/CLOSE");
 		realmain();
+#endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
 	    }
 #endif
