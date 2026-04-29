@@ -334,7 +334,7 @@ static long WaitCommand()
  *  Software Interrupt deals with handler functions
  */
 
-long __asm _sys13SoftInt(register __a1 long a4)
+long __asm  __interrupt _sys13SoftInt(register __a1 long a4)
 {
     Message *msg;
     DosPacket *pkt;
@@ -505,7 +505,7 @@ void DosFree(void *vptr)
     FreeMem(ptr, *ptr);
 }
 
-void ReturnPacket(DosPacket *packet)
+void __interrupt ReturnPacket(DosPacket *packet)
 {
     Message *mess;
     MsgPort *replyPort;
