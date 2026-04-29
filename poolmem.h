@@ -29,11 +29,11 @@ void __asm AsmDeletePool(register __a0 void *poolHeader,
 #if OSVERMIN >= 39
 #define PAlloc(memSize) AllocPooled(MemPool, memSize)
 #define PFree(memory,memSize) FreePooled(MemPool, memory, memSize)
-#define	PCreate(puddleSize,threshSize) CreatePool(MEMF_ANY, puddleSize, threshSize)
+#define	PCreate(puddleSize,threshSize) CreatePool(MEMF_PUBLIC, puddleSize, threshSize)
 #define PDelete() DeletePool(MemPool)
 #else
 #define PAlloc(memSize) AsmAllocPooled(MemPool, memSize, SysBase)
 #define PFree(memory,memSize) AsmFreePooled(MemPool, memory, memSize, SysBase)
-#define	PCreate(puddleSize,threshSize) AsmCreatePool(MEMF_ANY, puddleSize, threshSize, SysBase)
+#define	PCreate(puddleSize,threshSize) AsmCreatePool(MEMF_PUBLIC, puddleSize, threshSize, SysBase)
 #define PDelete() AsmDeletePool(MemPool, SysBase)
 #endif

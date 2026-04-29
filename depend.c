@@ -217,7 +217,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 
 		if (!parent->dn_Info)
 	        {
-		    printf("Error: malloc() failure\n");
+		    PrintF("Error: malloc() failure\n");
 		    return(DN_FAILED);
 	        }
 	    }
@@ -234,7 +234,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	{
 	    if (!parent || (!(lhsDep->dn_Info = parent->dn_Info) && !(parent->dn_Flags&DNF_LEFT_NOTFOUND)))
 	    {
-		printf("Error: The group %s has no real-file parent\n", lhsDep->dn_Node.ln_Name);
+		PrintF("Error: The group %s has no real-file parent\n", lhsDep->dn_Node.ln_Name);
 	        return(DN_FAILED);
 	    }
 
@@ -271,7 +271,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 
 		if (!lhsDep->dn_Info)
 	        {
-		    printf("Error: malloc() failure\n");
+		    PrintF("Error: malloc() failure\n");
 		    return(DN_FAILED);
 	        }
 	    }
@@ -294,8 +294,8 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	{
 	    const char *name = parent ? parent->dn_Node.ln_Name : "?";
 	    ignoreright = 1;
-	    dbprintf(("%*.*sSkipping lhs=%s (0x%p) parStRes=%d(%s) r=%d\n",
-		tab, tab, "", lhsDep->dn_Node.ln_Name, lhsDep, parStRes,
+	    dbprintf(("	 Skipping lhs=%s (0x%p) parStRes=%ld(%s) r=%ld\n",
+		lhsDep->dn_Node.ln_Name, lhsDep, parStRes,
 		name, lhsDep->dn_Result));
 	}
 
@@ -308,7 +308,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		ret = DN_CHANGED;
 	    else
 	    if (lhsStRes < 0) {
-	        printf("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
+	        PrintF("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
 		ret = DN_FAILED;
 	    }
 	    else
@@ -475,12 +475,10 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		xr = r;
 
 	    dbprintf((
-		"%*.*sRUNDEPEND lhs=\"%s\" rhs=\"%s\"\n"
-		"%*.*s--------- r=%d cumulative=%d\n",
-		tab, tab, "",
+		"   RUNDEPEND lhs=\"%s\" rhs=\"%s\"\n"
+		"   --------- r=%ld cumulative=%ld\n",
 		lhsDep->dn_Node.ln_Name,
 		rhsRef->rn_Node.ln_Name,
-		tab, tab, "",
 		r,
 		xr
 	    ));
@@ -525,8 +523,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		if (!CacheLevel && depCmdList->dc_Flags&DCF_IGNORED_FAIL)
 		    lhsDep->dn_Ignored--;
 
-	        dbprintf(("%*.*sRUNCMDLIST \"%s\" index=%d\n",
-		    tab, tab, "",
+		dbprintf((" RUNCMDLIST \"%s\" index=%ld\n",
 		    lhsDep->dn_Node.ln_Name, index));
 
 	        if ((var = MakeVariable("left", '%')) != NULL) {
@@ -567,8 +564,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	}
 	else
 	{
-	    dbprintf(("%*.*sSkipping RUNCMDLIST \"%s\" (0x%p) index=%d DID_RUN: %ld List IGNORED_FAIL: %ld\n",
-		tab, tab, "",
+	    dbprintf(("	 Skipping RUNCMDLIST \"%s\" (0x%p) index=%ld DID_RUN: %ld List IGNORED_FAIL: %ld\n",
 		lhsDep->dn_Node.ln_Name, lhsDep, index, lhsDep->dn_Flags&DNF_DID_RUN, depCmdList->dc_Flags&DCF_IGNORED_FAIL));
 	}
     }
@@ -593,7 +589,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		if ((CompareDates(&lhsDep->dn_Info->datestamp, &fib->fib_Date) == 0) &&
 		lhsDep->dn_Info->size == fib->fib_Size)
 		{
-		    printf("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
+		    PrintF("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
 		    lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
 		}
 		else
@@ -627,7 +623,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
     if (lhsDep->dn_Result == DN_NOCHANGE_TOUCH) {
 	struct DateStamp ds;
 	
-	printf("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
+	PrintF("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
 	DateStamp(&ds);
 	SetFileDate(lhsDep->dn_Node.ln_Name , &ds);
 	lhsDep->dn_Info->datestamp = ds;
@@ -661,8 +657,8 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      */
     {
 	const char *name = parent ? parent->dn_Node.ln_Name : "?";
-	dbprintf(("%*.*sFINAL lhs=%s parStRes=%d(%s) r=%d\n",
-	    tab, tab, "", lhsDep->dn_Node.ln_Name, parStRes,
+	dbprintf(("	 FINAL lhs=%s parStRes=%ld(%s) r=%ld\n",
+	    lhsDep->dn_Node.ln_Name, parStRes,
 	    name, lhsDep->dn_Result));
     }
     return(yr);

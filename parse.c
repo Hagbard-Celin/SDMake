@@ -167,7 +167,7 @@ void ParseFile(STRPTR fileName)
 	const char *p;
 
 	if (QuietOpt == 0)
-	    printf("fileName: %s\n", fileName);
+	    PrintF("fileName: %s\n", fileName);
 	if ((p = strrchr(fileName, '/')) != NULL) {
 		Var *var = FindVariable("TOPDIR", '$');
 		AppendVariable(var, fileName, p - fileName + 1);
@@ -395,15 +395,15 @@ void ParseFile(STRPTR fileName)
 			error(FATAL, "memory allocation failed");
 		    strcpy(OnError, SymBuf);
 		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftislabel") == 0) {
-		    printf("Setting left dummy\n");
+		    PrintF("Setting left dummy\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_DUMMY;
 		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftisgroup") == 0) {
-		    printf("Setting left group\n");
+		    PrintF("Setting left group\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_GROUP;
 		} else if (ifTrue && SymBufLen == 11 && strcmp(SymBuf, ".leftisfile") == 0) {
-		    printf("Setting left file\n");
+		    PrintF("Setting left file\n");
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_FILE;
 		} else if (ifTrue) {
@@ -739,7 +739,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	    }
 	}
     }
-    dbprintf(("parse: %d : %d\n", nlhs, nrhs));
+    dbprintf(("parse: %ld : %d\n", nlhs, nrhs));
 
     /*
      *	formats allowed:
@@ -780,7 +780,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	    PFree(lhs, sizeof(DepRef));
 	}
     } else {
-	error(FATAL, "%d items on the left, %d on the right of colon!", nlhs, nrhs);
+	error(FATAL, "%ld items on the left, %ld on the right of colon!", nlhs, nrhs);
     }
     return(t);
 }
@@ -1269,14 +1269,19 @@ void error(short type, CONST_STRPTR ctl, ...)
     static char ExitAry[] = { 1, 0, 0 };
     va_list va;
 
-    printf("%s: %s Line %ld: ", FileName, TypeString[type], LineNo);
+    PrintF("%s: %s Line %ld: ", FileName, TypeString[type], LineNo);
     va_start(va, ctl);
     vprintf(ctl, va);
     va_end(va);
     puts("");
     if (ExitAry[type])
     {
-	exit(20);
+#if OSVERMAX >= 36
+	if (mycli == (struct Process *)FindTask(NULL))
+	    Exit(20);
+	else
+#endif
+	    exit(20);
     }
 }
 

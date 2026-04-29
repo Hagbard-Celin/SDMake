@@ -476,9 +476,9 @@ long ExecuteCmdList(DepNode *dep, List *list)
 
 		if (quiet == 0)
 		{
-		    printf("    %s", cmd);
+		    PrintF("    %s", cmd);
 		    if (cmdIfTrue)
-			printf("\n");
+			PrintF("\n");
 		}
 
 		if (NoRunOpt == 0 && cmd[0] != '#') {
@@ -499,7 +499,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		    if (NoRunOpt && cmd[0] != '#')
 			SomeWork = 1;
 		    if (quiet == 0 && !cmdIfTrue)
-			printf("\n");
+			PrintF("\n");
 		}
 	    }
 	    if (allocated)

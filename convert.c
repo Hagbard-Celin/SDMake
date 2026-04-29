@@ -122,7 +122,7 @@ int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat)
 	    ++dstMat;
 	}
     }
-    db4printf((" r = %d\n", r));
+    db4printf((" r = %ld\n", r));
     return(r);
 }
 

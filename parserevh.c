@@ -40,7 +40,7 @@ WORD ParseRevInclude(STRPTR includefile)
 
 	    while (FGets(revfile, line, 128))
 	    {
-		//printf("Got line: %s \n", line);
+		//PrintF("Got line: %s \n", line);
 		if (!(strncmp(line, "#define", 7 )))
 		    GetVerRev(line + 8);
 	    }
@@ -65,7 +65,7 @@ WORD ParseRevInclude(STRPTR includefile)
 
 	    while (fgets(line, 128, revfile))
 	    {
-		//printf("Got line: %s \n", line);
+		//PrintF("Got line: %s \n", line);
 		if (!(strncmp(line, "#define", 7 )))
 		    GetVerRev(line + 8);
 	    }

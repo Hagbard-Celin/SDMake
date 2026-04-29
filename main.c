@@ -66,6 +66,9 @@
  */
 
 #include "defs.h"
+#include <stdarg.h>
+#include <dos.h>
+#include <dos/dostags.h>
 #include <intuition/intuition.h>
 #include <graphics/gfx.h>
 #include <proto/intuition.h>
@@ -77,12 +80,19 @@
 
 int main(ULONG argc, char *argv[]);
 void wbmain(struct WBStartup *wbs);
-int realmain(int ac, char **av);
+LONG realmain(void);
 void help(int);
 static void InitStuff(void);
 const char *SkipAss(const char *);
 struct IntuiText *ITextOf(char *);
 
+struct climsg
+{
+    struct Message msg;
+    LONG data;
+};
+
+Prototype void PrintF(CONST_STRPTR ctl, ...);
 Prototype void MemErr(void);
 Prototype List	DoList;
 Prototype short DDebug;
@@ -95,6 +105,7 @@ Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
+Prototype struct Process *mycli;
 
 List	DoList;
 STRPTR	OnError;
@@ -113,7 +124,17 @@ char     version[] = VERSTAG "\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
-struct Library *UtilityBase = 0;
+char *console = 0;
+struct Process *mycli = 0;
+BPTR StdIn;
+BPTR StdOut;
+BPTR OrgIn;
+BPTR OrgOut;
+BPTR StdErr;
+BPTR OrgErr;
+struct MsgPort *OldPort;
+struct climsg *clmsg;
+struct	Library *UtilityBase = 0;
 
 void xmyexit(void)
 {
@@ -132,16 +153,16 @@ void myexit(void)
 	    if (CheckTarget)
 	    {
 	        if (SomeWork)
-		    printf("0\n");
+		    PrintF("0\n");
 	        else
-		    printf("1\n");
+		    PrintF("1\n");
 	    }
 	    else
 	    {
 	        if (SomeWork)
-	            printf("SDMAKE Done.\n");
+	            PrintF("SDMAKE Done.\n");
 	        else
-	            printf("All Targets up to date.\n");
+	            PrintF("All Targets up to date.\n");
 	    }
 	}
     }
@@ -149,166 +170,160 @@ void myexit(void)
     PDelete();
     if (UtilityBase)
 	CloseLibrary(UtilityBase);
+
+    if (StdOut)
+    {
+	char ch;
+
+	PrintF("\nHit RETURN to Exit\n");
+	while ((ch = FGetC(StdIn)) != '\n' && ch != -1);
+
+	Close(StdOut);
+	Close(StdIn);
+    }
+}
+
+void procmsg(void)
+{
+    struct climsg msg;
+    struct MsgPort *reply;
+
+    reply = CreateMsgPort();
+
+    msg.msg.mn_ReplyPort = reply;
+    msg.data = getreg(REG_A4);
+
+    PutMsg(&mycli->pr_MsgPort, (struct Message *)&msg);
+
+    WaitPort(reply);
+    GetMsg(reply);
+
+    DeleteMsgPort(reply);
+}
+
+void cliproc(void)
+{
+    struct ExecBase * SysBase = *(struct ExecBase **)4;
+    struct climsg *msg;
+    struct Process *self;
+
+    self = (struct Process *)FindTask((char *)NULL);
+
+    WaitPort(&self->pr_MsgPort);
+    msg	= (struct climsg *)GetMsg(&self->pr_MsgPort);
+
+    putreg(REG_A4, (long)msg->data);
+    clmsg = msg;
+
+    {
+	struct FileHandle *fh = (struct FileHandle *)BADDR(StdIn);
+
+	DoPkt(fh->fh_Type, ACTION_CHANGE_SIGNAL, fh->fh_Arg1, (LONG)&self->pr_MsgPort, 0, 0, 0);
+	fh = (struct FileHandle *)BADDR(StdOut);
+	DoPkt(fh->fh_Type, ACTION_CHANGE_SIGNAL, fh->fh_Arg1, (LONG)&self->pr_MsgPort, 0, 0, 0);
+    }
+
+    SetProgramName("sdmake_cli");
+
+    realmain();
 }
 
 
-void wbmain(struct WBStartup *wbs)
+LONG  __asm cliproc_exit(register __d0 LONG rc, register __d1 LONG exitdata)
 {
-    struct DiskObject *dob;
-    short i;
-    short j;
-    short abortIt = 0;
+    putreg(REG_A4, exitdata);
 
-    /*
-     *	Search for options, set current directory to last valid
-     *	disk object
-     */
+    Forbid();
+    ReplyMsg((struct Message *)clmsg);
 
-    InitStuff();
+    return rc;
+}
 
-    for (i = 0; i < wbs->sm_NumArgs; ++i) {
-	BPTR saveLock = CurrentDir((BPTR)wbs->sm_ArgList[i].wa_Lock);
 
-	if (i == wbs->sm_NumArgs - 1 && FileSpecified == 0)
+BOOL makecli(struct Process *sproc)
+{
+    struct TagItem *tags;
+    BPTR path;
+
+    if (!(tags=AllocVec(sizeof(struct TagItem)*14,MEMF_ANY)))
+	return FALSE;
+
+    if (path = stealpath(sproc))
+    {
+	struct MsgPort *ctask;
+
+	if (StdIn = Open(console?console:"con:10/10/400/150/SDMake/CLOSE", MODE_OLDFILE))
 	{
-	    if (!(XFileName = PAlloc(strlen(wbs->sm_ArgList[i].wa_Name) + 1)))
-		MemErr();
-	    strcpy(XFileName, wbs->sm_ArgList[i].wa_Name);
-	}
+	    ctask = ((struct FileHandle *)BADDR(StdIn))->fh_Type;
 
-	if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
-	    if (dob->do_ToolTypes)
 	    {
-	        for (j = 0; dob->do_ToolTypes[j]; ++j) {
-		    char *ptr = dob->do_ToolTypes[j];
-
-		    if (strnicmp(ptr, "FILE=", 5) == 0) {
-		        const char *xptr = SkipAss(ptr);
-		        if (!(XFileName = PAlloc(strlen(xptr) + 1)))
-			    MemErr();
-		        strcpy(XFileName, xptr);
-		        FileSpecified = 1;
-		    } else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
-		        NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
-		    } else if (strnicmp(ptr, "TARGET=", 7) == 0) {
-		        CreateDepRef(&DoList, SkipAss(ptr));
-		    } else if (strnicmp(ptr, "QUIET=", 6) == 0) {
-		        QuietOpt = strtol(SkipAss(ptr), NULL, 0);
-		    } else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
-		        DDebug = strtol(SkipAss(ptr), NULL, 0);
-		    } else if (strnicmp(ptr, "CONSOLE=", 8) == 0) {
-		        OpenConsole(SkipAss(ptr)); /*  lib/misc.h  */
-		    } else {
-		        char buf[64];
-
-		        sprintf(buf, "Bad ToolType: %s", ptr);
-		        switch(AutoRequest(NULL, ITextOf(ptr), ITextOf("Ignore"), ITextOf("Abort"), 0, 0, 300, 40)) {
-		        case 1:
-			    break;
-		        case 0:
-			    abortIt = 1;
-			    break;
-		        }
-		    }
-		    if (abortIt)
-		        break;
-	        }
+		struct MsgPort *oldport;
+		oldport	= SetConsoleTask(ctask);
+		StdOut = Open("*", MODE_NEWFILE);
+		SetConsoleTask(oldport);
 	    }
-	    FreeDiskObject(dob);
+
+	    if (StdOut)
+	    {
+		tags[0].ti_Tag=NP_Entry;
+		tags[0].ti_Data=(ULONG)cliproc;
+		tags[1].ti_Tag=NP_Name;
+		tags[1].ti_Data=(ULONG)"sdmake_cli";
+		tags[2].ti_Tag=NP_ExitCode;
+		tags[2].ti_Data=(ULONG)cliproc_exit;
+		tags[3].ti_Tag=NP_ExitData;
+		tags[3].ti_Data=(ULONG)getreg(REG_A4);
+		tags[4].ti_Tag=NP_StackSize;
+		tags[4].ti_Data=8192;
+		tags[5].ti_Tag=NP_Priority;
+		tags[5].ti_Data=0;
+		tags[6].ti_Tag=NP_Cli;
+		tags[6].ti_Data=TRUE;
+		tags[7].ti_Tag=NP_Path;
+		tags[7].ti_Data=(ULONG)path;
+		tags[8].ti_Tag=NP_Input;
+		tags[8].ti_Data=(ULONG)StdIn;
+		tags[9].ti_Tag=NP_CloseInput;
+		tags[9].ti_Data=0;
+		tags[10].ti_Tag=NP_Output;
+		tags[10].ti_Data=(ULONG)StdOut;
+		tags[11].ti_Tag=NP_CloseOutput;
+		tags[11].ti_Data=0;
+		tags[12].ti_Tag=NP_ConsoleTask;
+		tags[12].ti_Data=(ULONG)ctask;
+		tags[13].ti_Tag=TAG_END;
+
+		mycli = CreateNewProc(tags);
+	    }
+	    else
+		Close(StdIn);
 	}
-	CurrentDir(saveLock);
-	if (abortIt)
-	    break;
     }
 
-    XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
-    XSaveLockValid = 1;
-    atexit(xmyexit);
+    FreeVec(tags);
 
-    if (abortIt == 0)
-	realmain(1, NULL);
+    if (!mycli)
+    {
+	if (path)
+	    freepath(path);
+
+	return FALSE;
+    }
+
+	return TRUE;
 }
 
 
-int realmain(int ac, char **av)
+LONG realmain(void)
 {
-    short i;
     int r = 0;
-    List tmpList;
-    Var *var;
-    NewList(&tmpList);
-
-    InitStuff();
-
-    /*printf("ARGS= %d\n", ac);*/
-    for (i = 1; i < ac; ++i) {
-	char *ptr = av[i];
-	char *p2;
-
-	/*printf("ARG[%d]= %d:%s\n", i, strlen(av[i]), av[i]);*/
-
-	if (*ptr != '-') {
-	    CreateDepRef(&DoList, ptr);
-	    continue;
-	}
-	ptr += 2;
-	switch(ptr[-1]) {
-	case 'F':   /*  fast opt    */
-	    break;
-	case 'f':
-	    XFileName = (*ptr) ? ptr : av[++i];
-	    break;
-	case 'Q':
-	    QuietOpt = 1;
-	case 'q':
-	    CheckTarget	= 1;
-	    QuietCmd = 1;
-	case 'n':
-	    NoRunOpt = 1;
-	    break;
-
-	case 'D':
-	    ptr = (*ptr) ? ptr : av[++i];
-	    if ((p2 = strchr(ptr, '=')) != NULL)
-		*p2++ = 0;
-	    var = MakeVariable(ptr, '$');
-	    if (p2) {
-		ExpandVariable(p2, &tmpList);
-		AppendCmdList(&tmpList, &var->var_CmdList);
-	    }
-	    break;
-
-	case 'd':
-	    DDebug = (*ptr) ? atoi(ptr) : 1;
-	    break;
-	case 'c':
-	    CacheLevel = (*ptr) ? atoi(ptr) - 1 : 0;
-	    break;
-	case 's':
-	    QuietCmd = 1;
-	case 'a':
-	    DoAll = 1;
-	case 'S':
-	    QuietOpt = 1;
-	    break;
-	case 'h':
-	default:
-	    QuietOpt = 1;
-	    help(1);
-	}
-    }
-    if (QuietOpt == 0)
-	puts(VERS " (" DATE ")");
-
-    if (i > ac)
-	error(FATAL, "Expected argument to command line option");
 
     /*
-     *	resolve dependancies requested by the user.  If none requested
-     *	the resolve the first one
+     *	add built-inn variables
+     *
      */
 
-    (void)MakeVariable("TOPDIR", '$');
+    MakeVariable("TOPDIR", '$');
 
     {
 	Var *var;
@@ -373,6 +388,10 @@ int realmain(int ac, char **av)
     }
 #endif
 
+    /*
+     *	resolve dependancies requested by the user.  If none requested
+     *	the resolve the first one
+     */
     {
 	DepRef *node;
 
@@ -402,6 +421,7 @@ int realmain(int ac, char **av)
 	    }
 	}
     }
+
     if (r < 0 && ExitCode < 20)
 	ExitCode = 20;
     if (CheckTarget && !SomeWork)
@@ -411,25 +431,226 @@ int realmain(int ac, char **av)
 
 int main(ULONG argc, char *argv[])
 {
+    InitStuff();
+
     if (argc == 0)
     {
-	wbmain((struct WBStartup *)argv);
+	struct WBStartup *wbs = (struct WBStartup *)argv;
+	struct DiskObject *dob;
+	short i;
+	short j;
+	short abortIt = 0;
+#if OSVERMAX >= 36
+	WORD restart;
+#endif
+
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	if (DOSBase->dl_lib.lib_Version >= 36)
+#endif
+#if OSVERMAX >= 36
+	    restart = 1;
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	else
+#endif
+#if OSVERMIN < 36
+	    restart = 0;
+#endif
+
+	/*
+	 *  Search for options, set current directory to last valid
+	 *  disk object
+	 */
+
+
+	for (i = 0; i < wbs->sm_NumArgs; ++i) {
+	    BPTR saveLock = CurrentDir((BPTR)wbs->sm_ArgList[i].wa_Lock);
+
+	    if (i == wbs->sm_NumArgs - 1 && FileSpecified == 0)
+	    {
+	        if (!(XFileName = PAlloc(strlen(wbs->sm_ArgList[i].wa_Name) + 1)))
+		    MemErr();
+	        strcpy(XFileName, wbs->sm_ArgList[i].wa_Name);
+	    }
+	    if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
+	        if (dob->do_ToolTypes)
+		{
+		    for (j = 0; dob->do_ToolTypes[j]; ++j) {
+			char *ptr = dob->do_ToolTypes[j];
+
+			if (strnicmp(ptr, "FILE=", 5) == 0) {
+			    const char *xptr = SkipAss(ptr);
+			     if (!(XFileName = PAlloc(strlen(xptr) + 1)))
+				MemErr();
+			    strcpy(XFileName, xptr);
+			    FileSpecified = 1;
+			} else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
+			    NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
+			} else if (strnicmp(ptr, "TARGET=", 7) == 0) {
+			    CreateDepRef(&DoList, SkipAss(ptr));
+			} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
+			    QuietOpt = strtol(SkipAss(ptr), NULL, 0);
+			} else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
+			    DDebug = strtol(SkipAss(ptr), NULL, 0);
+			} else if (strnicmp(ptr, "CONSOLE=", 8) == 0) {
+			    const char *cptr = SkipAss(ptr);
+			    if (!(console = PAlloc(strlen(cptr) + 1)))
+				MemErr();
+			    strcpy(console, cptr);
+			    //OpenConsole(SkipAss(ptr)); /*  lib/misc.h  */
+			} else {
+			    char buf[64];
+
+		            sprintf(buf, "Bad ToolType: %s", ptr);
+			    switch(AutoRequest(NULL, ITextOf(buf), ITextOf("Ignore"), ITextOf("Abort"), 0, 0, 300, 40)) {
+		            case 1:
+			        break;
+		            case 0:
+			        abortIt = 1;
+			        break;
+		            }
+		        }
+		        if (abortIt)
+		            break;
+		    }
+		}
+	        FreeDiskObject(dob);
+	    }
+	    CurrentDir(saveLock);
+	    if (abortIt)
+	        break;
+	}
+
+	XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
+	XSaveLockValid = 1;
+	atexit(xmyexit);
+
+	if (abortIt == 0)
+	{
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	    if (restart)
+	    {
+#endif
+#if OSVERMAX >= 36
+		if (makecli(wbs->sm_Message.mn_ReplyPort->mp_SigTask))
+		    procmsg();
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	    }
+	    else
+	    {
+#endif
+#if OSVERMIN < 36
+		OpenConsole(console?console:"con:10/10/400/150/SDMake/CLOSE");
+		realmain();
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	    }
+#endif
+	}
     }
     else
     {
-	realmain(argc, argv);
-    }
+	short i;
+	List tmpList;
+	Var *var;
+	NewList(&tmpList);
 
-    return 0;
+	/*PrintF("ARGS= %d\n", argc);*/
+	for (i = 1; i < argc; ++i) {
+	    char *ptr = argv[i];
+	    char *p2;
+
+	    /*PrintF("ARG[%ld]= %ld:%s\n", i, strlen(argv[i]), argv[i]);*/
+
+	    if (*ptr != '-') {
+	        CreateDepRef(&DoList, ptr);
+	        continue;
+	    }
+	    ptr += 2;
+	    switch(ptr[-1]) {
+	    case 'F':   /*  fast opt    */
+	        break;
+	    case 'f':
+	        XFileName = (*ptr) ? ptr : argv[++i];
+	        break;
+	    case 'Q':
+	        CheckTarget = 1;
+	    case 'q':
+	        QuietCmd = 1;
+	    case 'n':
+	        NoRunOpt = 1;
+	        break;
+
+	    case 'D':
+	        ptr = (*ptr) ? ptr : argv[++i];
+	        if ((p2 = strchr(ptr, '=')) != NULL)
+		    *p2++ = 0;
+	        var = MakeVariable(ptr, '$');
+	        if (p2) {
+		    ExpandVariable(p2, &tmpList);
+		    AppendCmdList(&tmpList, &var->var_CmdList);
+	        }
+	        break;
+
+	    case 'd':
+	        DDebug = (*ptr) ? atoi(ptr) : 1;
+	        break;
+	    case 'c':
+	        CacheLevel = (*ptr) ? atoi(ptr) - 1 : 0;
+	        break;
+	    case 's':
+	        QuietCmd = 1;
+	    case 'a':
+	        DoAll = 1;
+	    case 'S':
+	        QuietOpt = 1;
+	        break;
+	    case 'h':
+	    default:
+	        QuietOpt = 1;
+	        help(1);
+	    }
+	}
+	if (QuietOpt == 0)
+	    puts(VERS " (" DATE ")");
+
+	if (i > argc)
+	    error(FATAL, "Expected argument to command line option");
+
+	return realmain();
+    }
+}
+
+void PrintF(CONST_STRPTR ctl, ...)
+{
+    if (StdOut)
+    {
+	VFPrintf(StdOut, ctl, (LONG *)(&ctl + 1));
+    }
+    else
+    {
+	va_list va;
+
+	va_start(va, ctl);
+	vprintf(ctl, va);
+	va_end(va);
+    }
 }
 
 void MemErr(void)
 {
-    printf("Fatal error: memory allocation failed");
-    exit(20);
+    PrintF("Fatal error: memory allocation failed");
+
+    ExitCode = 20;
+#if OSVERMAX >= 36
+    if (mycli == (struct Process *)FindTask(NULL))
+	Exit(20);
+    else
+#endif
+	exit(20);
 }
 
-static void InitStuff()
+static void InitStuff(void)
 {
     static int Initialized;
 

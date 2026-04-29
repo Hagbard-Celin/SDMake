@@ -13,6 +13,7 @@ Prototype int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMa
 
 /* main.c               */
 
+Prototype void PrintF(CONST_STRPTR ctl, ...);
 Prototype void MemErr(void);
 Prototype List	DoList;
 Prototype short DDebug;
@@ -25,6 +26,7 @@ Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
+Prototype struct Process *mycli;
 
 /* run.c                */
 
@@ -76,6 +78,8 @@ Prototype void AppendVariable(Var *, char *, long);
 /* path.c               */
 
 Prototype long _SearchPath(char *cmd);
+Prototype BPTR stealpath(struct Process *sproc);
+Prototype void freepath(BPTR list);
 
 /* system13.c           */
 

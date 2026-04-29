@@ -61,16 +61,18 @@ void _STD_opencon_exit(void)
 
     if (CustomCIS || CustomCOS)
 	proc->pr_ConsoleTask = SaveConsoleTask;
-    if (CustomCIS) {
-	proc->pr_CIS = SaveCIS;
-	Close(CustomCIS);
-	CustomCIS = 0;
-    }
     if (CustomCOS) {
-	Write(CustomCOS, "**END**\n", 8);
+	Write(CustomCOS, "\nHit RETURN to Exit\n", 20);
 	proc->pr_COS = SaveCOS;
 	Close(CustomCOS);
 	CustomCOS = 0;
+    }
+    if (CustomCIS) {
+	char ch;
+	while (Read(CustomCIS, &ch, 1) && ch != '\n');
+	proc->pr_CIS = SaveCIS;
+	Close(CustomCIS);
+	CustomCIS = 0;
     }
 }
 

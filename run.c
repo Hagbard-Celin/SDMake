@@ -96,9 +96,9 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    if (quiet == 0 && !isif)
 	    {
 		if (!(*cmdIfTrue))
-		    printf(" (Skipped by if-condition)\n");
+		    PrintF(" (Skipped by if-condition)\n");
 		else
-		    printf("\n");
+		    PrintF("\n");
 	    }
 
 	    return 0;
@@ -111,9 +111,9 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    if (quiet == 0 && !isif)
 	    {
 	        if (!(*cmdIfTrue))
-		    printf(" (Skipped by if-condition)\n");
+		    PrintF(" (Skipped by if-condition)\n");
 	        else
-		    printf("\n");
+		    PrintF("\n");
 	    }
 
 	    return 0;
@@ -197,7 +197,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
 				if (quiet == 0)
-				    printf(" (Skipped by if-condition)\n");
+				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
 		    }
@@ -234,7 +234,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
 				if (quiet == 0)
-				    printf(" (Skipped by if-condition)\n");
+				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
 		    }
@@ -264,7 +264,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
 				if (quiet == 0)
-				    printf(" (Skipped by if-condition)\n");
+				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
 		    }
@@ -274,7 +274,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        {
 		    if (notfound)
 		    {
-			printf("Internal command if: Wrong number of arguments\n");
+			PrintF("Internal command if: Wrong number of arguments\n");
 			err = 20;
 		    }
 	        }
@@ -283,7 +283,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    } else
 	    if (!(*cmdIfTrue)) {
 		if (quiet == 0)
-		    printf(" (Skipped by if-condition)\n");
+		    PrintF(" (Skipped by if-condition)\n");
 		return 0;
 	    } else
 	    if (strnicmp(cmd, "cd", 2) == 0) {
@@ -305,7 +305,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        if (lock)
 	            UnLock(CurrentDir(lock));
 	        else {
-	            printf("Unable to cd %s\n", ptr);
+	            PrintF("Unable to cd %s\n", ptr);
 	            err = 20;
 	        }
 	        return((ignore) ? 0 : err);
@@ -313,7 +313,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	} else
 	if (!(*cmdIfTrue)) {
 	    if (quiet == 0)
-		printf(" (Skipped by if-condition)\n");
+		PrintF(" (Skipped by if-condition)\n");
 	    return 0;
 	} else
 	if (cmdlen == 7 && strnicmp(cmd, "makedir", 7) == 0) {
@@ -325,7 +325,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    if (lock = CreateDir(ptr))
 	        UnLock(lock);
 	    else {
-	        printf("Unable to makedir %s\n", ptr);
+	        PrintF("Unable to makedir %s\n", ptr);
 	        err = 20;
 	    }
 	    return((ignore) ? 0 : err);
@@ -374,7 +374,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        }
 	        else
 	        {
-	            printf("Unable to write %s\n", ptr);
+	            PrintF("Unable to write %s\n", ptr);
 	            err = 20;
 	        }
 		return((ignore) ? 0 : err);
@@ -461,7 +461,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		if (seg->seg_UC > 0)
 		    seg->seg_UC--;
 	    } else if ((lock = _SearchPath(cmd)) && (seglist = LoadSegLock(lock, ""))) {
-		dbprintf(("B\n"));
+		dbprintf(("B cmd = '%s' stack = %d\n", cmdArgs, stack));
 		err = RunCommand(seglist, stack, cmdArgs, strlen(cmdArgs));
 		UnLoadSeg(seglist);
 	    } else {
@@ -484,7 +484,8 @@ dosys:
 	PFreeVec(cmdArgs);
 	if (err)
 	{
-	    printf("Exit code %d %s\n", err, (ignore) ? "(Ignored)":"");
+	    PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
+
 	    if (ignore)
 		return(-42);
 	}

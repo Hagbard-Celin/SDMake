@@ -106,9 +106,9 @@ typedef unsigned short uword;
 #define clrmem(d,n)	  memset(d,0,n)
 
 #if USE_DEBUG
-#define dbprintf(x)  { if (DDebug) printf x;}
-#define db3printf(x) { if (DDebug >= 3) printf x;}
-#define db4printf(x) { if (DDebug >= 4) printf x;}
+#define dbprintf(x)  { if (DDebug) PrintF x;}
+#define db3printf(x) { if (DDebug >= 3) PrintF x;}
+#define db4printf(x) { if (DDebug >= 4) PrintF x;}
 #else
 #define dbprintf(x)
 #define db3printf(x)
