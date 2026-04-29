@@ -105,11 +105,13 @@ Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
+Prototype WORD	  Break;
 Prototype struct Process *mycli;
 
 List	DoList;
 STRPTR	OnError;
 APTR    MemPool;
+WORD	Break;
 short	DDebug;
 short	CacheLevel;
 short	NoRunOpt;
@@ -146,23 +148,28 @@ void xmyexit(void)
 
 void myexit(void)
 {
-    if (ExitCode < 20)
+    if (Break)
+	PrintF("SDMAKE: ***Break\n");
+    else
     {
-	if (QuietOpt == 0)
+	if (ExitCode < 20)
 	{
-	    if (CheckTarget)
+	    if (QuietOpt == 0)
 	    {
-	        if (SomeWork)
-		    PrintF("0\n");
+	        if (CheckTarget)
+	        {
+	            if (SomeWork)
+		        PrintF("0\n");
+	            else
+		        PrintF("1\n");
+	        }
 	        else
-		    PrintF("1\n");
-	    }
-	    else
-	    {
-	        if (SomeWork)
-	            PrintF("SDMAKE Done.\n");
-	        else
-	            PrintF("All Targets up to date.\n");
+	        {
+	            if (SomeWork)
+	                PrintF("SDMAKE Done.\n");
+	            else
+	                PrintF("All Targets up to date.\n");
+	        }
 	    }
 	}
     }
@@ -424,7 +431,7 @@ LONG realmain(void)
 
     if (r < 0 && ExitCode < 20)
 	ExitCode = 20;
-    if (CheckTarget && !SomeWork)
+    if (Break || CheckTarget && !SomeWork)
 	ExitCode = 5;
     return(ExitCode);
 }
@@ -635,6 +642,7 @@ void PrintF(CONST_STRPTR ctl, ...)
 	va_start(va, ctl);
 	vprintf(ctl, va);
 	va_end(va);
+	fflush(stdout);
     }
 }
 

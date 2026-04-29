@@ -26,6 +26,7 @@ Prototype short ExitCode;
 Prototype short	DoAll;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
+Prototype WORD	  Break;
 Prototype struct Process *mycli;
 
 /* run.c                */

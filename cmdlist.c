@@ -83,6 +83,7 @@ Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 
 static long CmdListSizeCommand(List *list);
+static WORD ChkCtrlD(void);
 
 List CmdFreeList;
 __aligned char CmdTmp1[256];
@@ -436,7 +437,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
     {
 	long n;
 
-	while (r <= EXIT_CONTINUE && (n = CmdListSizeCommand(&tmpDst))) {
+	while (!ChkCtrlD() && r <= EXIT_CONTINUE && (n = CmdListSizeCommand(&tmpDst))) {
 	    short allocated;
 	    short quiet = 0;
 	    short ignore= 0;
@@ -514,4 +515,12 @@ long ExecuteCmdList(DepNode *dep, List *list)
     if (withfail)
 	return (-1);
     return(r);
+}
+
+static WORD ChkCtrlD(void)
+{
+    if (SetSignal(0, SIGBREAKF_CTRL_D) & SIGBREAKF_CTRL_D)
+	Break = 1;
+
+    return Break;
 }

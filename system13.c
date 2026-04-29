@@ -62,6 +62,8 @@
 
 Prototype int system13(const char *buf);
 
+Prototype WORD	  Break;
+
 typedef struct DosPacket    DosPacket;
 typedef struct FileHandle   FileHandle;
 typedef struct DeviceNode   DeviceNode;
@@ -324,7 +326,8 @@ static long WaitCommand()
     }
     if (BreakMask) {
 	SetSignal(BreakMask, BreakMask);
-	chkabort();
+	if (CmdStatus != 1 && (SetSignal(0, SIGBREAKF_CTRL_D) & SIGBREAKF_CTRL_D))
+	    Break = 1;
 	BreakMask = 0;
     }
     return(ReturnCode);
@@ -558,7 +561,11 @@ void WaitPktMask(void)
 	mask = Wait(PktMask | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F);
 	if (mask & (SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F)) {
 	    if (RemShellTask)
+	    {
 		Signal(RemShellTask, (mask & (SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F)));
+		if (mask & SIGBREAKF_CTRL_D)
+		    BreakMask |= SIGBREAKF_CTRL_D;
+	    }
 	    else
 		BreakMask |= mask & (SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F);
 	}
