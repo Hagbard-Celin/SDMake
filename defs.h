@@ -141,8 +141,6 @@ typedef struct DepNode {
 #define DNF_VIRTUAL	  (1<<0)  /* virtual lhs - has no command list */
 #define DNF_LEFT_VIRTUAL  (1<<1)
 #define DNF_LEFT_GROUP    (1<<2)
-//#define DNF_VIRTUAL	  0x0001  /* virtual lhs - has no command list */
-//#define DNF_LEFT_VIRTUAL (1<<1)
 #define DNF_DID_RUN       (1<<3)
 #define DNF_RIGHT_CHANGED (1<<4)
 #define DNF_LEFT_NOTFOUND (1<<5)

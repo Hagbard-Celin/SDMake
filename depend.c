@@ -540,7 +540,6 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		        PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
 		    }
 	        }
-	        //SomeWork = 1;
 	        if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > EXIT_CONTINUE)
 		    xr = DN_FAILED;
 
@@ -557,8 +556,6 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		}
 	    }
 
-	    //if (lhsDep->dn_Flags&DNF_IGNORED_FAIL && !lhsDep->dn_Ignored)
-	    //	  lhsDep->dn_Flags &= ~DNF_IGNORED_FAIL;
 	    if (lhsDep->dn_Result > xr)
 	        lhsDep->dn_Result = xr;
 	}
@@ -661,6 +658,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    lhsDep->dn_Node.ln_Name, parStRes,
 	    name, lhsDep->dn_Result));
     }
+
     return(yr);
 }
 

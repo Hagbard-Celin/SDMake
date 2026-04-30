@@ -504,7 +504,6 @@ int main(ULONG argc, char *argv[])
 			    if (!(console = PAlloc(strlen(cptr) + 1)))
 				MemErr();
 			    strcpy(console, cptr);
-			    //OpenConsole(SkipAss(ptr)); /*  lib/misc.h  */
 			} else {
 			    char buf[64];
 
@@ -563,12 +562,9 @@ int main(ULONG argc, char *argv[])
 	Var *var;
 	NewList(&tmpList);
 
-	/*PrintF("ARGS= %d\n", argc);*/
 	for (i = 1; i < argc; ++i) {
 	    char *ptr = argv[i];
 	    char *p2;
-
-	    /*PrintF("ARG[%ld]= %ld:%s\n", i, strlen(argv[i]), argv[i]);*/
 
 	    if (*ptr != '-') {
 	        CreateDepRef(&DoList, ptr);
@@ -580,10 +576,10 @@ int main(ULONG argc, char *argv[])
 	        XFileName = (*ptr) ? ptr : argv[++i];
 	        break;
 	    case 'q':
-	        CheckTarget = 1;
+		CheckTarget = 1;
 		QuietCmd = 1;
 	    case 'n':
-	        NoRunOpt = 1;
+		NoRunOpt = 1;
 	        break;
 
 	    case 'D':
