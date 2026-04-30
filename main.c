@@ -84,7 +84,6 @@ LONG realmain(void);
 void help(int);
 static void InitStuff(void);
 const char *SkipAss(const char *);
-struct IntuiText *ITextOf(char *);
 
 struct climsg
 {
@@ -107,6 +106,7 @@ Prototype short SomeWork;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
 Prototype struct Process *mycli;
+Prototype BPTR StdOut;
 
 List	DoList;
 STRPTR	OnError;
@@ -449,7 +449,6 @@ int main(ULONG argc, char *argv[])
 	struct DiskObject *dob;
 	short i;
 	short j;
-	short abortIt = 0;
 #if OSVERMAX >= 36
 	WORD restart;
 #endif
@@ -485,6 +484,10 @@ int main(ULONG argc, char *argv[])
 	    if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
 	        if (dob->do_ToolTypes)
 		{
+		    List tmpList;
+
+		    NewList(&tmpList);
+
 		    for (j = 0; dob->do_ToolTypes[j]; ++j) {
 			char *ptr = dob->do_ToolTypes[j];
 
@@ -498,6 +501,23 @@ int main(ULONG argc, char *argv[])
 			    NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
 			} else if (strnicmp(ptr, "TARGET=", 7) == 0) {
 			    CreateDepRef(&DoList, SkipAss(ptr));
+			} else if (strnicmp(ptr, "DEFINE=", 7) == 0) {
+			    const char *p1 = SkipAss(ptr);
+			    char *p2;
+			    Var *var;
+			    if ((p2 = strchr(p1, '=')) != NULL)
+			        *p2++ = 0;
+			    var = MakeVariable(p1, '$');
+			    if (*p2) {
+				ExpandVariable(p2, &tmpList);
+			        AppendCmdList(&tmpList, &var->var_CmdList);
+		            }
+			} else if (strnicmp(ptr, "DOALL=", 6) == 0) {
+			    DoAll = strtol(SkipAss(ptr), NULL, 0);
+			} else if (strnicmp(ptr, "CACHE=", 6) == 0) {
+			    CacheLevel = strtol(SkipAss(ptr), NULL, 0);
+			} else if (strnicmp(ptr, "SILENT=", 7) == 0) {
+			    QuietCmd = strtol(SkipAss(ptr), NULL, 0);
 			} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
 			    QuietOpt = strtol(SkipAss(ptr), NULL, 0);
 			} else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
@@ -507,56 +527,38 @@ int main(ULONG argc, char *argv[])
 			    if (!(console = PAlloc(strlen(cptr) + 1)))
 				MemErr();
 			    strcpy(console, cptr);
-			} else {
-			    char buf[64];
-
-		            sprintf(buf, "Bad ToolType: %s", ptr);
-			    switch(AutoRequest(NULL, ITextOf(buf), ITextOf("Ignore"), ITextOf("Abort"), 0, 0, 300, 40)) {
-		            case 1:
-			        break;
-		            case 0:
-			        abortIt = 1;
-			        break;
-		            }
-		        }
-		        if (abortIt)
-		            break;
+			}
 		    }
 		}
 	        FreeDiskObject(dob);
 	    }
 	    CurrentDir(saveLock);
-	    if (abortIt)
-	        break;
 	}
 
 	XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
 	XSaveLockValid = 1;
 	atexit(xmyexit);
 
-	if (abortIt == 0)
-	{
 #if OSVERMIN < 36 && OSVERMAX >= 36
-	    if (restart)
-	    {
+	if (restart)
+	{
 #endif
 #if OSVERMAX >= 36
-		if (makecli(wbs->sm_Message.mn_ReplyPort->mp_SigTask))
-		    procmsg();
+	    if (makecli(wbs->sm_Message.mn_ReplyPort->mp_SigTask))
+	        procmsg();
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
-	    }
-	    else
-	    {
+	}
+	else
+	{
 #endif
 #if OSVERMIN < 36
-		OpenConsole(console?console:"con:10/10/400/150/SDMake/CLOSE");
-		realmain();
+	    OpenConsole(console?console:"con:10/10/400/150/SDMake/CLOSE");
+	    realmain();
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
-	    }
-#endif
 	}
+#endif
     }
     else
     {
@@ -695,20 +697,3 @@ const char *SkipAss(const char *ptr)
     }
     return(ptr);
 }
-
-struct IntuiText *ITextOf(char *ptr)
-{
-    static struct IntuiText ITAry[8];
-    static short ITIdx;
-    struct IntuiText *it = ITAry + ITIdx;
-
-    ITIdx = (ITIdx + 1) & 7;
-    it->FrontPen = 1;
-    it->BackPen  = 0;
-    it->DrawMode = JAM2;
-    it->LeftEdge = 2;
-    it->TopEdge = 6;
-    it->IText = (unsigned char *)ptr;
-    return(it);
-}
-

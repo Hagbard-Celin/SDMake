@@ -28,6 +28,7 @@ Prototype short SomeWork;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
 Prototype struct Process *mycli;
+Prototype BPTR StdOut;
 
 /* run.c                */
 
@@ -73,9 +74,9 @@ Prototype char SpecialChar[256];
 /* var.c                */
 
 Prototype void InitVariable(void);
-Prototype Var *MakeVariable(char *, char);
-Prototype Var *FindVariable(char *, char);
-Prototype void AppendVariable(Var *, char *, long);
+Prototype Var *MakeVariable(CONST_STRPTR, char);
+Prototype Var *FindVariable(CONST_STRPTR, char);
+Prototype void AppendVariable(Var *, CONST_STRPTR, long);
 
 /* path.c               */
 

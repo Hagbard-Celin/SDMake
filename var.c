@@ -32,9 +32,9 @@
 #include <dos/dos.h>
 
 Prototype void InitVariable(void);
-Prototype Var *MakeVariable(char *, char);
-Prototype Var *FindVariable(char *, char);
-Prototype void AppendVariable(Var *, char *, long);
+Prototype Var *MakeVariable(CONST_STRPTR, char);
+Prototype Var *FindVariable(CONST_STRPTR, char);
+Prototype void AppendVariable(Var *, CONST_STRPTR, long);
 
 List VarList;
 
@@ -47,7 +47,7 @@ void InitVariable(void)
  *  create a variable, deleting any previous contents
  */
 
-Var *MakeVariable(char *name, char type)
+Var *MakeVariable(CONST_STRPTR name, char type)
 {
     Var *var;
 
@@ -70,7 +70,7 @@ Var *MakeVariable(char *name, char type)
     return(var);
 }
 
-Var *FindVariable(char *name, char type)
+Var *FindVariable(CONST_STRPTR name, char type)
 {
     Var *var;
 
@@ -140,7 +140,7 @@ Var *FindVariable(char *name, char type)
 }
 
 
-void AppendVariable(Var *var, char *buf, long len)
+void AppendVariable(Var *var, CONST_STRPTR buf, long len)
 {
     while (len--)
 	PutCmdListChar(&var->var_CmdList, *buf++);
