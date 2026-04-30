@@ -681,7 +681,7 @@ void help(int code)
 {
     puts("SDMake V0.1 © 1991-2003 Matthew Dillon, © 2026 Hagbard Celine");
     puts("Distributed with WITHOUT ANY WARRANTY, under terms of GNU General Public License version 2");
-    puts("SDMmake [-f file] [-n] [-Dvariable] [-d] [-a] [-q] [-h]");
+    puts("SDMmake [-f file] [-n] [-Dvariable] [-d] [-a] [-c] [-s] [-S] [-q] [-h]");
     exit(code);
 }
 
