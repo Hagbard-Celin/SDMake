@@ -101,7 +101,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    PrintF("\n");
 	    }
 
-	    return 0;
+	    return CMD_OK;
 	} else
 	if (cmdlen == 4 && strnicmp(cmd, "else", 4) == 0) {
 	    LONG isif = *cmdIfTrue;
@@ -116,14 +116,14 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    PrintF("\n");
 	    }
 
-	    return 0;
+	    return CMD_OK;
 	} else
 	if (cmdlen == 2)
 	{
 	    if (strnicmp(cmd, "if", 2) == 0)
 	    {
 	        char *t;
-	        short err = 0;
+	        short err = CMD_OK;
 		WORD notfound = 1;
 
 	        while (*ptr == ' ' || *ptr == '\t')
@@ -275,7 +275,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    if (notfound)
 		    {
 			PrintF("Internal command if: Wrong number of arguments\n");
-			err = 20;
+			err = CMD_FAIL;
 		    }
 	        }
 
@@ -284,11 +284,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    if (!(*cmdIfTrue)) {
 		if (quiet == 0)
 		    PrintF(" (Skipped by if-condition)\n");
-		return 0;
+		return CMD_OK;
 	    } else
 	    if (strnicmp(cmd, "cd", 2) == 0) {
 	        long lock;
-	        short err = 0;
+	        short err = CMD_OK;
 
 	        while (*ptr == ' ' || *ptr == '\t')
 	            ++ptr;
@@ -306,19 +306,19 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            UnLock(CurrentDir(lock));
 	        else {
 	            PrintF("Unable to cd %s\n", ptr);
-	            err = 20;
+	            err = CMD_FAIL;
 	        }
-	        return((ignore) ? 0 : err);
+	        return((ignore) ?  CMD_IGNORED : err);
 	    }
 	} else
 	if (!(*cmdIfTrue)) {
 	    if (quiet == 0)
 		PrintF(" (Skipped by if-condition)\n");
-	    return 0;
+	    return CMD_OK;
 	} else
 	if (cmdlen == 7 && strnicmp(cmd, "makedir", 7) == 0) {
 	    long lock;
-	    short err = 0;
+	    short err = CMD_OK;
 
 	    while (*ptr == ' ' || *ptr == '\t')
 	        ++ptr;
@@ -326,9 +326,9 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        UnLock(lock);
 	    else {
 	        PrintF("Unable to makedir %s\n", ptr);
-	        err = 20;
+	        err = CMD_FAIL;
 	    }
-	    return((ignore) ? 0 : err);
+	    return((ignore) ?  CMD_IGNORED : err);
 	} else
 	if (cmdlen == 6) {
 	    LONG mode;
@@ -370,14 +370,32 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            t[len] = '\0';
 
 	            Close(fh);
-	            err = 0;
+	            err = CMD_OK;
 	        }
 	        else
 	        {
 	            PrintF("Unable to write %s\n", ptr);
-	            err = 20;
+	            err = CMD_FAIL;
 	        }
-		return((ignore) ? 0 : err);
+		return((ignore) ?  CMD_IGNORED : err);
+	    } else
+	    if (strnicmp(cmd, "failat", 6) == 0)
+	    {
+		LONG failat;
+		short err = CMD_OK;
+
+	        while (*ptr == ' ' || *ptr == '\t')
+	            ++ptr;
+
+		if (stcd_l(ptr, &failat))
+		    Failat = failat;
+		else
+		{
+		    err = CMD_FAIL;
+		    PrintF("Missing or invalid argument for failat\n", ptr);
+		}
+
+		return((ignore) ?  CMD_IGNORED : err);
 	    }
 	}
     }
@@ -486,14 +504,21 @@ dosys:
 
 	PFreeVec(cmdArgs);
 
-	if (err)
 	{
-	    PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
+	    LONG ret = CMD_OK;
 
-	    if (ignore)
-		return(-42);
+	    if (err)
+	    {
+	        PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
+
+	        if (ignore)
+		    ret = CMD_IGNORED;
+		else
+		if (err > Failat)
+		    ret = CMD_FAIL;
+	    }
+	    return(ret);
 	}
-	return(err);
     }
 }
 

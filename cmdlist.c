@@ -81,10 +81,12 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
+Prototype LONG Failat;
 
 static long CmdListSizeCommand(List *list);
 static WORD ChkCtrlD(void);
 
+LONG Failat;
 List CmdFreeList;
 __aligned char CmdTmp1[256];
 __aligned char CmdTmp2[256];
@@ -385,7 +387,6 @@ long ExecuteCmdList(DepNode *dep, List *list)
     List tmpSrc;
     List tmpDst;
     short c;
-    short withfail = 0;
     long r = 0;
     IfNode *cmdIfBase = NULL;
     LONG cmdIfTrue = 1;
@@ -393,6 +394,8 @@ long ExecuteCmdList(DepNode *dep, List *list)
     NewList(&tmpSrc);
     NewList(&tmpDst);
     CopyCmdList(list, &tmpSrc);
+
+    Failat = RETURN_WARN;
 
     while ((c = PopCmdListChar(&tmpSrc)) != EOF) {
 	if (c == '$' || c == '%') {
@@ -437,7 +440,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
     {
 	long n;
 
-	while (!ChkCtrlD() && r <= EXIT_CONTINUE && (n = CmdListSizeCommand(&tmpDst))) {
+	while (!ChkCtrlD() && r <= CMD_OK && (n = CmdListSizeCommand(&tmpDst))) {
 	    short allocated;
 	    short quiet = 0;
 	    short ignore= 0;
@@ -485,15 +488,6 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		if (NoRunOpt == 0 && cmd[0] != '#') {
 		    r = Execute_Command(cmd, ignore, quiet, &cmdIfBase, &cmdIfTrue);
 		    SomeWork = 1;
-		    if (r == -42)
-		    {
-			withfail = 1;
-			r = 0;
-		    }
-		    if (r < 0)
-			r = 20;
-		    if (ExitCode < r)
-			ExitCode = r;
 		}
 		else
 		{
@@ -512,8 +506,6 @@ long ExecuteCmdList(DepNode *dep, List *list)
 
     }
 
-    if (withfail)
-	return (-1);
     return(r);
 }
 

@@ -466,7 +466,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	     * will want to return that it has changed.
 	     */
 	    if (parStRes < 0 && r > DN_CHANGED &&
-		(parent == NULL || (parent->dn_Flags & DNF_VIRTUAL) == 0)
+		(parent && (parent->dn_Flags & DNF_VIRTUAL) == 0)
 	    ) {
 		yr = DN_CHANGED;
 	    }
@@ -540,12 +540,13 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		        PutCmdListSym(&var->var_CmdList, rhsRef->rn_Node.ln_Name, &space);
 		    }
 	        }
-	        if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > EXIT_CONTINUE)
+
+		if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > CMD_OK)
 		    xr = DN_FAILED;
 
 		if (!CacheLevel)
 		{
-		    if (cmdret == -1)
+		    if (cmdret == CMD_IGNORED)
 		    {
 		        lhsDep->dn_Ignored++;
 		        depCmdList->dc_Flags |= DCF_IGNORED_FAIL;
@@ -631,7 +632,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      * dependancy, mark the parent as having changed.
      */
     yr = lhsDep->dn_Result;
-    if (parStRes < 0 &&
+    if (parStRes < 0 && parent &&
 	lhsDep->dn_Result > DN_FAILED &&
 	(lhsDep->dn_Flags & DNF_VIRTUAL) == 0
     ) {

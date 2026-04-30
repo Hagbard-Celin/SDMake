@@ -152,18 +152,18 @@ void myexit(void)
 	PrintF("SDMAKE: ***Break\n");
     else
     {
-	if (ExitCode < 20)
+	if (ExitCode < RETURN_FAIL)
 	{
+	    if (CheckTarget && QuietOpt < 2)
+	    {
+	        if (SomeWork)
+		    PrintF("0\n");
+	        else
+		    PrintF("1\n");
+	    }
+	    else
 	    if (QuietOpt == 0)
 	    {
-	        if (CheckTarget)
-	        {
-	            if (SomeWork)
-		        PrintF("0\n");
-	            else
-		        PrintF("1\n");
-	        }
-	        else
 	        {
 	            if (SomeWork)
 	                PrintF("SDMAKE Done.\n");
@@ -323,7 +323,7 @@ BOOL makecli(struct Process *sproc)
 
 LONG realmain(void)
 {
-    int r = 0;
+    int r;
 
     /*
      *	add built-inn variables
@@ -417,8 +417,9 @@ LONG realmain(void)
 		break;
 	    }
 
-	    if ((r = ExecuteDependency(NULL, node)) < 0)
+	    if ((r = ExecuteDependency(NULL, node)) < DN_CHANGED)
 	    {
+		ExitCode = RETURN_ERROR;
 		if (OnError)
 		{
 		    node = CreateDepRef(NULL, OnError);
@@ -426,13 +427,15 @@ LONG realmain(void)
 		}
 		break;
 	    }
+	    else
+	    if (CheckTarget)
+	    {
+		if (r < DN_NOCHANGE)
+		    ExitCode = RETURN_WARN;
+	    }
 	}
     }
 
-    if (r < 0 && ExitCode < 20)
-	ExitCode = 20;
-    if (Break || CheckTarget && !SomeWork)
-	ExitCode = 5;
     return(ExitCode);
 }
 
@@ -578,6 +581,7 @@ int main(ULONG argc, char *argv[])
 	    case 'q':
 		CheckTarget = 1;
 		QuietCmd = 1;
+		QuietOpt += 1;
 	    case 'n':
 		NoRunOpt = 1;
 	        break;
@@ -606,7 +610,7 @@ int main(ULONG argc, char *argv[])
 	        DoAll = 1;
 		break;
 	    case 'S':
-	        QuietOpt = 1;
+		QuietOpt += 1;
 	        break;
 	    case 'h':
 	    default:
@@ -645,13 +649,13 @@ void MemErr(void)
 {
     PrintF("Fatal error: memory allocation failed");
 
-    ExitCode = 20;
+    ExitCode = RETURN_FAIL;
 #if OSVERMAX >= 36
     if (mycli == (struct Process *)FindTask(NULL))
-	Exit(20);
+	Exit(RETURN_FAIL);
     else
 #endif
-	exit(20);
+	exit(RETURN_FAIL);
 }
 
 static void InitStuff(void)

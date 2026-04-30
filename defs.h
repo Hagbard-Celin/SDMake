@@ -87,7 +87,10 @@ typedef struct List List;
 typedef unsigned char ubyte;
 typedef unsigned short uword;
 
-#define EXIT_CONTINUE	5
+
+#define CMD_IGNORED -1
+#define CMD_OK       0
+#define CMD_FAIL     1
 
 #define Prototype extern
 
