@@ -62,7 +62,7 @@
 
 Prototype int system13(const char *buf);
 
-Prototype WORD	  Break;
+extern WORD    Break;
 
 typedef struct DosPacket    DosPacket;
 typedef struct FileHandle   FileHandle;
