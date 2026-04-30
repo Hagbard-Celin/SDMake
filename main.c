@@ -576,15 +576,12 @@ int main(ULONG argc, char *argv[])
 	    }
 	    ptr += 2;
 	    switch(ptr[-1]) {
-	    case 'F':   /*  fast opt    */
-	        break;
 	    case 'f':
 	        XFileName = (*ptr) ? ptr : argv[++i];
 	        break;
-	    case 'Q':
-	        CheckTarget = 1;
 	    case 'q':
-	        QuietCmd = 1;
+	        CheckTarget = 1;
+		QuietCmd = 1;
 	    case 'n':
 	        NoRunOpt = 1;
 	        break;
@@ -608,8 +605,10 @@ int main(ULONG argc, char *argv[])
 	        break;
 	    case 's':
 	        QuietCmd = 1;
+		break;
 	    case 'a':
 	        DoAll = 1;
+		break;
 	    case 'S':
 	        QuietOpt = 1;
 	        break;
