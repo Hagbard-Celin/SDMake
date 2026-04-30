@@ -1296,10 +1296,17 @@ void error(short type, CONST_STRPTR ctl, ...)
     va_list va;
 
     PrintF("%s: %s Line %ld: ", FileName, TypeString[type], LineNo);
-    va_start(va, ctl);
-    vprintf(ctl, va);
-    va_end(va);
-    puts("");
+    if (StdOut)
+    {
+	VFPrintf(StdOut, ctl, (LONG *)(&ctl + 1));
+    }
+    else
+    {
+	va_start(va, ctl);
+	vprintf(ctl, va);
+	va_end(va);
+    }
+    PrintF("\n");
     if (ExitAry[type])
     {
 #if OSVERMAX >= 36
