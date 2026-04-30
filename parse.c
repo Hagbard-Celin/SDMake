@@ -360,6 +360,32 @@ void ParseFile(STRPTR fileName)
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
+		} else if (SymBufLen == 5 && strcmp(SymBuf, ".ifos") == 0) {
+		    if (ifTrue) {
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifos!");
+			if (stricmp(SymBuf, "AmigaOS") == 0) {
+			    ifTrue = pushIf(&ifBase, 1);
+			} else {
+			    ifTrue = pushIf(&ifBase, 0);
+			}
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
+		} else if (SymBufLen == 7 && strcmp(SymBuf, ".ifarch") == 0) {
+		    if (ifTrue) {
+			t = GetElement(ifTrue, &expansion);
+			if (t != TokSym)
+			    error(FATAL, "Expected a symbol for .ifarch!");
+			if (stricmp(SymBuf, "m68k") == 0) {
+			    ifTrue = pushIf(&ifBase, 1);
+			} else {
+			    ifTrue = pushIf(&ifBase, 0);
+			}
+		    } else {
+			ifTrue = pushIf(&ifBase, 0);
+		    }
 		} else if (SymBufLen == 7 && strcmp(SymBuf, ".iffile") == 0) {
 		    if (ifTrue) {
 			BPTR tmplock;
