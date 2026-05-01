@@ -402,6 +402,28 @@ LONG realmain(void)
     {
 	DepRef *node;
 
+	if (!FileSpecified)
+	{
+	    BPTR lock;
+	    WORD i;
+
+	    for (i = 0; !(lock = Lock(XFileName, ACCESS_READ)); i++)
+	    {
+		if (i < 2)
+		    XFileName++;
+		else
+		    break;
+	    }
+
+	    if (lock)
+		UnLock(lock);
+	    else
+	    {
+		error(FATAL, "Unable to to open (SDM|DM|M)akefile");
+
+	    }
+	}
+
 	ParseFile(XFileName);
 
 	if (GetHead(&DoList) == NULL) {
@@ -579,6 +601,7 @@ int main(ULONG argc, char *argv[])
 	    switch(ptr[-1]) {
 	    case 'f':
 	        XFileName = (*ptr) ? ptr : argv[++i];
+		FileSpecified = 1;
 	        break;
 	    case 'q':
 		CheckTarget = 1;
