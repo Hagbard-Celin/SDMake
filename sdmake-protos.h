@@ -50,7 +50,7 @@ Prototype void CopyCmdListBuf(List *, char *);
 Prototype long CmdListSize(List *);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
-Prototype ULONG Failat;
+Prototype LONG Failat;
 
 /* depend.c             */
 
