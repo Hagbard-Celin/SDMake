@@ -1309,6 +1309,7 @@ void error(short type, CONST_STRPTR ctl, ...)
     PrintF("\n");
     if (ExitAry[type])
     {
+	ExitCode = RETURN_FAIL;
 #if OSVERMAX >= 36
 	if (mycli == (struct Process *)FindTask(NULL))
 	    Exit(20);
