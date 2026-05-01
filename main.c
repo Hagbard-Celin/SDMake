@@ -532,7 +532,7 @@ int main(ULONG argc, char *argv[])
 			    strcpy(XFileName, xptr);
 			    FileSpecified = 1;
 			} else if (strnicmp(ptr, "DRYRUN=", 7) == 0) {
-			    NoRunOpt = strtol(SkipAss(ptr), NULL, 0);
+			    NoRunOpt = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "TARGET=", 7) == 0) {
 			    CreateDepRef(&DoList, SkipAss(ptr));
 			} else if (strnicmp(ptr, "DEFINE=", 7) == 0) {
@@ -547,15 +547,15 @@ int main(ULONG argc, char *argv[])
 			        AppendCmdList(&tmpList, &var->var_CmdList);
 		            }
 			} else if (strnicmp(ptr, "DOALL=", 6) == 0) {
-			    DoAll = strtol(SkipAss(ptr), NULL, 0);
+			    DoAll = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "CACHE=", 6) == 0) {
-			    CacheLevel = strtol(SkipAss(ptr), NULL, 0);
+			    CacheLevel = atol(SkipAss(ptr)) - 1;
 			} else if (strnicmp(ptr, "SILENT=", 7) == 0) {
-			    QuietCmd = strtol(SkipAss(ptr), NULL, 0);
+			    QuietCmd = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
-			    QuietOpt = strtol(SkipAss(ptr), NULL, 0);
+			    QuietOpt = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "DEBUG=", 6) == 0) {
-			    DDebug = strtol(SkipAss(ptr), NULL, 0);
+			    DDebug = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "CONSOLE=", 8) == 0) {
 			    const char *cptr = SkipAss(ptr);
 			    if (!(console = PAlloc(strlen(cptr) + 1)))
