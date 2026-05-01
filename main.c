@@ -332,6 +332,7 @@ LONG realmain(void)
 
     MakeVariable("TOPDIR", '$');
 
+    if (!FindVariable("HOST_OSVER", '$'))
     {
 	Var *var;
 	TEXT osver[5];
@@ -342,59 +343,70 @@ LONG realmain(void)
 	AppendVariable(var, osver, strlen(osver));
     }
 
-#if OSVERMIN < 36 && OSVERMAX >= 36
-    if (DOSBase->dl_lib.lib_Version >= 36)
     {
+	Var *datevar = FindVariable("BUILDDATE", '$');
+	Var *timevar = FindVariable("BUILDTIME", '$');
+
+	if (!datevar || !timevar)
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	if (DOSBase->dl_lib.lib_Version >= 36)
 #endif
-#if OSVERMAX >= 36
-	struct DateTime buildtime;
-	TEXT date[LEN_DATSTRING], time[LEN_DATSTRING];
-
-	buildtime.dat_Format = FORMAT_CDN;
-	buildtime.dat_Flags = 0;
-	buildtime.dat_StrDay = 0;
-	buildtime.dat_StrDate = date;
-	buildtime.dat_StrTime = time;
-
-	DateStamp(&buildtime.dat_Stamp);
-	DateToStr(&buildtime);
 	{
-	    Var *var;
+#if OSVERMAX >= 36
+	    struct DateTime buildtime;
+	    TEXT date[LEN_DATSTRING], time[LEN_DATSTRING];
 
-	    var = MakeVariable("BUILDDATE", '$');
-	    AppendVariable(var, date, strlen(date));
-	    var = MakeVariable("BUILDTIME", '$');
-	    AppendVariable(var, time, strlen(time));
-	}
+	    buildtime.dat_Format = FORMAT_CDN;
+	    buildtime.dat_Flags = 0;
+	    buildtime.dat_StrDay = 0;
+	    buildtime.dat_StrDate = date;
+	    buildtime.dat_StrTime = time;
+
+	    DateStamp(&buildtime.dat_Stamp);
+	    DateToStr(&buildtime);
+	    {
+		if (!datevar)
+		{
+		    datevar = MakeVariable("BUILDDATE", '$');
+		    AppendVariable(datevar, date, strlen(date));
+		}
+		if (!timevar)
+		{
+		    timevar = MakeVariable("BUILDTIME", '$');
+		    AppendVariable(timevar, time, strlen(time));
+		}
+	    }
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
-    }
-    else
-    {
+	}
+	else
+	{
 #endif
 #if OSVERMIN < 36
-	time_t buildt;
-	struct tm *buildtime;
-	TEXT datestr[9], timestr[9];
+	    time_t buildt;
+	    struct tm *buildtime;
+	    TEXT datestr[9], timestr[9];
 
-	time(&buildt);
-	buildtime = localtime(&buildt);
-	strftime(datestr, sizeof(datestr), "%d-%m-%y", buildtime);
-	strftime(timestr, sizeof(timestr), "%H:%M:%S", buildtime);
+	    time(&buildt);
+	    buildtime = localtime(&buildt);
+	    strftime(datestr, sizeof(datestr), "%d-%m-%y", buildtime);
+	    strftime(timestr, sizeof(timestr), "%H:%M:%S", buildtime);
 
-	{
-	    Var *var;
-
-	    var = MakeVariable("BUILDDATE", '$');
-	    AppendVariable(var, datestr, strlen(datestr));
-	    var = MakeVariable("BUILDTIME", '$');
-	    AppendVariable(var, timestr, strlen(timestr));
+	    {
+		if (!datevar)
+		{
+		    datevar = MakeVariable("BUILDDATE", '$');
+		    AppendVariable(datevar, datestr, strlen(datestr));
+		}
+		if (!timevar)
+		{
+		    timevar = MakeVariable("BUILDTIME", '$');
+		    AppendVariable(timevar, timestr, strlen(timestr));
+		}
+	    }
+#endif
 	}
-#endif
-#if OSVERMIN < 36 && OSVERMAX >= 36
     }
-#endif
-
     /*
      *	resolve dependancies requested by the user.  If none requested
      *	the resolve the first one
