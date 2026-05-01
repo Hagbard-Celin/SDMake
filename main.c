@@ -511,9 +511,18 @@ int main(ULONG argc, char *argv[])
 
 	    if (i == wbs->sm_NumArgs - 1 && FileSpecified == 0)
 	    {
-	        if (!(XFileName = PAlloc(strlen(wbs->sm_ArgList[i].wa_Name) + 1)))
-		    MemErr();
-	        strcpy(XFileName, wbs->sm_ArgList[i].wa_Name);
+		BPTR testlock;
+
+		if (testlock = Lock(wbs->sm_ArgList[i].wa_Name,ACCESS_READ))
+		{
+		    UnLock(testlock);
+
+	            if (!(XFileName = PAlloc(strlen(wbs->sm_ArgList[i].wa_Name) + 1)))
+		        MemErr();
+
+	            strcpy(XFileName, wbs->sm_ArgList[i].wa_Name);
+		    FileSpecified = 1;
+		}
 	    }
 	    if (dob = GetDiskObject(wbs->sm_ArgList[i].wa_Name)) {
 	        if (dob->do_ToolTypes)
