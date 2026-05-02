@@ -441,6 +441,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 
     {
 	long n;
+	LONG lastret = 0;
 
 	while (!ChkCtrlD() && r <= CMD_OK && (n = CmdListSizeCommand(&tmpDst))) {
 	    short allocated;
@@ -488,7 +489,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		}
 
 		if (NoRunOpt == 0 && cmd[0] != '#') {
-		    r = Execute_Command(cmd, ignore, quiet, &cmdIfBase, &cmdIfTrue);
+		    r = Execute_Command(cmd, ignore, quiet, &cmdIfBase, &cmdIfTrue, &lastret);
 		    SomeWork = 1;
 		}
 		else

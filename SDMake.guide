@@ -696,7 +696,7 @@
 
       if arguments
 
-         The if command arguments has five forms:
+         The if command arguments has multiple forms:
 
             if defined variable
 
@@ -718,6 +718,18 @@
 
                 If string1 is a sub-string of string2
                 (string2 can consist of multiple symbols)
+
+            if warn
+
+                If return code from previous AmigaDOS command was >= 5
+
+            if error
+
+                If return code from previous AmigaDOS command was >= 10
+
+            if fail
+
+                If return code from previous AmigaDOS command was >= 20
 
 
       else

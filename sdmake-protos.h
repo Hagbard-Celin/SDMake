@@ -33,7 +33,7 @@ Prototype BPTR StdOut;
 
 /* run.c                */
 
-Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
+Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret);
 Prototype void InitCommand(void);
 
 /* cmdlist.c            */

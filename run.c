@@ -36,7 +36,7 @@
 typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
-Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue);
+Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret);
 Prototype void InitCommand(void);
 
 static BPTR LoadSegLock(BPTR lock, char *cmd);
@@ -71,7 +71,7 @@ void InitCommand()
  *  cmd[-1] is valid space and, in fact, must be long word aligned!
  */
 
-long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue)
+long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret)
 {
     register char *ptr;
 
@@ -201,6 +201,37 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    }
 			}
 		    }
+		    else
+		    if (arglen == 4 || arglen == 5)
+		    {
+			LONG val;
+
+			if (((strnicmp(ptr, "WARN", 4) == 0) && (val = RETURN_WARN)) ||
+			    ((strnicmp(ptr, "ERROR", 5) == 0) && (val = RETURN_ERROR)) ||
+			    ((strnicmp(ptr, "FAIL", 2) == 0) && (val = RETURN_FAIL)))
+			{
+			    if (*cmdIfTrue)
+			    {
+				notfound = 0;
+
+				if (*lastret >= val)
+				{
+				        *cmdIfTrue = pushIf(cmdIfBase, 1);
+			            }
+			            else
+			            {
+				        *cmdIfTrue = pushIf(cmdIfBase, 0);
+				}
+			    }
+			    else
+			    {
+				*cmdIfTrue = pushIf(cmdIfBase, 0);
+				if (quiet == 0)
+				    PrintF(" (Skipped by if-condition)\n");
+			    }
+			}
+		    }
+		    else
 		    if (arglen == 6)
 		    {
 			if (strnicmp(ptr, "exists", 6) == 0)
@@ -238,6 +269,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    }
 			}
 		    }
+		    else
 		    if (arglen == 7)
 		    {
 			if (strnicmp(ptr, "defined", 7) == 0)
@@ -521,6 +553,9 @@ dosys:
 		if (err >= Failat)
 		    ret = CMD_ERROR;
 	    }
+
+	    *lastret = err;
+
 	    return(ret);
 	}
     }
