@@ -217,7 +217,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 
 		if (!parent->dn_Info)
 	        {
-		    PrintF("Error: malloc() failure\n");
+		    PrintF("Error: memory allocation failure\n");
 		    return(DN_FAIL);
 	        }
 	    }
@@ -271,7 +271,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 
 		if (!lhsDep->dn_Info)
 	        {
-		    PrintF("Error: malloc() failure\n");
+		    PrintF("Error: memory allocation failure\n");
 		    return(DN_FAIL);
 	        }
 	    }
