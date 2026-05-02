@@ -509,7 +509,8 @@ dosys:
 
 	    if (err)
 	    {
-	        PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
+		if (!QuietCmd && (!QuietOpt || err >= Failat))
+		    PrintF("%s: Exit code %ld %s\n", cmd, err, (ignore) ? "(Ignored)":"");
 
 		if (err == -1)
 		    ret = CMD_FAIL;
@@ -517,7 +518,7 @@ dosys:
 	        if (ignore)
 		    ret = CMD_IGNORED;
 		else
-		if (err > Failat)
+		if (err >= Failat)
 		    ret = CMD_ERROR;
 	    }
 	    return(ret);

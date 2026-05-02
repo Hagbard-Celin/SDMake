@@ -646,7 +646,7 @@ int main(ULONG argc, char *argv[])
 		FileSpecified = 1;
 	        break;
 	    case 'F':
-		DefFailat = (*ptr) ? atoi(ptr) : RETURN_WARN;
+		DefFailat = (*ptr) ? atoi(ptr) : RETURN_WARN + 1;
 	        break;
 	    case 'q':
 		CheckTarget = 1;

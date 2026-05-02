@@ -80,7 +80,7 @@
     -F[N]
 
         Set the default failat level for command lists. If no number
-        is specified, a level of 5 is used.
+        is specified, a level of 6 is used.
 
     -i
 
@@ -168,7 +168,7 @@
     FAILAT
 
         Set the default failat level for command lists. If this tool
-        type is not present the default level of 5 is used.
+        type is not present the default level of 6 is used.
 
     IGNORE
 

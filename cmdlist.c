@@ -88,7 +88,7 @@ static long CmdListSizeCommand(List *list);
 static WORD ChkCtrlD(void);
 
 LONG Failat;
-LONG DefFailat = RETURN_WARN;
+LONG DefFailat = RETURN_WARN + 1;
 List CmdFreeList;
 __aligned char CmdTmp1[256];
 __aligned char CmdTmp2[256];
