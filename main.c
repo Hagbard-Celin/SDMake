@@ -492,9 +492,7 @@ int main(ULONG argc, char *argv[])
 	struct DiskObject *dob;
 	short i;
 	short j;
-#if OSVERMAX >= 36
 	WORD restart;
-#endif
 
 #if OSVERMIN < 36 && OSVERMAX >= 36
 	if (DOSBase->dl_lib.lib_Version >= 36)

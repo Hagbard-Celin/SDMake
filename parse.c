@@ -225,9 +225,9 @@ void ParseFile(STRPTR fileName)
 #if OSVERMIN < 36 && OSVERMAX >= 36
 			    }
 			    else
-			    {
 #endif
 #if OSVERMIN < 36
+			    {
 				BPTR dir, file, old;
 				if (dir = Lock("ENV:", SHARED_LOCK))
 				{
@@ -239,10 +239,9 @@ void ParseFile(STRPTR fileName)
 				    }
 				    UnLock(CurrentDir(old));
 				}
-#endif
-#if OSVERMIN < 36 && OSVERMAX >= 36
 			    }
 #endif
+
 			    PFree(data, maxl);
 			}
 		    }
