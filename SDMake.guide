@@ -76,6 +76,7 @@
 
         Set the debug level. If no number is specified, a debug level
         of 1 is used.
+        (This only works if compiled with "define=USE_DEBUG=1")
 
     -F[N]
 
@@ -203,6 +204,7 @@
     DEBUG
 
        Set the debug level.
+       (This only works if compiled with "define=USE_DEBUG=1")
 
     CONSOLE
 
