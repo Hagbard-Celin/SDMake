@@ -146,7 +146,7 @@
 
     DRYRUN
 
-        If set to any value > 1, do a dry run, do no run any commands.
+        If set to any value > 0, do a dry run, do no run any commands.
 
     TARGET
 
@@ -167,7 +167,7 @@
 
     DOALL
 
-        If set to any value > 1, force all dependencies to be run as
+        If set to any value > 0, force all dependencies to be run as
         if they were out of date
 
     CACHE
@@ -182,12 +182,12 @@
 
     SILENT
 
-        If set to any value > 1, do not echo command to the screen
+        If set to any value > 0, do not echo command to the screen
         before executing them.
 
     QUIET
 
-        If set to any value > 1, generate less verbose output.
+        If set to any value > 0, generate less verbose output.
 
     DEBUG
 
