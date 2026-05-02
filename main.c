@@ -421,7 +421,10 @@ LONG realmain(void)
 
 	    for (i = 0; !(lock = Lock(XFileName, ACCESS_READ)); i++)
 	    {
-		if (i < 2)
+		if (i == 1)
+		    *XFileName = 'S';
+		else
+		if (i < 3)
 		    XFileName++;
 		else
 		    break;
@@ -431,7 +434,7 @@ LONG realmain(void)
 		UnLock(lock);
 	    else
 	    {
-		error(FATAL, "Unable to to open (SDM|DM|M)akefile");
+		error(FATAL, "Unable to to open (SDM|DM|SM|M)akefile");
 
 	    }
 	}

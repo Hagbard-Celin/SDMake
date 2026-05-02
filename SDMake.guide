@@ -61,8 +61,8 @@
 
         Selects the SDMakefile to open.
         If this argument is not supplied SDMake will try to open
-        SDMakefile. If that fail it will try DMakefile and Makefile
-        in that order.
+        SDMakefile. If that fail it will try DMakefile, SMakefile and
+        Makefile in that order.
 
     -n
 
@@ -141,7 +141,7 @@
         If this argument is not supplied, SDMake first tries to
         open the file associated with the icon that was double-clicked.
         If the icon has no associated file, it falls back to trying
-        SDMakefile, DMakefile, and Makefile, in that order, in the
+        SDMakefile, DMakefile, SMakefile, and Makefile, in that order, in the
         directory of the double-clicked icon.
 
     DRYRUN
