@@ -54,8 +54,8 @@
 
   When starting from shell the following options are supported:
 
-    SDMake [-f file] [-n] [-D symbol[=data]] [-d[N]] [-a] [-q] [-h] [-c[N]]
-            [-s] [-S] [targets...]
+    SDMake [-f file] [-n] [-D variable[=value]] [-d[N]] [-F[N]] [-a] [-c[N]]
+            [-q] [-s] [-S] [-h] [targets...]
 
     -f file
 
@@ -76,6 +76,11 @@
 
         Set the debug level. If no number is specified, a debug level
         of 1 is used.
+
+    -F[N]
+
+        Set the default failat level for command lists. If no number
+        is specified, a level of 5 is used.
 
     -a
 
@@ -154,6 +159,11 @@
 
         Define a variable, and optionally set it to value.
         Can appear multiple times, to define multiple variables.
+
+    FAILAT
+
+        Set the default failat level for command lists. If this tool
+        type is not present the default level of 5 is used.
 
     DOALL
 
@@ -1071,6 +1081,3 @@
 
 @endnode
 
-@node INDEX "Index"
-Insert index here
-@endnode

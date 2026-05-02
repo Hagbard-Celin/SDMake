@@ -563,6 +563,8 @@ int main(ULONG argc, char *argv[])
 			    DoAll = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "CACHE=", 6) == 0) {
 			    CacheLevel = atol(SkipAss(ptr)) - 1;
+			} else if (strnicmp(ptr, "FAILAT=", 7) == 0) {
+			    DefFailat = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "SILENT=", 7) == 0) {
 			    QuietCmd = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
@@ -627,6 +629,9 @@ int main(ULONG argc, char *argv[])
 	    case 'f':
 	        XFileName = (*ptr) ? ptr : argv[++i];
 		FileSpecified = 1;
+	        break;
+	    case 'F':
+		DefFailat = (*ptr) ? atoi(ptr) : RETURN_WARN;
 	        break;
 	    case 'q':
 		CheckTarget = 1;
@@ -731,7 +736,7 @@ void help(int code)
 {
     puts("SDMake V0.1 © 1991-2003 Matthew Dillon, © 2026 Hagbard Celine");
     puts("Distributed WITHOUT ANY WARRANTY, under terms of GNU General Public License version 2");
-    puts("SDMmake [-f file] [-n] [-Dvariable] [-d] [-a] [-c] [-s] [-S] [-q] [-h]");
+    puts("SDMmake [-f file] [-n] [-Dvariable[=value]] [-d[N]] [-F[N]] [-a] [-c] [-s] [-S] [-q] [-h] [targets...]");
     exit(code);
 }
 

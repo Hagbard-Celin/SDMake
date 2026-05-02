@@ -82,11 +82,13 @@ Prototype long CmdListSize(List *);
 Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 Prototype LONG Failat;
+Prototype LONG DefFailat;
 
 static long CmdListSizeCommand(List *list);
 static WORD ChkCtrlD(void);
 
 LONG Failat;
+LONG DefFailat = RETURN_WARN;
 List CmdFreeList;
 __aligned char CmdTmp1[256];
 __aligned char CmdTmp2[256];
@@ -395,7 +397,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
     NewList(&tmpDst);
     CopyCmdList(list, &tmpSrc);
 
-    Failat = RETURN_WARN;
+    Failat = DefFailat;
 
     while ((c = PopCmdListChar(&tmpSrc)) != EOF) {
 	if (c == '$' || c == '%') {
