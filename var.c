@@ -80,14 +80,17 @@ Var *FindVariable(CONST_STRPTR name, char type)
     }
 
     /*
-     *	check for local & env variable(s).  local variables under 2.04
+     *	check for local & env variable(s).  local variables under v36
      *	or later only.
      */
 
     if (var == NULL || var->var_Node.ln_Type == '0')
     {
-	if (Running2_04())
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	if (DOSBase->dl_lib.lib_Version >= 36)
 	{
+#endif
+#if OSVERMAX >= 36
 	    char *ptr;
 	    long len;
 
@@ -103,9 +106,13 @@ Var *FindVariable(CONST_STRPTR name, char type)
 		}
 		PFree(ptr, len + 1);
 	    }
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
 	}
 	else
 	{
+#endif
+#if OSVERMIN < 36
 	    BPTR lock, old, fh;
 	    long size;
 
@@ -134,7 +141,10 @@ Var *FindVariable(CONST_STRPTR name, char type)
 
 		UnLock(CurrentDir(old));
 	    }
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
 	}
+#endif
     }
     return(var);
 }

@@ -467,7 +467,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	 *  MUST use system13() in that case.
 	 */
 
-	if (SysBase->LibNode.lib_Version >= 36 && proc->pr_CLI) {
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	if (SysBase->LibNode.lib_Version >= 36 && proc->pr_CLI)
+#endif
+#if OSVERMAX >= 36
+	{
 	    struct Segment *seg;
 	    BPTR seglist, lock = 0;
 	    long stack;
@@ -527,12 +531,20 @@ dosys:
 
 	    if (lock)
 		UnLock(lock);
-	} else
+	}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+	else
 	{
+#endif
+#if OSVERMIN < 36
 	    dbprintf(("E\n"));
 	    cmd[i] = c;
 	    err = system13(cmd);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
 	}
+#endif
 
 	PFreeVec(cmdArgs);
 

@@ -740,6 +740,18 @@ static void InitStuff(void)
 	    MemErr();
 	atexit(myexit);
 	UtilityBase = OpenLibrary("utility.library", 37);
+#if OSVERMIN >= 37
+	if (!UtilityBase)
+	{
+	    PrintF("Fatal error: opening utility.library failed");
+
+	    ExitCode = RETURN_FAIL;
+	    if (mycli == (struct Process *)FindTask(NULL))
+		Exit(RETURN_FAIL);
+	    else
+		exit(RETURN_FAIL);
+	}
+#endif
 	NewList(&DoList);
 	InitCommand();
 	InitCmdList();
