@@ -218,7 +218,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		if (!parent->dn_Info)
 	        {
 		    PrintF("Error: malloc() failure\n");
-		    return(DN_FAILED);
+		    return(DN_FAIL);
 	        }
 	    }
 	    else
@@ -235,7 +235,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    if (!parent || (!(lhsDep->dn_Info = parent->dn_Info) && !(parent->dn_Flags&DNF_LEFT_NOTFOUND)))
 	    {
 		PrintF("Error: The group %s has no real-file parent\n", lhsDep->dn_Node.ln_Name);
-	        return(DN_FAILED);
+	        return(DN_FAIL);
 	    }
 
 	    if (parent && parent->dn_Flags&DNF_LEFT_NOTFOUND)
@@ -272,7 +272,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		if (!lhsDep->dn_Info)
 	        {
 		    PrintF("Error: malloc() failure\n");
-		    return(DN_FAILED);
+		    return(DN_FAIL);
 	        }
 	    }
 	    else
@@ -309,7 +309,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    else
 	    if (lhsStRes < 0) {
 	        PrintF("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
-		ret = DN_FAILED;
+		ret = DN_FAIL;
 	    }
 	    else
 	    if (parStRes < 0)
@@ -348,7 +348,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
     lhsDep->dn_Flags |= DNF_VIRTUAL;
 
     for (depCmdList = (DepCmdList *)GetHead(&lhsDep->dn_DepCmdList);
-	lhsDep->dn_Result > DN_FAILED && depCmdList;
+	lhsDep->dn_Result > DN_ERROR && depCmdList;
 	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node)
     ) {
 	int xr = DN_NOCHANGE;
@@ -375,7 +375,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	    xr = DN_CHANGED;
 
 	for (rhsRef = (DepRef *)GetHead(&depCmdList->dc_RhsList);
-	    xr > DN_FAILED && rhsRef;
+	    xr > DN_ERROR && rhsRef;
 	    rhsRef = (DepRef *)GetSucc(&rhsRef->rn_Node)
 	) {
 	    int r;
@@ -507,7 +507,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      * related commands.
      */
     for (depCmdList = (DepCmdList *)GetHead(&lhsDep->dn_DepCmdList);
-	runCmds && lhsDep->dn_Result > DN_FAILED && depCmdList;
+	runCmds && lhsDep->dn_Result > DN_ERROR && depCmdList;
 	depCmdList = (DepCmdList *)GetSucc(&depCmdList->dc_Node)
     ) {
 	DepRef  *rhsRef;
@@ -542,7 +542,12 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	        }
 
 		if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > CMD_OK)
-		    xr = DN_FAILED;
+		{
+		    if (cmdret < CMD_ERROR)
+			xr = DN_FAIL;
+		    else
+			xr = DN_ERROR;
+		}
 
 		if (!CacheLevel)
 		{
@@ -633,7 +638,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      */
     yr = lhsDep->dn_Result;
     if (parStRes < 0 && parent &&
-	lhsDep->dn_Result > DN_FAILED &&
+	lhsDep->dn_Result > DN_ERROR &&
 	(lhsDep->dn_Flags & DNF_VIRTUAL) == 0
     ) {
 	yr = DN_CHANGED;

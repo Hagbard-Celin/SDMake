@@ -275,7 +275,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    if (notfound)
 		    {
 			PrintF("Internal command if: Wrong number of arguments\n");
-			err = CMD_FAIL;
+			err = CMD_ERROR;
 		    }
 	        }
 
@@ -306,7 +306,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            UnLock(CurrentDir(lock));
 	        else {
 	            PrintF("Unable to cd %s\n", ptr);
-	            err = CMD_FAIL;
+	            err = CMD_ERROR;
 	        }
 	        return((ignore) ?  CMD_IGNORED : err);
 	    }
@@ -326,7 +326,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        UnLock(lock);
 	    else {
 	        PrintF("Unable to makedir %s\n", ptr);
-	        err = CMD_FAIL;
+	        err = CMD_ERROR;
 	    }
 	    return((ignore) ?  CMD_IGNORED : err);
 	} else
@@ -375,7 +375,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        else
 	        {
 	            PrintF("Unable to write %s\n", ptr);
-	            err = CMD_FAIL;
+	            err = CMD_ERROR;
 	        }
 		return((ignore) ?  CMD_IGNORED : err);
 	    } else
@@ -391,7 +391,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    Failat = failat;
 		else
 		{
-		    err = CMD_FAIL;
+		    err = CMD_ERROR;
 		    PrintF("Missing or invalid argument for failat\n", ptr);
 		}
 
@@ -409,10 +409,10 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	short i;
 	short ci;
 	short c;
-	short err;
 	short useSystem;
-	Process *proc = (Process *)FindTask(NULL);
+	LONG err;
 	char *cmdArgs;
+	Process *proc = (Process *)FindTask(NULL);
 
 	for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != 9 && cmd[i] != 10 && cmd[i] != 13; ++i)
 	    ;
@@ -511,11 +511,14 @@ dosys:
 	    {
 	        PrintF("Exit code %ld %s\n", err, (ignore) ? "(Ignored)":"");
 
+		if (err == -1)
+		    ret = CMD_FAIL;
+		else
 	        if (ignore)
 		    ret = CMD_IGNORED;
 		else
 		if (err > Failat)
-		    ret = CMD_FAIL;
+		    ret = CMD_ERROR;
 	    }
 	    return(ret);
 	}

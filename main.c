@@ -453,7 +453,11 @@ LONG realmain(void)
 
 	    if ((r = ExecuteDependency(NULL, node)) < DN_CHANGED)
 	    {
-		ExitCode = RETURN_ERROR;
+		if (r < DN_ERROR)
+		    ExitCode = RETURN_FAIL;
+		else
+		    ExitCode = RETURN_ERROR;
+
 		if (OnError)
 		{
 		    node = CreateDepRef(NULL, OnError);

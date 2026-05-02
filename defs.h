@@ -90,7 +90,8 @@ typedef unsigned short uword;
 
 #define CMD_IGNORED -1
 #define CMD_OK       0
-#define CMD_FAIL     1
+#define CMD_ERROR    1
+#define CMD_FAIL     2
 
 #define Prototype extern
 
@@ -150,7 +151,8 @@ typedef struct DepNode {
 
 #define DCF_IGNORED_FAIL (1<<0)
 
-#define DN_FAILED		-1
+#define DN_FAIL 	       -2
+#define DN_ERROR	       -1
 #define DN_CHANGED 		0
 #define DN_NOCHANGE_TOUCH	1
 #define DN_NOCHANGE		2
