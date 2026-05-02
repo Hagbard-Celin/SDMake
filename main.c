@@ -628,8 +628,16 @@ int main(ULONG argc, char *argv[])
 	    char *p2;
 
 	    if (*ptr != '-') {
-	        CreateDepRef(&DoList, ptr);
-	        continue;
+		if (ptr[0] == '?' && ptr[1] == 0)
+		{
+		    QuietOpt = 1;
+		    help(1);
+		}
+		else
+		{
+		    CreateDepRef(&DoList, ptr);
+		    continue;
+		}
 	    }
 	    ptr += 2;
 	    switch(ptr[-1]) {
