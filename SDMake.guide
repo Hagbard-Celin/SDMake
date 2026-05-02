@@ -54,8 +54,8 @@
 
   When starting from shell the following options are supported:
 
-    SDMake [-f file] [-n] [-D variable[=value]] [-d[N]] [-F[N]] [-a] [-c[N]]
-            [-q] [-s] [-S] [-h] [targets...]
+    SDMake [-f file] [-n] [-D variable[=value]] [-d[N]] [-F[N]] [-i] [-a]
+            [-c[N]] [-q] [-s] [-S] [-h] [targets...]
 
     -f file
 
@@ -81,6 +81,11 @@
 
         Set the default failat level for command lists. If no number
         is specified, a level of 5 is used.
+
+    -i
+
+        Ignore error returns from commands. This is equivalent of putting
+        '-' in front of every command in all command lists.
 
     -a
 
@@ -164,6 +169,12 @@
 
         Set the default failat level for command lists. If this tool
         type is not present the default level of 5 is used.
+
+    IGNORE
+
+        If set to any value > 0, ignore error returns from commands.
+        This is equivalent of putting '-' in front of every command
+        in all command lists.
 
     DOALL
 

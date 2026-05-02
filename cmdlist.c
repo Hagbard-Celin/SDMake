@@ -445,7 +445,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	while (!ChkCtrlD() && r <= CMD_OK && (n = CmdListSizeCommand(&tmpDst))) {
 	    short allocated;
 	    short quiet = 0;
-	    short ignore= 0;
+	    short ignore = DefIgnore;
 	    char *cmd;
 
 	    if (QuietCmd)

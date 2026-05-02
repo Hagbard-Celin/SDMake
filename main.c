@@ -102,6 +102,7 @@ Prototype short QuietCmd;
 Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
+Prototype short DefIgnore;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
@@ -119,6 +120,7 @@ short	CheckTarget;
 short	QuietOpt;
 short	QuietCmd;
 short	DoAll;
+short   DefIgnore;
 short   SomeWork;
 short	XSaveLockValid;
 BPTR	XSaveLock;
@@ -661,6 +663,8 @@ int main(ULONG argc, char *argv[])
 	    case 'c':
 	        CacheLevel = (*ptr) ? atoi(ptr) - 1 : 0;
 	        break;
+	    case 'i':
+		DefIgnore = 1;
 	    case 's':
 	        QuietCmd = 1;
 		break;
