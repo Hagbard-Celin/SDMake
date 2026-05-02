@@ -570,6 +570,8 @@ int main(ULONG argc, char *argv[])
 			    CacheLevel = atol(SkipAss(ptr)) - 1;
 			} else if (strnicmp(ptr, "FAILAT=", 7) == 0) {
 			    DefFailat = atol(SkipAss(ptr));
+			} else if (strnicmp(ptr, "IGNORE=", 7) == 0) {
+			    DefIgnore = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "SILENT=", 7) == 0) {
 			    QuietCmd = atol(SkipAss(ptr));
 			} else if (strnicmp(ptr, "QUIET=", 6) == 0) {
