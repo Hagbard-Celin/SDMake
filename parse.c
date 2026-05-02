@@ -420,15 +420,15 @@ void ParseFile(STRPTR fileName)
 			error(FATAL, "memory allocation failed");
 		    strcpy(OnError, SymBuf);
 		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftislabel") == 0) {
-		    PrintF("Setting left dummy\n");
+		    dbprintf(("Setting left label\n"));
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_DUMMY;
 		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftisgroup") == 0) {
-		    PrintF("Setting left group\n");
+		    dbprintf(("Setting left group\n"));
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_GROUP;
 		} else if (ifTrue && SymBufLen == 11 && strcmp(SymBuf, ".leftisfile") == 0) {
-		    PrintF("Setting left file\n");
+		    dbprintf(("Setting left file\n"));
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_FILE;
 		} else if (ifTrue) {
