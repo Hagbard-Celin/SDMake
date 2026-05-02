@@ -306,7 +306,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        {
 		    if (notfound)
 		    {
-			PrintF("Internal command if: Wrong number of arguments\n");
+			PrintF("Internal command if: Missing or unknown argument\n");
 			err = CMD_ERROR;
 		    }
 	        }
