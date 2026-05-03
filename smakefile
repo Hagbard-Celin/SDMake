@@ -1,4 +1,4 @@
-CFLAGS = DEF OSVERMIN=0 DEF OSVERMAX=999
+CFLAGS = DEF OSVERMIN=0 DEF OSVERMAX=999 DEF TYPE="Generic"
 
 OBJS= depend.o cmdlist.o run.o poolmem.o string.o main.o var.o parse.o cond.o \
       convert.o gethead.o getpred.o gettail.o buffer.o path.o console.o \

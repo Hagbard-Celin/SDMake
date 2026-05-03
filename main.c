@@ -124,7 +124,7 @@ short   DefIgnore;
 short   SomeWork;
 short	XSaveLockValid;
 BPTR	XSaveLock;
-char     version[] = VERSTAG "\0 Copyright 1994, O.I.C.\n";
+char     version[] = VERSTAG TYPE"\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;

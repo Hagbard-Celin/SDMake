@@ -16,8 +16,6 @@ etc/
 *.o
 bin/*
 !bin/.gitkeep
-build/obj/*
-!build/obj/.gitkeep
-build/bin/*
-!build/bin/.gitkeep
+build/*
+!build/.gitkeep
 

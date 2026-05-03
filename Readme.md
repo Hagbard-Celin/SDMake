@@ -16,6 +16,7 @@ certainly do not want to replace a 30K make tool with one that is 161K.
 So the best alternative seemed to be porting DMake and back-porting the .include
 directive from DXMake.
 
+
 Most notable changes from DMake/DXMake so far:
 - Removed all not Amiga related code.
 - Replaced many POSIX functions with dos.library calls.
@@ -28,6 +29,14 @@ Most notable changes from DMake/DXMake so far:
 For details, see SDMake.guide. Sorry about no detailed change-log yet except for
 the messy commit history, I will try to make one before I make first official
 release.
+
+
+To build and install, execute bootstrap.
+This uses the supplied SMakefile to build a generic version in "bin/", which is
+then used to build and install the appropriate version for the currently running
+AmigaOS version to "sc:c". It also installs the .guide file to "HELP:english/".
+The file SDMakefile.config can be edited to change these locations.
+
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

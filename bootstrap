@@ -1,0 +1,5 @@
+smake
+resident bin/sdmake add
+sdmake -DINSTALL native
+;sdmake all
+resident sdmake remove

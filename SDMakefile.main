@@ -1,0 +1,85 @@
+PROJECT= SDMake
+.include SDMakefile.config
+
+OSVERMIN ?= 0
+OSVERMAX ?= 999
+
+SRCS= depend.c cmdlist.c run.c poolmem.a string.c main.c var.c parse.c cond.c \
+      convert.c gethead.a getpred.a gettail.a buffer.c path.c parserevh.c
+
+.ifgt 36 $(OSVERMIN)
+SRCS= $(SRCS) console.c system13.c
+.endif
+
+GUIDE= sdmake.guide
+PDEFAULT= 
+TYPE?= Generic
+BD= build/$(TYPE)/
+OD= $(BD)obj/
+EXEDIR= $(BD)bin/
+RUN= 
+CFLAGS= DEF OSVERMIN=$(OSVERMIN) DEF OSVERMAX=$(OSVERMAX) DEF TYPE="$(TYPE)"
+
+
+EXE= $(EXEDIR)$(PROJECT)
+
+OBJS= $(SRCS:"*.?":"$(OD)*.o")
+
+DIRS = $(BD:*/:*) $(OD:*/:*) $(EXEDIR:*/:*)
+
+.leftislabel
+
+all: $(DIRS) $(EXE)
+
+bootstrap: all install
+
+.leftisfile
+
+
+$(DIRS) :$(DIRS)
+	makedir %(left)
+        copy build.info %(left).info
+
+##$(OD)$(TYPE) : $(OD)$(TYPE)
+##	  makedir $(OD)$(TYPE)
+
+$(EXE): $(OBJS)
+    @fwrite $(OD)$(PROJECT).lnktmp %(right)
+    sc $(CFLAGS) LINK to %(left) with $(OD)$(PROJECT).lnktmp
+
+$(OBJS) : $(SRCS)
+    sc $(CFLAGS) OBJNAME %(left) %(right)
+
+.leftislabel
+
+install:
+    protect $(EXE) H add
+    copy $(EXE)(%|.info) $(INSTALLDIR)
+    copy $(GUIDE) $(GUIDEDIR)
+
+clean:
+    -delete $(OBJS)
+
+relink: rmexe $(EXE)
+
+rmexe:
+    -delete $(EXE)
+
+version:
+    -bumprev 2 sdmake_rev
+
+.leftisfile
+
+$(OD)depend.o: depend.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)string.o: string.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)run.o: run.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
+$(OD)var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)buffer.o: buffer.c defs.h tokens.h sdmake-protos.h poolmem.h
+
