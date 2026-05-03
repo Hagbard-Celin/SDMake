@@ -503,6 +503,8 @@ void ParseFile(STRPTR fileName)
 	FreeCmdList(&var->var_CmdList);
 	AppendCmdList(&topdirList, &var->var_CmdList);
     }
+
+    fclose(fi);
 }
 
 /*
