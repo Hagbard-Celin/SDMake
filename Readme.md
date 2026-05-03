@@ -34,7 +34,7 @@ release.
 To build and install, execute bootstrap.
 This uses the supplied SMakefile to build a generic version in "bin/", which is
 then used to build and install the appropriate version for the currently running
-AmigaOS version to "sc:c". It also installs the .guide file to "HELP:english/".
+AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
 The file SDMakefile.config can be edited to change these locations.
 
 
