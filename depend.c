@@ -541,7 +541,7 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		    }
 	        }
 
-		if (cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList) > CMD_OK)
+		if ((cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList)) > CMD_OK)
 		{
 		    if (cmdret < CMD_ERROR)
 			xr = DN_FAIL;
