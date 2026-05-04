@@ -429,6 +429,22 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 
 		return((ignore) ?  CMD_IGNORED : err);
 	    }
+	} else
+	if (cmdlen == 4 && strnicmp(cmd, "quit", 4) == 0) {
+	    short err;
+
+	    while (*ptr == ' ' || *ptr == '\t')
+	        ++ptr;
+	    if (strnicmp(ptr, "OK", 2) == 0)
+		err = CMD_QUIT;
+	    else
+	    if (strnicmp(ptr, "ERROR", 5) == 0)
+		err = CMD_ERROR;
+	    else {
+		PrintF("Missing or invalid argument for quit\n");
+	        err = CMD_ERROR;
+	    }
+	    return((ignore) ?  CMD_IGNORED : err);
 	}
     }
 

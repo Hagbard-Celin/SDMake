@@ -92,6 +92,7 @@ typedef unsigned short uword;
 #define CMD_OK       0
 #define CMD_ERROR    1
 #define CMD_FAIL     2
+#define CMD_QUIT     3
 
 #define Prototype extern
 

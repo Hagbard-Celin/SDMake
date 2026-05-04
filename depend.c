@@ -543,10 +543,13 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 
 		if ((cmdret = ExecuteCmdList(lhsDep, depCmdList->dc_CmdList)) > CMD_OK)
 		{
-		    if (cmdret < CMD_ERROR)
-			xr = DN_FAIL;
-		    else
-			xr = DN_ERROR;
+		    if (cmdret != CMD_QUIT)
+		    {
+		        if (cmdret < CMD_ERROR)
+			    xr = DN_FAIL;
+		        else
+			    xr = DN_ERROR;
+		    }
 		}
 
 		if (!CacheLevel)
