@@ -674,6 +674,7 @@ int main(ULONG argc, char *argv[])
 	    case 't':
 		TouchAll = 1;
 		NoRunOpt = 1;
+		QuietCmd = 1;
 	        break;
 
 	    case 'D':
