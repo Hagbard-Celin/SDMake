@@ -48,6 +48,10 @@ CFLAGS= OBJNAME $(OD) DEF OSVERMIN=$(OSVERMIN) DEF OSVERMAX=$(OSVERMAX) $(CFLAGS
 CFLAGS= DEF INTERNAL_ASYNC $(CFLAGS)
 .endif
 
+.ifdef USE_DEBUG
+CFLAGS= DEF USE_DEBUG=1 $(CFLAGS)
+.endif
+
 EXE= $(EXEDIR)$(PROJECT)
 
 OBJS= $(SRCS:"*.?":"$(OD)*.o") $(ASYNCSRCS:"$(ASYNCDIR)*.?":"$(OD)*.o")
@@ -56,14 +60,15 @@ SRCS= $(SRCS) $(ASYNCSRCS)
 
 DIRS = $(BD:*/:*) $(OD:*/:*) $(EXEDIR:*/:*)
 
+
 .leftislabel
 
 all: $(DIRS) $(EXE)
 
 bootstrap: all install
 
-.leftisfile
 
+.leftisfile
 
 $(DIRS) :$(DIRS)
 	makedir %(left)

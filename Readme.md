@@ -38,6 +38,9 @@ then used to build and install the appropriate version for the currently running
 AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
 The file SDMakefile.config can be edited to change these locations.
 
+There is also a line in SDMakefile.config tat can be un-commented to switch on
+support for -d command line option and DEBUG tool type.
+
 If asyncio.library v39.2 or greater is detected in Libs:, the bootstrap will
 build a version using that. In the opposite case it will compile and link the
 relevant code from "asyncio/src/".
