@@ -584,7 +584,8 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      * quite possible that no changes were made and the commands explicitly
      * did not rewrite the left hand side file because of that.
      */
-    if (NoRunOpt == 0 && runCmds && lhsStRes == 0 && lhsDep->dn_Result == DN_CHANGED) {
+    if ((NoRunOpt == 0 || TouchAll == 1) && runCmds && lhsStRes == 0 &&
+	 lhsDep->dn_Result == DN_CHANGED) {
 	BPTR tmplock;
 	D_S(struct FileInfoBlock, fib);
 

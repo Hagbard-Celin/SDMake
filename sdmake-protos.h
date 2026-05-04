@@ -24,6 +24,7 @@ Prototype short QuietCmd;
 Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
+Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
 Prototype APTR  MemPool;

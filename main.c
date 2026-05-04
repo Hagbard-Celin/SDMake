@@ -102,6 +102,7 @@ Prototype short QuietCmd;
 Prototype short CheckTarget;
 Prototype short ExitCode;
 Prototype short	DoAll;
+Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
 Prototype APTR  MemPool;
@@ -116,6 +117,7 @@ WORD	Break;
 short	DDebug;
 short	CacheLevel;
 short	NoRunOpt;
+short	TouchAll;
 short	CheckTarget;
 short	QuietOpt;
 short	QuietCmd;
@@ -669,6 +671,9 @@ int main(ULONG argc, char *argv[])
 	    case 'n':
 		NoRunOpt = 1;
 	        break;
+	    case 't':
+		TouchAll = 1;
+	        break;
 
 	    case 'D':
 	        ptr = (*ptr) ? ptr : argv[++i];
@@ -779,7 +784,7 @@ void help(int code)
 {
     puts("SDMake V0.1 © 1991-2003 Matthew Dillon, © 2026 Hagbard Celine");
     puts("Distributed WITHOUT ANY WARRANTY, under terms of GNU General Public License version 2");
-    puts("SDMmake [-f file] [-n] [-Dvariable[=value]] [-d[N]] [-F[N]] [-i] [-a] [-c[N]] [-s] [-S] [-q] [-h] [targets...]");
+    puts("SDMmake [-f file] [-n] [-Dvariable[=value]] [-d[N]] [-F[N]] [-i] [-a] [-c[N]] [-s] [-S] [-t] [-q] [-h] [targets...]");
     exit(code);
 }
 

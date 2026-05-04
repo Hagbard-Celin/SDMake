@@ -55,7 +55,7 @@
   When starting from shell the following options are supported:
 
     SDMake [-f file] [-n] [-D variable[=value]] [-d[N]] [-F[N]] [-i] [-a]
-            [-c[N]] [-q] [-s] [-S] [-h] [targets...]
+            [-c[N]] [-q] [-s] [-S] [-t] [-h] [targets...]
 
     -f file
 
@@ -118,6 +118,12 @@
     -S
 
         Generate less verbose output.
+
+    -t
+
+        Touches the target files by updating them with the current
+        system time. SDMake does not execute any of the actions
+        associated with these targets.
 
     -h
 
