@@ -596,7 +596,6 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		if ((CompareDates(&lhsDep->dn_Info->datestamp, &fib->fib_Date) == 0) &&
 		lhsDep->dn_Info->size == fib->fib_Size)
 		{
-		    PrintF("Setting DN_NOCHANGE_TOUCH %s\n", lhsDep->dn_Node.ln_Name);
 		    lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
 		}
 		else
@@ -630,7 +629,8 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
     if (lhsDep->dn_Result == DN_NOCHANGE_TOUCH) {
 	struct DateStamp ds;
 	
-	PrintF("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
+	if (QuietOpt == 0)
+	    PrintF("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
 	DateStamp(&ds);
 	SetFileDate(lhsDep->dn_Node.ln_Name , &ds);
 	lhsDep->dn_Info->datestamp = ds;
