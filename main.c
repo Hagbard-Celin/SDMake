@@ -673,6 +673,7 @@ int main(ULONG argc, char *argv[])
 	        break;
 	    case 't':
 		TouchAll = 1;
+		NoRunOpt = 1;
 	        break;
 
 	    case 'D':
