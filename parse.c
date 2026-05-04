@@ -673,6 +673,18 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		{
 		    twolt = 0;
 
+		    if (c == '#' && blankLine && !ws)
+		    {
+			while ((c = ReadCharAsync(Fi)) != EOF) {
+			    if (c == '\n') {
+				++LineNo;
+				c = ReadCharAsync(Fi);
+				if (c == '#')
+				    continue;
+				break;
+			    }
+			}
+		    }
 		    if (c == '\n') {
 			++LineNo;
 			if (blankLine)
