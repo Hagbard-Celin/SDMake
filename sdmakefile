@@ -30,19 +30,16 @@ NATIVE = OS_v34
 native: $(NATIVE)
 
 .ifdef INSTALL
-$(NATIVE):
+$(Types)::
     $(SDMAKE) -f SDMakefile.main -DTYPE=%(left) -DOSVERMIN=%(left:OS_v*:*) -DOSVERMAX=%(left:OS_v*:*) bootstrap
 .else
-$(NATIVE):
+$(Types)::
     $(SDMAKE) -f SDMakefile.main -DTYPE=%(left) -DOSVERMIN=%(left:OS_v*:*) -DOSVERMAX=%(left:OS_v*:*)
 .endif
 
 
 Generic:
     $(SDMAKE) -f SDMakefile.main -DTYPE=%(left)
-
-$(Types)::
-    $(SDMAKE) -f SDMakefile.main -DTYPE=%(left) -DOSVERMIN=%(left:OS_v*:*) -DOSVERMAX=%(left:OS_v*:*)
 
 all: $(Types)
 
