@@ -744,6 +744,14 @@
 
          Make the directory dirname.
 
+
+      quit return
+
+         End execution of the current command-list.
+         If return is ERROR, SDMake will terminate with return code 10.
+         If return is OK, SDMake will act as if the current command-list
+         finished without errors.
+
 @endnode
 
 @node ENVIRONMENTVARIABLES "Environment Variables"
