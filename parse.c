@@ -1306,6 +1306,7 @@ void error(short type, CONST_STRPTR ctl, ...)
 	va_start(va, ctl);
 	vprintf(ctl, va);
 	va_end(va);
+	fflush(stdout);
     }
     PrintF("\n");
     if (ExitAry[type])
