@@ -27,18 +27,13 @@ static WORD GetVerRev(STRPTR define);
 
 WORD ParseRevInclude(STRPTR includefile)
 {
-#if OSVERMIN < 47 && OSVERMAX >= 47
-    if (DOSBase->dl_lib.lib_Version >= 47)
-    {
-#endif
-#if OSVERMAX >= 47
-	BPTR revfile;
+	struct AsyncFile *revfile;
 
-	if (revfile = Open(includefile, MODE_OLDFILE))
+	if (revfile = OpenAsyncR(includefile))
 	{
 	    TEXT line[128];
 
-	    while (FGets(revfile, line, 128))
+	    while (FGetsAsync(revfile, line, 128))
 	    {
 		//PrintF("Got line: %s \n", line);
 		if (!(strncmp(line, "#define", 7 )))
@@ -46,39 +41,11 @@ WORD ParseRevInclude(STRPTR includefile)
 	    }
 
 
-	    Close(revfile);
+	    CloseAsyncR(revfile);
 	}
 	else
 	    error(FATAL, "Unable to open %s", revfile);
-#endif
-#if OSVERMIN < 47 && OSVERMAX >= 47
-    }
-    else
-    {
-#endif
-#if OSVERMIN < 47
-	FILE *revfile;
 
-	if (revfile = fopen(includefile, "r"))
-	{
-	    TEXT line[128];
-
-	    while (fgets(line, 128, revfile))
-	    {
-		//PrintF("Got line: %s \n", line);
-		if (!(strncmp(line, "#define", 7 )))
-		    GetVerRev(line + 8);
-	    }
-
-
-	    fclose(revfile);
-	}
-	else
-	    error(FATAL, "Unable to open %s", revfile);
-#endif
-#if OSVERMIN < 47 && OSVERMAX >= 47
-    }
-#endif
     return 1;
 }
 

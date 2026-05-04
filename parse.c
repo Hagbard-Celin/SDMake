@@ -99,7 +99,7 @@ char AltBuf[256];
 char AltBuf2[256];
 long LineNo = 1;
 char *FileName = "";
-FILE *Fi;
+struct AsyncFile *Fi;
 
 void InitParser()
 {
@@ -121,7 +121,7 @@ void InitParser()
 
 void ParseFile(STRPTR fileName)
 {
-    FILE *fi;
+    struct AsyncFile *fi;
     token_t t;
     IfNode *ifBase = NULL;
     int ifTrue = 1;
@@ -149,15 +149,17 @@ void ParseFile(STRPTR fileName)
 	CopyCmdListBuf(&list, tfileName);
 	strcpy(tfileName + len, fileName);
 
-	if ((fi = fopen(tfileName, "r")) == NULL)
+	if ((fi = OpenAsyncR(tfileName)) == NULL)
 	    error(FATAL, "Unable to open %s", tfileName);
 	PFreeVec(tfileName);
     }
 
+    Fi = fi;
+
     if (!(FileName = PAlloc(strlen(fileName) + 1)))
 	MemErr();
     strcpy(FileName, fileName);
-    Fi = fi;
+
     LineNo = 1;
 
     /*
@@ -246,7 +248,7 @@ void ParseFile(STRPTR fileName)
 			}
 		    }
 		} else if (ifTrue && SymBufLen == 8 && strcmp(SymBuf, ".include") == 0) {
-		    FILE *saveFi = Fi;
+		    struct AsyncFile *saveFi = Fi;
 		    char *saveFileName = FileName;
 		    int saveLine = LineNo;
 		    char *path;
@@ -504,7 +506,7 @@ void ParseFile(STRPTR fileName)
 	AppendCmdList(&topdirList, &var->var_CmdList);
     }
 
-    fclose(fi);
+    CloseAsyncR(fi);
 }
 
 /*
@@ -528,9 +530,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 
     NewList(&tmpList);
 
-    while (fgets(AltBuf, sizeof(AltBuf), Fi)) {
-	len = strlen(AltBuf);
-
+    while (FGetsLenAsync(Fi, AltBuf, sizeof(AltBuf), &len)) {
 	if (eol && AltBuf[0] == '#') {
 	    ++LineNo;
 	    continue;
@@ -661,7 +661,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	WORD threelt = 0;
 	WORD newline = 0;
 
-	while ((c = getc(Fi)) != EOF) {
+	while ((c = ReadCharAsync(Fi)) != EOF) {
 	    if (twolt < 2)
 	    {
 		if (c == '<')
@@ -685,7 +685,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		    if (blankLine && ws == 0) {
 			if (c != ' ' && c != '\t')
 			{
-			    ungetc(c, Fi);
+			    SeekAsync(Fi, -1, MODE_CURRENT);
 			    break;
 			}
 		    }
@@ -704,7 +704,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			    PutCmdListChar(cmdList, ' ');
 			    ws = 0;
 			}
-			c = getc(Fi);
+			c = ReadCharAsync(Fi);
 			if (c == '\n') {
 			    blankLine = 1;
 			    ++LineNo;
@@ -853,7 +853,7 @@ swi:
 	}
     case TokDollar:
     case TokPercent:
-	c = fgetc(Fi);
+	c = ReadCharAsync(Fi);
 	if (c == '(' && ifTrue) {
 	    ParseVariable(&CmdList, (t == TokPercent) ? '%' : '$');
 
@@ -861,7 +861,7 @@ swi:
 	     *	XXX how to handle dependancies verses nominal string concat?
 	     */
 
-	    while ((c = fgetc(Fi)) != ' ' && c != '\t' && c != '\n' && c != ':') {
+	    while ((c = ReadCharAsync(Fi)) != ' ' && c != '\t' && c != '\n' && c != ':') {
 		if (c == EOF)
 		    break;
 		if (c == '$') {
@@ -875,10 +875,10 @@ swi:
 		PutCmdListChar(&CmdList, c);
 	    }
 	    if (c != EOF)
-		ungetc(c, Fi);
+		SeekAsync(Fi, -1, MODE_CURRENT);
 	    goto top;
 	}
-	ungetc(c, Fi);
+	SeekAsync(Fi, -1, MODE_CURRENT);
 	/* fall through */
     default:
 	break;
@@ -905,7 +905,7 @@ static void ParseVariable(List *cmdList, short c0)
      *	variable name
      */
 
-    while ((c = getc(Fi)) != EOF && !SpecialChar[c])
+    while ((c = ReadCharAsync(Fi)) != EOF && !SpecialChar[c])
 	AltBuf[i++] = c;
     AltBuf[i] = 0;
 
@@ -930,16 +930,16 @@ static void ParseVariable(List *cmdList, short c0)
      *	source operation
      */
 
-    c = fgetc(Fi);
+    c = ReadCharAsync(Fi);
     if (c == '\"') {
-	ungetc(c, Fi);
+	SeekAsync(Fi, -1, MODE_CURRENT);
 	expect(GetToken(), TokStr);
-	c = fgetc(Fi);
+	c = ReadCharAsync(Fi);
     } else {
 	i = 0;
 	while (c != ')' && c != ':' && c != EOF) {
 	    SymBuf[i++] = c;
-	    c = fgetc(Fi);
+	    c = ReadCharAsync(Fi);
 	}
 	SymBuf[i] = 0;
     }
@@ -958,16 +958,16 @@ static void ParseVariable(List *cmdList, short c0)
     if (c != ':')
 	error(FATAL, "Bad variable replacement spec: %c", c);
 
-    c = fgetc(Fi);
+    c = ReadCharAsync(Fi);
     if (c == '\"') {
-	ungetc(c, Fi);
+	SeekAsync(Fi, -1, MODE_CURRENT);
 	expect(GetToken(), TokStr);
-	c = fgetc(Fi);
+	c = ReadCharAsync(Fi);
     } else {
 	i = 0;
 	while (c != ')' && c != ':' && c != EOF) {
 	    SymBuf[i++] = c;
-	    c = fgetc(Fi);
+	    c = ReadCharAsync(Fi);
 	}
 	SymBuf[i] = 0;
     }
@@ -1190,7 +1190,7 @@ static token_t GetToken()
     short i;
 
     for (;;) {
-	switch(c = getc(Fi)) {
+	switch(c = ReadCharAsync(Fi)) {
 	case EOF:
 	    return(0);
 	case ':':
@@ -1216,7 +1216,7 @@ static token_t GetToken()
 	case '\r':
 	    break;
 	case '#':
-	    while ((c = getc(Fi)) != EOF) {
+	    while ((c = ReadCharAsync(Fi)) != EOF) {
 		if (c == '\n') {
 		    ++LineNo;
 		    break;
@@ -1224,13 +1224,13 @@ static token_t GetToken()
 	    }
 	    break;
 	case '\"':
-	    for (i = 0; i < sizeof(SymBuf) - 1 && (c = fgetc(Fi)) != EOF; ++i) {
+	    for (i = 0; i < sizeof(SymBuf) - 1 && (c = ReadCharAsync(Fi)) != EOF; ++i) {
 		if (c == '\n')
 		    error(FATAL, "newline in control string");
 		if (c == '\"')
 		    break;
 		if (c == '\\')
-		    c = fgetc(Fi);
+		    c = ReadCharAsync(Fi);
 		SymBuf[i] = c;
 	    }
 	    SymBuf[i] = 0;
@@ -1240,7 +1240,7 @@ static token_t GetToken()
 		error(FATAL, "Expected closing quote");
 	    return(TokStr);
 	case '\\':
-	    c = fgetc(Fi);
+	    c = ReadCharAsync(Fi);
 	    if (c == '\n') {
 		++LineNo;
 		break;
@@ -1251,12 +1251,12 @@ static token_t GetToken()
 	    {
 		WORD gotcol = 0;
 
-		for (i = 1; i < sizeof(SymBuf) - 1 && (c = getc(Fi)) != EOF; ++i) {
+		for (i = 1; i < sizeof(SymBuf) - 1 && (c = ReadCharAsync(Fi)) != EOF; ++i) {
 		    if (gotcol)
 		    {
 			if (SpecialChar[c])
 			{
-			    fseek(Fi, -2, SEEK_CUR);
+			    SeekAsync(Fi, -2, MODE_CURRENT);
 			    i--;
 			    break;
 			}
@@ -1268,7 +1268,7 @@ static token_t GetToken()
 			    gotcol = 1;
 			else
 			{
-			    ungetc(c, Fi);
+			    SeekAsync(Fi, -1, MODE_CURRENT);
 			    break;
 			}
 		    }

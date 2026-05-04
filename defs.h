@@ -65,6 +65,11 @@
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/lists.h>
+#ifdef INTERNAL_ASYNC
+#include <clib/asyncio_protos.h>
+#else
+#include <proto/asyncio.h>
+#endif
 #include "lists.h"
 #include "poolmem.h"
 
@@ -80,6 +85,18 @@
 #include <proto/dos.h>
 #include <proto/utility.h>
 #define Running2_04() (SysBase->LibNode.lib_Version >= 37)
+
+#ifdef GENERIC
+#define TYPESTR "Type: Generic"
+#else
+#define TYPESTR "Type: For "TYPE
+#endif
+
+#ifdef INTERNAL_ASYNC
+#define VEREXTRA TYPESTR
+#else
+#define VEREXTRA TYPESTR", requires asyncio.library asyncio.library v39.2"
+#endif
 
 typedef struct Node Node;
 typedef struct List List;
@@ -193,6 +210,11 @@ typedef struct IfNode {
     struct IfNode *if_Next;
     int		if_Value;
 } IfNode;
+
+struct FileList {
+    AsyncFile *File;
+    struct FileList *Next;
+};
 
 #include "tokens.h"
 #include "sdmake-protos.h"

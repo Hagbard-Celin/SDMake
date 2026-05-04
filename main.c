@@ -124,7 +124,7 @@ short   DefIgnore;
 short   SomeWork;
 short	XSaveLockValid;
 BPTR	XSaveLock;
-char     version[] = VERSTAG ", Type: "TYPE"\0 Copyright 1994, O.I.C.\n";
+char     version[] = VERSTAG ", "VEREXTRA"\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
@@ -174,6 +174,22 @@ void myexit(void)
 	        }
 	    }
 	}
+    }
+
+    if (OpenFiles)
+    {
+	struct FileList *nextfile;
+
+	nextfile = OpenFiles->Next;
+
+	CloseAsync(OpenFiles->File);
+
+	while (nextfile)
+	{
+	    CloseAsync(nextfile->File);
+	    nextfile = nextfile->Next;
+	}
+
     }
 
     PDelete();

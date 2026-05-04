@@ -25,6 +25,7 @@ Most notable changes from DMake/DXMake so far:
 - Added multiple directives.
 - Converted to use memory pools.
 - Fixed starting from Workbench.
+- Converted to asyncio.library/compiled in AsyncIO.
 
 For details, see SDMake.guide. Sorry about no detailed change-log yet except for
 the messy commit history, I will try to make one before I make first official
@@ -36,6 +37,10 @@ This uses the supplied SMakefile to build a generic version in "bin/", which is
 then used to build and install the appropriate version for the currently running
 AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
 The file SDMakefile.config can be edited to change these locations.
+
+If asyncio.library v39.2 or greater is detected in Libs:, the bootstrap will
+build a version using that. In the opposite case it will compile and link the
+relevant code from "asyncio/src/".
 
 
 This program is free software; you can redistribute it and/or modify it under

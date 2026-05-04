@@ -107,3 +107,9 @@ Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
 /* parserevh.c          */
 
 Prototype WORD ParseRevInclude(STRPTR includefile);
+
+/* async.c              */
+
+Prototype AsyncFile *OpenAsyncR(const STRPTR fileName);
+Prototype void CloseAsyncR(struct AsyncFile *file);
+Prototype struct FileList *OpenFiles;

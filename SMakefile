@@ -1,8 +1,16 @@
-CFLAGS = DEF OSVERMIN=0 DEF OSVERMAX=999 DEF TYPE="Generic"
 
-OBJS= depend.o cmdlist.o run.o poolmem.o string.o main.o var.o parse.o cond.o \
-      convert.o gethead.o getpred.o gettail.o buffer.o path.o console.o \
-      system13.o parserevh.o
+ODIR = obj/
+
+CFLAGS = OBJNAME $(ODIR)  DEF INTERNAL_ASYNC DEF OSVERMIN=0 DEF OSVERMAX=999 DEF GENERIC
+
+OBJS= $(ODIR)depend.o $(ODIR)cmdlist.o $(ODIR)run.o $(ODIR)poolmem.o $(ODIR)string.o\
+      $(ODIR)main.o $(ODIR)var.o $(ODIR)parse.o $(ODIR)cond.o $(ODIR)convert.o\
+      $(ODIR)gethead.o $(ODIR)getpred.o $(ODIR)gettail.o $(ODIR)buffer.o $(ODIR)path.o\
+      $(ODIR)console.o $(ODIR)system13.o $(ODIR)parserevh.o $(ODIR)async.o\
+      $(ODIR)OpenAsyncFH.o $(ODIR)OpenAsync.o $(ODIR)SeekAsync.o $(ODIR)ReadAsync.o\
+      $(ODIR)CloseAsync.o $(ODIR)FGetsLenAsync.o $(ODIR)ReadCharAsync.o\
+      $(ODIR)RecordAsyncFailure.o $(ODIR)SendPacket.o $(ODIR)WaitPacket.o\
+      $(ODIR)RequeuePacket.o
 
 bin/sdmake: $(OBJS)
    sc $(CFLAGS) link to bin/sdmake with <<
@@ -14,32 +22,52 @@ clean:
    -delete bin/sdmake
 
 
-depend.o: depend.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)poolmem.o: poolmem.a
 
-path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)gethead.o: gethead.a
 
-cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)getpred.o: getpred.a
 
-parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)gettail.o: gettail.a
 
-cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)depend.o: depend.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-string.o: string.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-run.o: run.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)string.o: string.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)run.o: run.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-buffer.o: buffer.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
 
+$(ODIR)var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
 
+$(ODIR)parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
 
+$(ODIR)convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
 
+$(ODIR)buffer.o: buffer.c defs.h tokens.h sdmake-protos.h poolmem.h
 
+$(ODIR)console.o: console.c
 
+$(ODIR)system13.o: system13.c
+
+$(ODIR)async.o: async.c defs.h
+
+$(ODIR)OpenAsyncFH.o: asyncio/src/OpenAsyncFH.c
+$(ODIR)OpenAsync.o: asyncio/src/OpenAsync.c
+$(ODIR)SeekAsync.o: asyncio/src/SeekAsync.c
+$(ODIR)ReadAsync.o: asyncio/src/ReadAsync.c
+$(ODIR)CloseAsync.o: asyncio/src/CloseAsync.c
+$(ODIR)FGetsLenAsync.o: asyncio/src/FGetsLenAsync.c
+$(ODIR)ReadCharAsync.o: asyncio/src/ReadCharAsync.c
+$(ODIR)RecordAsyncFailure.o: asyncio/src/RecordAsyncFailure.c
+$(ODIR)SendPacket.o: asyncio/src/SendPacket.c
+$(ODIR)WaitPacket.o: asyncio/src/WaitPacket.c
+$(ODIR)RequeuePacket.o: asyncio/src/RequeuePacket.c

@@ -652,11 +652,25 @@
 
     Commands may be prefixed.  The "@" prefix tells SDMake not to echo
     the command line before it executes it.  The "-" prefix tells SDMake
-    to ignore any error exit.
+    to ignore any error exit. The "#" prefix tells SDMake to skip the
+    command.
+
+    Note: Prefixing a command with "#" is not the same as starting a line
+    with "#". The former creates a command that the command shell will skip
+    when encountered. The latter creates a comment line the gets stripped
+    out before it is passed to the command shell.
 
 	all :
 	    echo "You see this twice"
 	    @echo "You see this once"
+
+        somefile: otherfile
+            #echo "SDMake will touch somefile since a command-list"
+            #echo "was executed, but somefile did not change."
+
+        someotherfile: yetafile
+        #    echo "SDMake will not touch someotherfile because no"
+        #    echo "command-list exists for this dependency."
 
     The command shell has a number of internal commands:
 
