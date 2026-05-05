@@ -1,4 +1,5 @@
 smake
+resident sdmake remove
 resident bin/sdmake add
 sdmake -DINSTALL native
 ;sdmake all
