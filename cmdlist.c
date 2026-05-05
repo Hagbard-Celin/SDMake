@@ -281,7 +281,7 @@ static long CmdListSizeCommand(List *list)
     long n = 0;
     long i;
     WORD twolt = 0;
-    WORD threelt = 0;
+    WORD endlt = 0;
     WORD newline = 0;
 
     for (node = (CmdNode *)GetHead(list); node; node = (CmdNode *)GetSucc(&node->cn_Node)) {
@@ -304,13 +304,12 @@ static long CmdListSizeCommand(List *list)
 	    {
 		if (newline)
 		{
-		    if (threelt < 3)
+		    if (endlt == 0)
 		    {
 			if (node->cn_Node.ln_Name[i] == '<')
-			    ++threelt;
+			    endlt++;
 			else
 			{
-			    threelt = 0;
 			    if (node->cn_Node.ln_Name[i] != '\n')
 				newline = 0;
 			}
@@ -321,7 +320,7 @@ static long CmdListSizeCommand(List *list)
 			{
 			    break;
 			}
-			newline = threelt = 0;
+			newline = endlt = 0;
 		    }
 		}
 		if (node->cn_Node.ln_Name[i] == '\n')
@@ -478,7 +477,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    if (c) {
 		cmd[n] = 0;
 
-		if (cmd[--n] == '<' && cmd[--n] == '<' && cmd[--n] == '<' && cmd[--n] == '\n')
+		if (cmd[--n] == '<' && cmd[--n] == '\n')
 		    cmd[n] = 0;
 
 		if (quiet == 0)

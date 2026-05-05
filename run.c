@@ -402,6 +402,8 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            t[len] = '\0';
 
 	            Close(fh);
+		    if (QuietCmd == 0)
+			PrintF("<\n");
 	            err = CMD_OK;
 	        }
 	        else

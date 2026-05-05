@@ -658,7 +658,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	short blankLine = 1;
 	short ws = 0;		/*  white space skip	*/
 	WORD twolt = 0;
-	WORD threelt = 0;
+	WORD endlt = 0;
 	WORD newline = 0;
 
 	while ((c = ReadCharAsync(Fi)) != EOF) {
@@ -740,16 +740,10 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	    {
 		if (newline)
 		{
-		    if (threelt < 3)
+		    if (endlt == 0)
 		    {
 			if (c == '<')
-			    ++threelt;
-			else
-			{
-			    threelt = 0;
-			    if (c != '\n')
-				newline = 0;
-			}
+			    endlt++;
 		    }
 		    else
 		    {
@@ -757,11 +751,14 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			{
 			    twolt = 0;
 			    ++LineNo;
+			    blankLine = 1;
+			    ws = 0;
 			}
-			newline = threelt = 0;
+			else
+			    newline = endlt = 0;
 		    }
 		}
-
+		else
 		if (c == '\n')
 		{
 		    if (twolt)

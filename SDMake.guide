@@ -707,9 +707,10 @@
             fwrite filename <<
             Text to
             write to file.
-            <<<
+            <
 
-            	Write the following lines up to '<<<' to filename.
+            	Write the following lines up to the line matching
+                exactly "<\n" to filename.
 
          The only difference between fwrite and fappnd is that the
          former will overwrite an existing file while the latter will
