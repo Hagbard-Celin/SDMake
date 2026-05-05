@@ -323,6 +323,7 @@ static long CmdListSizeCommand(List *list)
 			newline = endlt = 0;
 		    }
 		}
+		else
 		if (node->cn_Node.ln_Name[i] == '\n')
 		    newline = 1;
 	    }

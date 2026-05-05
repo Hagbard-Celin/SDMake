@@ -705,12 +705,13 @@
                 Write args to filename one per line.
 
             fwrite filename <<
-            Text to
-            write to file.
+            Text to write to file,
+            the last character in the file
+            will be the period.
             <
 
-            	Write the following lines up to the line matching
-                exactly "<\n" to filename.
+            	Write the following lines, up until "\n<\n" is
+                encountered, to filename.
 
          The only difference between fwrite and fappnd is that the
          former will overwrite an existing file while the latter will

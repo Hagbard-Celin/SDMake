@@ -395,11 +395,14 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		        len -= 3;
 		    }
 		    else
+		    {
 		        for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
 
-	            t[len] = '\n';
-	            Write(fh, t, len+1);
-	            t[len] = '\0';
+			t[len] = '\n';
+			len++;
+		    }
+
+		    Write(fh, t, len);
 
 	            Close(fh);
 		    if (QuietCmd == 0)
