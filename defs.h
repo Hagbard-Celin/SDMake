@@ -111,6 +111,11 @@ typedef unsigned short uword;
 #define CMD_FAIL     2
 #define CMD_QUIT     3
 
+#define CMDF_IGNORE    (1<<0)
+#define CMDF_QUIET     (1<<1)
+#define CMDF_ALLOCATED (1<<2)
+#define CMDF_MAKETEMP  (1<<3)
+
 #define Prototype extern
 
 #define FATAL	0

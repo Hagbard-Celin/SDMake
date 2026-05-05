@@ -34,7 +34,7 @@ Prototype BPTR StdOut;
 
 /* run.c                */
 
-Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret);
+Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
 
 /* cmdlist.c            */
@@ -54,6 +54,7 @@ Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 Prototype LONG Failat;
 Prototype LONG DefFailat;
+Prototype char CmdTmp1[256];
 
 /* depend.c             */
 

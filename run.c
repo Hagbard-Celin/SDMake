@@ -36,7 +36,7 @@
 typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
-Prototype long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret);
+Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
 
 static BPTR LoadSegLock(BPTR lock, char *cmd);
@@ -71,9 +71,11 @@ void InitCommand()
  *  cmd[-1] is valid space and, in fact, must be long word aligned!
  */
 
-long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret)
+long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, long cmdsize)
 {
     register char *ptr;
+    WORD flags = *cmdflags;
+    char *cmd = *cmdptr;
 
     for (ptr = cmd; *ptr && *ptr != ' ' && *ptr != '\t' && *ptr != '\n'; ++ptr)
 	;
@@ -93,7 +95,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	    LONG isif = *cmdIfTrue;
 
 	    *cmdIfTrue = popIf(cmdIfBase);
-	    if (quiet == 0 && !isif)
+	    if (!(flags&CMDF_QUIET) && !isif)
 	    {
 		if (!(*cmdIfTrue))
 		    PrintF(" (Skipped by if-condition)\n");
@@ -108,7 +110,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 
 	    *cmdIfTrue = elseIf(cmdIfBase);
 
-	    if (quiet == 0 && !isif)
+	    if (!(flags&CMDF_QUIET) && !isif)
 	    {
 	        if (!(*cmdIfTrue))
 		    PrintF(" (Skipped by if-condition)\n");
@@ -196,7 +198,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    else
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
-				if (quiet == 0)
+				if (!(flags&CMDF_QUIET))
 				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
@@ -226,7 +228,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    else
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
-				if (quiet == 0)
+				if (!(flags&CMDF_QUIET))
 				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
@@ -264,7 +266,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    else
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
-				if (quiet == 0)
+				if (!(flags&CMDF_QUIET))
 				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
@@ -295,7 +297,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 			    else
 			    {
 				*cmdIfTrue = pushIf(cmdIfBase, 0);
-				if (quiet == 0)
+				if (!(flags&CMDF_QUIET))
 				    PrintF(" (Skipped by if-condition)\n");
 			    }
 			}
@@ -314,7 +316,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        return(err);
 	    } else
 	    if (!(*cmdIfTrue)) {
-		if (quiet == 0)
+		if (!(flags&CMDF_QUIET))
 		    PrintF(" (Skipped by if-condition)\n");
 		return CMD_OK;
 	    } else
@@ -340,11 +342,11 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            PrintF("Unable to cd %s\n", ptr);
 	            err = CMD_ERROR;
 	        }
-	        return((ignore) ?  CMD_IGNORED : err);
+	        return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    }
 	} else
 	if (!(*cmdIfTrue)) {
-	    if (quiet == 0)
+	    if (!(flags&CMDF_QUIET))
 		PrintF(" (Skipped by if-condition)\n");
 	    return CMD_OK;
 	} else
@@ -360,7 +362,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	        PrintF("Unable to makedir %s\n", ptr);
 	        err = CMD_ERROR;
 	    }
-	    return((ignore) ?  CMD_IGNORED : err);
+	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	} else
 	if (cmdlen == 6) {
 	    LONG mode;
@@ -414,7 +416,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 	            PrintF("Unable to write %s\n", ptr);
 	            err = CMD_ERROR;
 	        }
-		return((ignore) ?  CMD_IGNORED : err);
+		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    } else
 	    if (strnicmp(cmd, "failat", 6) == 0)
 	    {
@@ -432,7 +434,7 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		    PrintF("Missing or invalid argument for failat\n", ptr);
 		}
 
-		return((ignore) ?  CMD_IGNORED : err);
+		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    }
 	} else
 	if (cmdlen == 4 && strnicmp(cmd, "quit", 4) == 0) {
@@ -449,7 +451,71 @@ long Execute_Command(char *cmd, short ignore, short quiet, IfNode **cmdIfBase, L
 		PrintF("Missing or invalid argument for quit\n");
 	        err = CMD_ERROR;
 	    }
-	    return((ignore) ?  CMD_IGNORED : err);
+	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
+	}
+	else
+	if (flags&CMDF_MAKETEMP)
+	{
+	    BPTR fh;
+	    STRPTR content = 0;
+	    LONG contentsize, usable;
+	    LONG keepsize, needsize;
+	    const char filename[] = "temp_sdmake.tmp";
+
+	    if (QuietCmd == 0)
+		PrintF("<\n");
+
+	    do
+	    {
+		if (ptr[0] == '<' && ptr[1] == '<' && ptr[2] == '\n')
+		{
+		    content = ptr + 3;
+		    break;
+		}
+
+		ptr++;
+	    } while (*ptr);
+
+	    contentsize = cmdsize - (content - cmd);
+	    usable = contentsize + 3;
+	    keepsize = cmdsize - usable;
+	    needsize = keepsize + sizeof(filename);
+
+	    if (fh = Open(filename, MODE_NEWFILE)) {
+		Write(fh, content, cmdsize - (content - cmd));
+		Close(fh);
+
+		*content = 0;
+		strcpy(ptr, filename);
+	    }
+	    else
+	    {
+		PrintF("Unable to write %s\n", filename);
+		return CMD_ERROR;
+	    }
+
+	    if ((usable < 16 && flags&CMDF_ALLOCATED) ||
+		(!(flags&CMDF_ALLOCATED) && needsize > sizeof(CmdTmp1)))
+	    {
+		STRPTR tmp;
+
+		if (!(tmp =  PAllocVec(needsize)))
+	        {
+		    PrintF("Memory allocation error\n");
+		    return CMD_FAIL;
+	        }
+
+		stccpy(tmp, cmd, keepsize + 1);
+
+		if (flags&CMDF_ALLOCATED)
+		    PFreeVec(*cmdptr);
+
+		*cmdptr = tmp;
+		cmd = tmp;
+		*cmdflags |= CMDF_ALLOCATED;
+	    }
+
+	    strcpy(cmd + keepsize, filename);
 	}
     }
 
@@ -575,12 +641,12 @@ dosys:
 	    if (err)
 	    {
 		if (!QuietCmd && (!QuietOpt || err >= Failat))
-		    PrintF("%s: Exit code %ld %s\n", cmd, err, (ignore) ? "(Ignored)":"");
+		    PrintF("%s: Exit code %ld %s\n", cmd, err, (flags&CMDF_IGNORE) ? "(Ignored)":"");
 
 		if (err == -1)
 		    ret = CMD_FAIL;
 		else
-	        if (ignore)
+	        if (flags&CMDF_IGNORE)
 		    ret = CMD_IGNORED;
 		else
 		if (err >= Failat)

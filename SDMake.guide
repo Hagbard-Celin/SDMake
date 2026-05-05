@@ -678,6 +678,26 @@
         #    echo "SDMake will not touch someotherfile because no"
         #    echo "command-list exists for this dependency."
 
+    In addition to the fwrite/fappnd commands described below, SDMake also
+    supports the simplest and most commonly used form of local input files
+    implemented by SMake. When a command line ends with two '<' followed by
+    a newline, the following lines, up until a newline followed by '<' and
+    another newline, are written to a file named "temp_sdmake.tmp". And the
+    two '<'s are replaced with that filename. Variables will be resolved and
+    replaced with their content.
+
+        link:
+            slink WITH <<
+        long list of
+        link optrions go here
+
+        will be written to temp_sdmake.tmp
+        and the command will be changed to:
+        slink WITH temp_sdmake.tmp
+
+        <
+
+
     The command shell has a number of internal commands:
 
       cd path
@@ -716,6 +736,8 @@
          The only difference between fwrite and fappnd is that the
          former will overwrite an existing file while the latter will
          append to it.
+
+         Variables will be resolved and replaced with their content.
 
 
       if arguments

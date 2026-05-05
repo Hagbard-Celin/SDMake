@@ -83,6 +83,7 @@ Prototype void CopyCmdListConvert(List *, List *, char *, char *);
 Prototype long ExecuteCmdList(DepNode *, List *);
 Prototype LONG Failat;
 Prototype LONG DefFailat;
+Prototype char CmdTmp1[256];
 
 static long CmdListSizeCommand(List *list);
 static WORD ChkCtrlD(void);
@@ -444,31 +445,31 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	LONG lastret = 0;
 
 	while (!ChkCtrlD() && r <= CMD_OK && (n = CmdListSizeCommand(&tmpDst))) {
-	    short allocated;
-	    short quiet = 0;
-	    short ignore = DefIgnore;
+	    WORD cmdflags = 0;
 	    char *cmd;
 
+	    if (DefIgnore)
+		cmdflags |= CMDF_IGNORE;
+
 	    if (QuietCmd)
-		quiet = 1;
+		cmdflags |= CMDF_QUIET;
 
 	    if (n >= sizeof(CmdTmp1) - 2) {	/*  avoid malloc    */
-		allocated = 1;
+		cmdflags |= CMDF_ALLOCATED;
 		if (!(cmd = (char *)PAllocVec(n + 2)))
 		    error(FATAL, "memory allocation failed");
 	    } else {
-		allocated = 0;
 		cmd = CmdTmp1;
 	    }
 	    while ((c = PopCmdListChar(&tmpDst)) != EOF && (c == ' ' || c == '\t'))
 		--n;
 	    if (c == '@') {
-		quiet = 1;
+		cmdflags |= CMDF_QUIET;
 		c = PopCmdListChar(&tmpDst);
 		--n;
 	    }
 	    if (c == '-') {
-		ignore = 1;
+		cmdflags |= CMDF_IGNORE;
 		c = PopCmdListChar(&tmpDst);
 		--n;
 	    }
@@ -478,10 +479,14 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    if (c) {
 		cmd[n] = 0;
 
-		if (cmd[--n] == '<' && cmd[--n] == '\n')
+		if (cmd[n - 1] == '<' && cmd[n - 2] == '\n')
+		{
+		    n -= 2;
 		    cmd[n] = 0;
+		    cmdflags |= CMDF_MAKETEMP;
+		}
 
-		if (quiet == 0)
+		if (!(cmdflags&CMDF_QUIET))
 		{
 		    PrintF("    %s", cmd);
 		    if (cmdIfTrue)
@@ -489,18 +494,18 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		}
 
 		if (NoRunOpt == 0 && cmd[0] != '#') {
-		    r = Execute_Command(cmd, ignore, quiet, &cmdIfBase, &cmdIfTrue, &lastret);
+		    r = Execute_Command(&cmd, &cmdflags, &cmdIfBase, &cmdIfTrue, &lastret, n);
 		    SomeWork = 1;
 		}
 		else
 		{
 		    if (NoRunOpt && cmd[0] != '#')
 			SomeWork = 1;
-		    if (quiet == 0 && !cmdIfTrue)
+		    if (!(cmdflags&CMDF_QUIET) && !cmdIfTrue)
 			PrintF("\n");
 		}
 	    }
-	    if (allocated)
+	    if (cmdflags&CMDF_ALLOCATED)
 		PFreeVec(cmd);
 	}
 
