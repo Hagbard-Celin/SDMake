@@ -533,7 +533,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	char *cmdArgs;
 	Process *proc = (Process *)FindTask(NULL);
 
-	for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != 9 && cmd[i] != 10 && cmd[i] != 13; ++i)
+	for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
 	    ;
 	if (strpbrk(cmd + i, "<>|`"))
 	    useSystem = 1;
