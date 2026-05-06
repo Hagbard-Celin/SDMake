@@ -482,7 +482,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    needsize = keepsize + sizeof(filename);
 
 	    if (fh = Open(filename, MODE_NEWFILE)) {
-		Write(fh, content, cmdsize - (content - cmd));
+		Write(fh, content, contentsize);
 		Close(fh);
 
 		*content = 0;
@@ -494,7 +494,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		return CMD_ERROR;
 	    }
 
-	    if ((usable < 16 && flags&CMDF_ALLOCATED) ||
+	    if ((usable < sizeof(filename) && flags&CMDF_ALLOCATED) ||
 		(!(flags&CMDF_ALLOCATED) && needsize > sizeof(CmdTmp1)))
 	    {
 		STRPTR tmp;
