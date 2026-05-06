@@ -459,14 +459,14 @@ LONG realmain(void)
 	    }
 	}
 
-	if (strnicmp(XFileName, "smakefile", 10))
+	if (!(strnicmp(XFileName, "smakefile", 10)))
 	{
 	    BPTR deffile;
 
 	    if (deffile = Lock("ENV:SDMake/SDMake-SMake.def", ACCESS_READ))
 	    {
 		UnLock(deffile);
-		ParseFile(XFileName);
+		ParseFile("ENV:SDMake/SDMake-SMake.def");
 	    }
 	}
 
