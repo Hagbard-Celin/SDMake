@@ -689,7 +689,7 @@
         link:
             slink WITH <<
         long list of
-        link optrions go here
+        link options go here
 
         will be written to temp_sdmake.tmp
         and the command will be changed to:

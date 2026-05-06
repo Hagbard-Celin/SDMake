@@ -38,7 +38,7 @@ then used to build and install the appropriate version for the currently running
 AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
 The file SDMakefile.config can be edited to change these locations. It will
 also install the file SDMake-Smake.def to "ENVARC:SDMake/". This file is used
-for limitted compatiblity with SMake default variables when the selected makefile
+for limited compatibility with SMake default variables when the selected makefile
 is named smakefile.
 
 There is also a line in SDMakefile.config tat can be un-commented to switch on
