@@ -692,6 +692,11 @@
          - The default macros $<, $>, $? and $@.
          - Local input files that use preface, filename, or '!'.
 
+         Note: SMake runs the command lists of targets with a hard coded
+         failat level of 1. While SDMake uses a default level of 6.
+         This can be changed with the "-F" command line option or "FAILAT"
+         tool type.
+
 @endnode
 
 @node COMMANDSHELL "Command Shell"
