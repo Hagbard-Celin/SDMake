@@ -36,7 +36,10 @@ To build and install, execute bootstrap.
 This uses the supplied SMakefile to build a generic version in "bin/", which is
 then used to build and install the appropriate version for the currently running
 AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
-The file SDMakefile.config can be edited to change these locations.
+The file SDMakefile.config can be edited to change these locations. It will
+also install the file SDMake-Smake.def to "ENVARC:SDMake/". This file is used
+for limitted compatiblity with SMake default variables when the selected makefile
+is named smakefile.
 
 There is also a line in SDMakefile.config tat can be un-commented to switch on
 support for -d command line option and DEBUG tool type.
