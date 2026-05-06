@@ -1,0 +1,5 @@
+AS = asm
+CC = sc
+CFLAGS =
+LD = slink
+

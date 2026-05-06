@@ -81,12 +81,16 @@ $(EXE): $(OBJS)
 $(OBJS) : $(SRCS)
     sc $(CFLAGS) OBJNAME %(left) %(right)
 
+ENVARC:SDMake : ENVARC:SDMake
+    makedir ENVARC:SDMake
+
 .leftislabel
 
-install:
+install: ENVARC:SDMake
     protect $(EXE) H add
     copy $(EXE)(%|.info) $(INSTALLDIR)
     copy $(GUIDE) $(GUIDEDIR)
+    copy SDMake-SMake.def ENVARC:SDMake
 
 clean:
     -delete $(OBJS)
