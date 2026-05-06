@@ -548,6 +548,15 @@
 
          Contains the time in format: hh:mm:ss.
 
+    Additionally if "SMakefile" is (auto)selected when SDMake is started,
+    the file "ENV:SDMake/SDmake-SMake.def is parsed before "SMakefile".
+    This file contains by default the following assignments:
+
+      AS = asm
+      CC = sc
+      CFLAGS =
+      LD = slink
+
 @endnode
 
 @node DIRECTIVES "Directives"
