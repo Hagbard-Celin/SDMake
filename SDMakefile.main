@@ -110,9 +110,11 @@ install: ENVARC:SDMake ENVARC:SDMake/SDMake-SMake.def
     copy $(EXE)(%|.info) $(INSTALLDIR)
     copy $(GUIDE) $(GUIDEDIR)
     @if defined HOLDBIT_NOP
+     @echo " "
      @echo "The hold bit does not work on this version of AmigaOS."
      @echo "Adding the following line to s:user-startup is highly recommended:"
      @echo "Resident $(INSTALLDIR)SDMake ADD"
+     @echo " "
     @endif
 
 clean:
