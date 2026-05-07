@@ -571,13 +571,9 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		NP_CopyVars, TRUE,
 		TAG_END, NULL};
 
-	    if (cli) {
-		GetProgramName(OldCmd, sizeof(OldCmd));
-		SetProgramName(cmd);
-		stack = cli->cli_DefaultStack * 4;
-	    } else {
-		stack = 8192;
-	    }
+	    GetProgramName(OldCmd, sizeof(OldCmd));
+	    SetProgramName(cmd);
+	    stack = cli->cli_DefaultStack * 4;
 
 	    /*
 	     *	note: Running2_04() means V37 or greater
@@ -615,15 +611,11 @@ dosys:
 		cmd[i] = c;
 		/*err = system13(cmd);*/
 		err = SystemTagList(cmd, tags);
-		if (cli)
-		    cli->cli_Result2 = IoErr();
+		cli->cli_Result2 = IoErr();
 	    }
 
-	    if (cli)
-	    {
-		SetProgramName(OldCmd);
-		SetReturnVar(err, cli->cli_Result2);
-	    }
+	    SetProgramName(OldCmd);
+	    SetReturnVar(err, cli->cli_Result2);
 
 	    if (lock)
 		UnLock(lock);
