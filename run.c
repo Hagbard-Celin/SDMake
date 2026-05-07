@@ -38,9 +38,9 @@ typedef struct Process		    Process;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
+Prototype void SetReturnVar(LONG rc, LONG return2);
 
 static BPTR LoadSegLock(BPTR lock, char *cmd);
-static void SetReturnVar(LONG rc, LONG return2);
 static void SetLocalVar(CONST_STRPTR var, LONG value);
 
 BPTR SaveLock;
@@ -669,7 +669,7 @@ dosys:
     }
 }
 
-static void SetReturnVar(LONG rc, LONG return2)
+void SetReturnVar(LONG rc, LONG return2)
 {
     SetLocalVar("RC", rc);
     SetLocalVar("Result2", return2);

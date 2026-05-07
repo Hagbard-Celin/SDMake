@@ -36,6 +36,7 @@ Prototype BPTR StdOut;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
+Prototype void SetReturnVar(LONG rc, LONG return2);
 
 /* cmdlist.c            */
 
