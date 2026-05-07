@@ -660,32 +660,39 @@
 
                                 COMPATIBILITY
 
-      DMake v2.4 and older.
+      DMake from DICE (v2.4 and older)
 
-         SDMake should be compatible with all DMakefiles made for DMake up
-         to v2.4. Differences in behavior between DMake and SDMake on with
-         those files should be considered, and preferably reported as, bugs.
-
+         SDMake should be compatible with all DMakefiles made for DMake
+         up to v2.4. Any such files that do not work should be considered,
+         and preferably reported as, bugs. The one exception is that DMake
+         will search "dcc:bin/" if a command is not found in the path,
+         while SDMake will not.
 
       DXMake
 
-         SDMake should should technically be compatible with most DMakefies
-         made for DXMake up to v2.12, but those versions where never
-         released for Amiga.
+         SDMake should should technically be compatible with most
+         DMakefies made for DXMake up to v2.12, but those versions where
+         never released for Amiga.
 
 
-      DMake v3.20.0
+      DMake from DICE-nx (v3.20.0 and newer)
 
-         DMake should be compatible with all DMakefiles made for DMake v3.20.0.
-         Differences in behavior between DMake and SDMake on with those files
-         should be considered, and preferably reported as, bugs.
+         SDMake should be compatible with all DMakefiles made for DMake
+         v3.20.0 (the latest version at the time of writing). Any such
+         files that do not work should be considered, and preferably
+         reported as, bugs. The one exception is that DMake will search
+         "dcc:bin/" if a command is not found in the path, while SDMake
+         will not.
+
+         DMakefiles created for newer DMake versions may not work
+         correctly.
 
 
       SMake
 
          SDMake is compatible with a small subset of SMakefiles.
-         The default macros AS, CC, LD, and CFLAGS are added if the selected
-         makefile is named SMakefile.
+         The default macros AS, CC, LD, and CFLAGS are added if the
+         selected makefile is named SMakefile.
          The following is not supported:
          - Fake targets.
          - Transformation rules.
