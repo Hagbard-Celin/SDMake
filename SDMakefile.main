@@ -84,13 +84,36 @@ $(OBJS) : $(SRCS)
 ENVARC:SDMake : ENVARC:SDMake
     makedir ENVARC:SDMake
 
-.leftislabel
+ENVARC:SDMake/SDMake-SMake.def : ENVARC:SDMake/SDMake-SMake.def
+    copy SDMake-SMake.def ENVARC:SDMake
 
-install: ENVARC:SDMake
+.ifgt $(HOST_OSVER) 46
+.else
+ENV:SDMake : ENV:SDMake
+    makedir ENV:SDMake
+
+ENV:SDMake/SDMake-SMake.def : ENV:SDMake/SDMake-SMake.def
+    copy SDMake-SMake.def ENV:SDMake
+
+install: ENV:SDMake ENV:SDMake/SDMake-SMake.def
+.endif
+
+.ifgt $(HOST_OSVER) 39
+.ifgt $(HOST_OSVER) 44
+.else
+HOLDBIT_NOP =
+.endif
+.endif
+
+install: ENVARC:SDMake ENVARC:SDMake/SDMake-SMake.def
     protect $(EXE) H add
     copy $(EXE)(%|.info) $(INSTALLDIR)
     copy $(GUIDE) $(GUIDEDIR)
-    copy SDMake-SMake.def ENVARC:SDMake
+    @if defined HOLDBIT_NOP
+     @echo "The hold bit does not work on this version of AmigaOS."
+     @echo "Adding the following line to s:user-startup is highly recommended:"
+     @echo "Resident $(INSTALLDIR)SDMake ADD"
+    @endif
 
 clean:
     -delete $(OBJS)
