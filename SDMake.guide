@@ -668,9 +668,8 @@
         design:
         - DMake will search "dcc:bin/" if a command is not found in the
           path, while SDMake will not.
-        - DMake accepts CR, LF, or any combination of the two as line
-          endings, while SDMake only works with Amiga text-files (LF line
-          endings).
+        - DMake accepts both CR+LF and LF as line endings, while SDMake
+          only works with Amiga text-files (LF line endings).
 
 
       DXMake
@@ -688,9 +687,8 @@
         reported as, bugs. The following exceptions are by design:
         - DMake will search "dcc:bin/" if a command is not found in the
           path, while SDMake will not.
-        - DMake accepts CR, LF, or any combination of the two as line
-          endings, while SDMake only works with Amiga text-files (LF line
-          endings).
+        - DMake accepts both CR+LF and LF as line endings, while SDMake
+          only works with Amiga text-files (LF line endings).
 
         DMakefiles created for newer DMake versions may not work
         correctly.
