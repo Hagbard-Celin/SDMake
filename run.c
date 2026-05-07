@@ -40,6 +40,8 @@ Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase
 Prototype void InitCommand(void);
 
 static BPTR LoadSegLock(BPTR lock, char *cmd);
+static void SetReturnVar(LONG rc, LONG return2);
+static void SetLocalVar(CONST_STRPTR var, LONG value);
 
 BPTR SaveLock;
 char RootPath[512];
@@ -599,11 +601,13 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    if (seg) {
 		dbprintf(("A cmd = '%s' stack = %d\n", cmdArgs, stack));
 		err = RunCommand(seg->seg_Seg, stack, cmdArgs, strlen(cmdArgs));
+		cli->cli_Result2 = IoErr();
 		if (seg->seg_UC > 0)
 		    seg->seg_UC--;
 	    } else if ((lock = _SearchPath(cmd)) && (seglist = LoadSegLock(lock, ""))) {
 		dbprintf(("B cmd = '%s' stack = %d\n", cmdArgs, stack));
 		err = RunCommand(seglist, stack, cmdArgs, strlen(cmdArgs));
+		cli->cli_Result2 = IoErr();
 		UnLoadSeg(seglist);
 	    } else {
 dosys:
@@ -611,10 +615,15 @@ dosys:
 		cmd[i] = c;
 		/*err = system13(cmd);*/
 		err = SystemTagList(cmd, tags);
+		if (cli)
+		    cli->cli_Result2 = IoErr();
 	    }
 
 	    if (cli)
+	    {
 		SetProgramName(OldCmd);
+		SetReturnVar(err, cli->cli_Result2);
+	    }
 
 	    if (lock)
 		UnLock(lock);
@@ -660,6 +669,19 @@ dosys:
     }
 }
 
+static void SetReturnVar(LONG rc, LONG return2)
+{
+    SetLocalVar("RC", rc);
+    SetLocalVar("Result2", return2);
+}
+
+static void SetLocalVar(CONST_STRPTR var, LONG value)
+{
+    TEXT buf[13] = {0};
+
+    stcl_d(buf, value);
+    SetVar(var, buf, -1, LV_VAR|GVF_LOCAL_ONLY);
+}
 
 static BPTR LoadSegLock(BPTR lock, char *cmd)
 {
