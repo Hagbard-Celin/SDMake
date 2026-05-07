@@ -627,6 +627,18 @@ dosys:
 
 	    if (lock)
 		UnLock(lock);
+
+#if OSVERMIN < 39
+	    if (DOSBase->dl_lib.lib_Version < 39)
+	    {
+		char c;
+
+		c = FGetC(proc->pr_COS);
+		UnGetC(proc->pr_COS, c);
+	    }
+#endif
+	    Flush(proc->pr_COS);
+
 	}
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36

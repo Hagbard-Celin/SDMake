@@ -204,10 +204,13 @@ void myexit(void)
 
 	PrintF("\nHit RETURN to Exit\n");
 	while ((ch = FGetC(StdIn)) != '\n' && ch != -1);
+	Flush(StdOut);
+	Flush(StdOut);
 
 	Close(StdOut);
 	Close(StdIn);
     }
+    flushall();
 }
 
 void procmsg(void)
@@ -737,6 +740,7 @@ void PrintF(CONST_STRPTR ctl, ...)
     if (StdOut)
     {
 	VFPrintf(StdOut, ctl, (LONG *)(&ctl + 1));
+	Flush(StdOut);
     }
     else
     {

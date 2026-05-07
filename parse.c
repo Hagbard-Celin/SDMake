@@ -1309,6 +1309,7 @@ void error(short type, CONST_STRPTR ctl, ...)
     if (StdOut)
     {
 	VFPrintf(StdOut, ctl, (LONG *)(&ctl + 1));
+	Flush(StdOut);
     }
     else
     {
