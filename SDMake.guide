@@ -133,7 +133,9 @@
     targets...
 
         One or more target(s) to run. If none are supplied SDMake
-        will run the first target it finds in the SDMakefile.
+        will run the first target found during parsing of the
+        selected SDMakefile and any included files
+.
 
 @endnode
 @node WBUSAGE "Workbench Usage"
@@ -165,8 +167,8 @@
 
         Select a target to run.
         Can appear multiple times, to select multiple targets.
-        If not present the first target of the selected SDMakefile
-        will run.
+        If not present the first target found during parsing of the
+        selected SDMakefile and any included files will run.
 
     DEFINE
 
@@ -689,6 +691,9 @@
           path, while SDMake will not.
         - DMake accepts both CR+LF and LF as line endings, while SDMake
           only works with Amiga text-files (LF line endings).
+        - If run without specifying a target DMake will try to run a
+          target named "all", while SDMake will run the first target
+          encountered during parsing.
 
         DMakefiles created for newer DMake versions may not work
         correctly.
@@ -702,19 +707,22 @@
         are made:
         - The default macros AS, CC, LD, and CFLAGS are added by auto-
           including the file "ENV:SDMake/SDMake-SMake.def".
-        - In the command list $@ will be translated to %(left), matching
-          SMake behavior.
-        - In the command list $* will be translated to %(right:*.*:*).
-          This matches SMake behavior if there is only one file on the
-          rhs of the current dependency.
-        - In the command list \# will be translated to #.
+        - During parsing of command lists, $@ will be translated to
+          %(left), matching SMake behavior.
+        - During parsing of command lists, $* will be translated to
+          %(right:*.*:*). This matches SMake behavior if there is only
+          one file on the rhs of the current dependency.
+        - During parsing of command lists, \# will be translated to #.
 
         The following is not supported (SMake terminology):
         - Fake targets.
         - Transformation rules.
         - The default macros $<, $> and $?.
         - Local input files that use preface, filename, or '!'.
-        - Comments at the end of any non comment line.
+        - Comments that do not follow the rules explained in @{"SDMakefile" link "SDMAKEFILE"}
+          and @{"Command Shell" link "COMMANDSHELL"}.
+
+        Aditionally comments must that does not start at the first character at the end of any non comment line.
 
         Note: SMake runs the command lists of targets with a hard coded
         failat level of 1. While SDMake uses a default level of 6.
