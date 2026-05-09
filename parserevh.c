@@ -35,7 +35,6 @@ WORD ParseRevInclude(STRPTR includefile)
 
 	    while (FGetsAsync(revfile, line, 128))
 	    {
-		//PrintF("Got line: %s \n", line);
 		if (!(strncmp(line, "#define", 7 )))
 		    GetVerRev(line + 8);
 	    }

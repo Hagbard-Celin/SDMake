@@ -430,6 +430,7 @@ LONG realmain(void)
 #endif
 	}
     }
+
     /*
      *	resolve dependancies requested by the user.  If none requested
      *	the resolve the first one
@@ -725,6 +726,7 @@ int main(ULONG argc, char *argv[])
 	        help(1);
 	    }
 	}
+
 	if (QuietOpt == 0)
 	    puts(VERS " (" DATE ")");
 
