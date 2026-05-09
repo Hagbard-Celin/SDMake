@@ -29,6 +29,7 @@
  */
 
 #include "defs.h"
+#include <math.h>
 #include <dos/dosextens.h>
 #include <dos/var.h>
 #include <dos/dostags.h>
@@ -40,7 +41,9 @@ Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase
 Prototype void InitCommand(void);
 Prototype void SetReturnVar(LONG rc, LONG return2);
 
+#if OSVERMAX >= 36
 static BPTR LoadSegLock(BPTR lock, char *cmd);
+#endif
 static void SetLocalVar(CONST_STRPTR var, LONG value);
 
 BPTR SaveLock;
@@ -527,29 +530,83 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
      */
 
     {
-	short i;
+#if OSVERMAX >= 36
+	short i = 0;
 	short ci;
-	short c;
-	short useSystem;
+	short c = 0;
+	short useSystem = 0;
+	UWORD dosVer = DOSBase->dl_lib.lib_Version;
+	BPTR oldBuf = 0;
+	LONG oldPos = 0;
+	LONG oldEnd = 0;
+#endif
 	LONG err;
-	char *cmdArgs;
+#if OSVERMAX >= 36
+	struct FileHandle *fh = 0;
+	char *cmdArgs = 0;
 	Process *proc = (Process *)FindTask(NULL);
 
-	for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
-	    ;
-	if (strpbrk(cmd + i, "<>|`"))
-	    useSystem = 1;
-	else
-	    useSystem = 0;
+	if (dosVer >= 36)
+	{
+	    for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
+		;
+	    if (strpbrk(cmd + i, "<>|`"))
+		useSystem = 1;
+	    else
+		useSystem = 0;
 
-	if (c = cmd[ci = i])
-	    ++ci;
-	cmd[i] = 0;
+	    if (c = cmd[ci = i])
+		++ci;
+	    cmd[i] = 0;
 
-	if (!(cmdArgs = PAllocVec(strlen(cmd + ci) + 3)))
-	    MemErr();
-	sprintf(cmdArgs, "%s\n", cmd + ci);
-	fflush(stdout);
+	    {
+		char dt[4];
+
+		if (GetVar(cmd, dt, 2, LV_ALIAS | GVF_LOCAL_ONLY) >= 0)
+		    useSystem = 1;
+	    }
+	    
+	    fflush(stdout);
+	    if (StdOut)
+		Flush(StdOut);
+
+	    if (!useSystem)
+	    {
+		ULONG arglen = strlen(cmd + ci);
+
+#if OSVERMIN < 37 && OSVERMAX >= 37
+		if (dosVer >= 37)
+		{
+#endif
+#if OSVERMAX >= 37
+		    if (!(cmdArgs = PAllocVec(arglen + 3)))
+			MemErr();
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
+		}
+		else
+		{
+#endif
+#if OSVERMIN < 37
+		    if (!(cmdArgs = AllocVec(max(arglen + 3, 104), MEMF_PUBLIC)))
+			MemErr();
+
+		    fh = BADDR(Input());
+		    oldBuf = fh->fh_Buf;
+		    oldPos = fh->fh_Pos;
+		    oldEnd = fh->fh_End;
+
+		    fh->fh_Buf = MKBADDR(cmdArgs);
+		    fh->fh_Pos = 0;
+		    fh->fh_End = arglen + 1;
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
+		}
+#endif
+		sprintf(cmdArgs, "%s\n", cmd + ci);
+	    }
+	}
+#endif
 
 	/*
 	 *  NOTE: RunCommand() is unreliable if no pr_CLI exists,
@@ -557,7 +614,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	 */
 
 #if OSVERMIN < 36 && OSVERMAX >= 36
-	if (SysBase->LibNode.lib_Version >= 36 && proc->pr_CLI)
+	if (dosVer >= 36)
 #endif
 #if OSVERMAX >= 36
 	{
@@ -566,20 +623,12 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    long stack;
 	    CLI *cli = (CLI *)BADDR(proc->pr_CLI);
 	    static char OldCmd[128];
-	    char dt[4];
-	    struct TagItem tags[] = {
-		NP_CopyVars, TRUE,
-		TAG_END, NULL};
 
 	    GetProgramName(OldCmd, sizeof(OldCmd));
 	    SetProgramName(cmd);
 	    stack = cli->cli_DefaultStack * 4;
 
-	    /*
-	     *	note: Running2_04() means V37 or greater
-	     */
-
-	    if (useSystem || (Running2_04() && GetVar(cmd, dt, 2, LV_ALIAS | GVF_LOCAL_ONLY) >= 0))
+	    if (useSystem)
 		goto dosys;
 
 	    Forbid();
@@ -605,8 +654,13 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		err = RunCommand(seglist, stack, cmdArgs, strlen(cmdArgs));
 		cli->cli_Result2 = IoErr();
 		UnLoadSeg(seglist);
-	    } else {
+	    } else
 dosys:
+	    {
+		struct TagItem tags[] = {
+		    NP_CopyVars, TRUE,
+		    TAG_END, NULL};
+
 		dbprintf(("D\n"));
 		cmd[i] = c;
 		/*err = system13(cmd);*/
@@ -629,15 +683,29 @@ dosys:
 #endif
 #if OSVERMIN < 36
 	    dbprintf(("E\n"));
-	    cmd[i] = c;
 	    err = system13(cmd);
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
 	}
 #endif
 
-	PFreeVec(cmdArgs);
-
+#if OSVERMAX >= 36
+	if (cmdArgs)
+	{
+	    if (dosVer >= 37)
+		PFreeVec(cmdArgs);
+	    else
+	    {
+		if(fh->fh_Buf == MKBADDR(cmdArgs))
+		{
+		    fh->fh_Buf = oldBuf;
+		    fh->fh_Pos = oldPos;
+		    fh->fh_End = oldEnd;
+		}
+		FreeVec(cmdArgs);
+	    }
+	}
+#endif
 	{
 	    LONG ret = CMD_OK;
 
@@ -677,6 +745,7 @@ static void SetLocalVar(CONST_STRPTR var, LONG value)
     SetVar(var, buf, -1, LV_VAR|GVF_LOCAL_ONLY);
 }
 
+#if OSVERMAX >= 36
 static BPTR LoadSegLock(BPTR lock, char *cmd)
 {
     BPTR oldLock;
@@ -687,3 +756,4 @@ static BPTR LoadSegLock(BPTR lock, char *cmd)
     CurrentDir(oldLock);
     return(seg);
 }
+#endif
