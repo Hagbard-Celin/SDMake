@@ -37,11 +37,11 @@ This uses the supplied SMakefile to build a generic version in "bin/", which is
 then used to build and install the appropriate version for the currently running
 AmigaOS version to "sc:c/". It also installs the .guide file to "HELP:english/".
 The file SDMakefile.config can be edited to change these locations. It will
-also install the file SDMake-Smake.def to "ENVARC:SDMake/" if it is not already
+also install the file SDMake-SMake.def to "ENVARC:SDMake/" if it is not already
 present. This file is used for limited compatibility with SMake default variables
 when the selected makefile is named smakefile.
 
-There is also a line in SDMakefile.config tat can be un-commented to switch on
+There is also a line in SDMakefile.config that can be un-commented to switch on
 support for -d command line option and DEBUG tool type.
 
 If asyncio.library v39.2 or greater is detected in Libs:, the bootstrap will
