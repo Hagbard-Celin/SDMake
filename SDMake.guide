@@ -697,13 +697,24 @@
       SMake
 
         SDMake is compatible with a small subset of SMakefiles.
-        The default macros AS, CC, LD, and CFLAGS are added if the
-        selected makefile is named SMakefile.
-        The following is not supported:
+        On startup the supplied/auto-selected filename is checked,
+        and if it matches SMakefile (case-insensitive) some adjustments
+        are made:
+        - The default macros AS, CC, LD, and CFLAGS are added by auto-
+          including the file "ENV:SDMake/SDMake-SMake.def".
+        - In the command list $@ will be translated to %(left), matching
+          SMake behavior.
+        - In the command list $* will be translated to %(right:*.*:*).
+          This matches SMake behavior if there is only one file on the
+          rhs of the current dependency.
+        - In the command list \# will be translated to #.
+
+        The following is not supported (SMake terminology):
         - Fake targets.
         - Transformation rules.
-        - The default macros $<, $>, $? and $@.
+        - The default macros $<, $> and $?.
         - Local input files that use preface, filename, or '!'.
+        - Comments at the end of any non comment line.
 
         Note: SMake runs the command lists of targets with a hard coded
         failat level of 1. While SDMake uses a default level of 6.

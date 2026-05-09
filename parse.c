@@ -734,6 +734,30 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			    PutCmdListChar(cmdList, '\\');
 			PutCmdListChar(cmdList, c);
 			break;
+		    case '$':
+			if (SMakeMode)
+			{
+			    if (ws) {
+			        PutCmdListChar(cmdList, ' ');
+			        ws = 0;
+			    }
+			    c = ReadCharAsync(Fi);
+			    if (c == '@')
+			    {
+				PutCmdListLen(cmdList, "%(left)", 7);
+			    }
+			    else
+			    if (c == '*')
+			    {
+				PutCmdListLen(cmdList, "%(right:*.*:*)", 14);
+			    }
+			    else
+			    {
+				PutCmdListChar(cmdList, '$');
+				PutCmdListChar(cmdList, c);
+			    }
+			    break;
+			}
 		    default:
 			if (ws) {
 			    PutCmdListChar(cmdList, ' ');
