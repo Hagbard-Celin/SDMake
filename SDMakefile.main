@@ -16,13 +16,31 @@ SRCS= $(SRCS) console.c system13.c
 .endif
 
 .ifgt 1 $(INTERNAL_ASYNC)
+
 ASYNCSRCS=$(ASYNCDIR)AsyncLib.c $(ASYNCDIR)AsyncLibVer.c
+
+.ifgt $(OSVERMIN) 35
 .else
-ASYNCSRCS=$(ASYNCDIR)OpenAsyncFH.c $(ASYNCDIR)SeekAsync.c \
-      $(ASYNCDIR)ReadAsync.c $(ASYNCDIR)CloseAsync.c $(ASYNCDIR)FGetsLenAsync.c \
+NOBUILD =
+.endif
+
+.else
+
+ASYNCSRCS=$(ASYNCDIR)ReadAsync.c $(ASYNCDIR)CloseAsync.c $(ASYNCDIR)FGetsLenAsync.c \
       $(ASYNCDIR)ReadCharAsync.c $(ASYNCDIR)RecordAsyncFailure.c $(ASYNCDIR)SendPacket.c \
-      $(ASYNCDIR)WaitPacket.c $(ASYNCDIR)RequeuePacket.c
+      $(ASYNCDIR)RequeuePacket.c
+
+.ifgt $(OSVERMAX) 35
+ASYNCSRCS=$(ASYNCDIR)OpenAsyncFH.c $(ASYNCDIR)SeekAsync.c $(ASYNCSRCS)
 SRCS =$(SRCS) OpenAsync.c
+.endif
+
+.ifgt $(OSVERMIN) 35
+ASYNCSRCS=$(ASYNCDIR)WaitPacket.c $(ASYNCSRCS)
+.else
+SRCS = $(SRCS) asyncr13.c waitpacketr13.c
+.endif
+
 .endif
 
 GUIDE= sdmake.guide
@@ -71,6 +89,15 @@ bootstrap: all install
 
 .leftisfile
 
+.ifdef NOBUILD
+$(DIRS) ::
+
+$(EXE):
+    @echo ""
+    @echo "Building %(left) is not supported as "
+    @echo "asyncio.library is not 1.3 compatible."
+    @echo ""
+.else
 $(DIRS) :$(DIRS)
 	makedir %(left)
         copy build.info %(left).info
@@ -78,9 +105,10 @@ $(DIRS) :$(DIRS)
 $(EXE): $(OBJS)
     @fwrite $(OD)$(PROJECT).lnktmp %(right)
     sc $(CFLAGS) LINK to %(left) with $(OD)$(PROJECT).lnktmp
+.endif
 
 $(OBJS) : $(SRCS)
-    sc $(CFLAGS) OBJNAME %(left) %(right)
+      sc $(CFLAGS) OBJNAME %(left) %(right)
 
 ENVARC:SDMake : ENVARC:SDMake
     makedir ENVARC:SDMake
@@ -131,16 +159,18 @@ version:
 
 .leftisfile
 
-$(OD)depend.o: depend.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)string.o: string.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)run.o: run.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
-$(OD)var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)buffer.o: buffer.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)depend.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)path.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)cond.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parserevh.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)cmdlist.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)string.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)run.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)main.o: defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
+$(OD)var.o:  defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parse.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)convert.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)buffer.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)asyncr13.o: asyncior13.h
+
 

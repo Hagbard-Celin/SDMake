@@ -67,6 +67,9 @@
 
 #include "defs.h"
 
+extern void *DosAllocMem(long bytes);
+extern void DosFree(void *vptr);
+
 Prototype void InitDep(void);
 Prototype DepRef  *CreateDepRef(List *, CONST_STRPTR);
 Prototype DepRef  *DupDepRef(DepRef *);
@@ -308,14 +311,18 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		ret = DN_CHANGED;
 	    else
 	    if (lhsStRes < 0) {
-	        PrintF("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
+		PrintF("The file %s could not be found\n", lhsDep->dn_Node.ln_Name);
 		ret = DN_FAIL;
 	    }
 	    else
 	    if (parStRes < 0)
 		ret = DN_CHANGED;
 	    else
+#if OSVERMIN >= 36
 	    if (CompareDates(&parent->dn_Info->datestamp, &lhsDep->dn_Info->datestamp) < 0)
+#else
+	    if (datecmp(&parent->dn_Info->datestamp, &lhsDep->dn_Info->datestamp) < 0)
+#endif
 		ret = DN_NOCHANGE;
 	    else
 		ret = DN_CHANGED;
@@ -447,7 +454,11 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 		{
 		    if (Examine(tmplock, fib))
 		    {
+#if OSVERMIN >= 36
 			if (CompareDates(&parent->dn_Info->datestamp, &fib->fib_Date) > 0)
+#else
+			if (datecmp(&parent->dn_Info->datestamp, &fib->fib_Date) > 0)
+#endif
 			    if (fib->fib_DirEntryType < 0)
 				yr = DN_CHANGED;
 
@@ -593,7 +604,11 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
 	{
 	    if (Examine(tmplock, fib))
 	    {
+#if OSVERMIN >= 36
 		if ((CompareDates(&lhsDep->dn_Info->datestamp, &fib->fib_Date) == 0) &&
+#else
+		if ((datecmp(&lhsDep->dn_Info->datestamp, &fib->fib_Date) == 0) &&
+#endif
 		lhsDep->dn_Info->size == fib->fib_Size)
 		{
 		    lhsDep->dn_Result = DN_NOCHANGE_TOUCH;
@@ -627,13 +642,40 @@ int ExecuteDependency(DepNode *parent, DepRef *lhs)
      * again.
      */
     if (lhsDep->dn_Result == DN_NOCHANGE_TOUCH) {
-	struct DateStamp ds;
+	D_S(struct DateStamp, ds);
 	
 	if (QuietOpt == 0)
 	    PrintF("TOUCHFILE %s\n", lhsDep->dn_Node.ln_Name);
-	DateStamp(&ds);
-	SetFileDate(lhsDep->dn_Node.ln_Name , &ds);
-	lhsDep->dn_Info->datestamp = ds;
+	DateStamp(ds);
+#if OSVERMIN >= 36
+	SetFileDate(lhsDep->dn_Node.ln_Name , ds);
+#else
+	{
+	    BPTR lock;
+	    BSTR filename;
+
+	    if (filename = MKBADDR(DosAllocMem(strlen(lhsDep->dn_Node.ln_Name))))
+	    {
+		if (lock = Lock (lhsDep->dn_Node.ln_Name, ACCESS_READ))
+		{
+		    BPTR parent;
+
+		    if (parent = ParentDir(lock))
+		    {
+			struct MsgPort *port = ((struct FileLock *)BADDR(parent))->fl_Task;
+
+			UnLock(lock);
+			DoPkt(port, ACTION_SET_DATE, 0, parent, filename, MKBADDR(ds), 0);
+			UnLock(parent);
+		    }
+		    else
+			UnLock(lock);
+		}
+		DosFree(BADDR(filename));
+	    }
+	}
+#endif
+	lhsDep->dn_Info->datestamp = *ds;
     }
 
     /*

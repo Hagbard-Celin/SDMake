@@ -448,7 +448,12 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	LONG lastret = 0;
 
 	((CLI *)BADDR(((Process *)FindTask(NULL))->pr_CLI))->cli_Result2 = 0;
-	SetReturnVar(0, 0);
+#if OSVERMAX >= 36
+#if OSVERMIN < 36
+	if (DOSBase->dl_lib.lib_Version >= 36)
+#endif
+	    SetReturnVar(0, 0);
+#endif
 
 	while (!ChkCtrlD() && r <= CMD_OK && (n = CmdListSizeCommand(&tmpDst))) {
 	    WORD cmdflags = 0;

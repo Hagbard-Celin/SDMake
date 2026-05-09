@@ -7,9 +7,9 @@ OBJS= $(ODIR)depend.o $(ODIR)cmdlist.o $(ODIR)run.o $(ODIR)poolmem.o $(ODIR)stri
       $(ODIR)main.o $(ODIR)var.o $(ODIR)parse.o $(ODIR)cond.o $(ODIR)convert.o\
       $(ODIR)gethead.o $(ODIR)getpred.o $(ODIR)gettail.o $(ODIR)buffer.o $(ODIR)path.o\
       $(ODIR)console.o $(ODIR)system13.o $(ODIR)parserevh.o $(ODIR)async.o\
-      $(ODIR)OpenAsyncFH.o $(ODIR)OpenAsync.o $(ODIR)SeekAsync.o $(ODIR)ReadAsync.o\
-      $(ODIR)CloseAsync.o $(ODIR)FGetsLenAsync.o $(ODIR)ReadCharAsync.o\
-      $(ODIR)RecordAsyncFailure.o $(ODIR)SendPacket.o $(ODIR)WaitPacket.o\
+      $(ODIR)asyncr13.o $(ODIR)waitpacketr13.o $(ODIR)OpenAsyncFH.o $(ODIR)OpenAsync.o\
+      $(ODIR)SeekAsync.o $(ODIR)ReadAsync.o $(ODIR)CloseAsync.o $(ODIR)FGetsLenAsync.o\
+      $(ODIR)ReadCharAsync.o $(ODIR)RecordAsyncFailure.o $(ODIR)SendPacket.o\
       $(ODIR)RequeuePacket.o
 
 bin/sdmake: $(OBJS)
@@ -59,6 +59,8 @@ $(ODIR)console.o: console.c
 $(ODIR)system13.o: system13.c
 
 $(ODIR)async.o: async.c defs.h
+$(ODIR)asyncr13.o: asyncr13.c asyncior13.h
+$(ODIR)waitpacketr13.o: waitpacketr13.c
 $(ODIR)OpenAsync.o: OpenAsync.c
 
 $(ODIR)OpenAsyncFH.o: asyncio/src/OpenAsyncFH.c
@@ -69,5 +71,4 @@ $(ODIR)FGetsLenAsync.o: asyncio/src/FGetsLenAsync.c
 $(ODIR)ReadCharAsync.o: asyncio/src/ReadCharAsync.c
 $(ODIR)RecordAsyncFailure.o: asyncio/src/RecordAsyncFailure.c
 $(ODIR)SendPacket.o: asyncio/src/SendPacket.c
-$(ODIR)WaitPacket.o: asyncio/src/WaitPacket.c
 $(ODIR)RequeuePacket.o: asyncio/src/RequeuePacket.c

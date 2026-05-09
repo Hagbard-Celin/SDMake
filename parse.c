@@ -69,6 +69,14 @@
 
 #include "defs.h"
 #include <stdarg.h>
+#if OSVERMIN < 36
+#if OSVERMAX >= 36
+#define SeekAsync seekAsync
+#else
+#define SeekAsync SeekAsyncR13
+extern LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode );
+#endif
+#endif
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);

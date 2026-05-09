@@ -19,8 +19,14 @@
 
 #include "defs.h"
 
+
+extern AsyncFile *OpenAsyncR13( CONST_STRPTR fileName, LONG filesize,  LONG bufferSize );
+extern LONG CloseAsyncR13( AsyncFile *file );
+extern LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode );
+
 Prototype AsyncFile *OpenAsyncR(const STRPTR fileName);
 Prototype void CloseAsyncR(struct AsyncFile *file);
+Prototype LONG seekAsync( AsyncFile *filearg, LONG position, SeekModes mode );
 
 Prototype struct FileList *OpenFiles;
 
@@ -31,7 +37,10 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 {
     BPTR lock;
     UWORD buffsize = 8192;
-    AsyncFile *file;
+    AsyncFile *file = 0;
+#if OSVERMIN < 36
+    LONG filesize;
+#endif
 
     if (lock = Lock(fileName, ACCESS_READ))
     {
@@ -39,6 +48,9 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 	UWORD half = 4096;
 
 	Examine(lock, fib);
+#if OSVERMIN < 36
+	filesize = fib->fib_Size;
+#endif
 
 	while (fib->fib_Size < half)
 	{
@@ -51,7 +63,26 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 	UnLock(lock);
     }
 
-    if (file = OpenAsync(fileName, MODE_READ, buffsize))
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
+    {
+#endif
+#if OSVERMAX >= 36
+	file = OpenAsync(fileName, MODE_READ, buffsize);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	file = OpenAsyncR13(fileName, filesize, buffsize);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
+
+    if (file)
     {
 	struct FileList *thisfile;
 
@@ -101,6 +132,34 @@ void CloseAsyncR(struct AsyncFile *file)
 	    PFree(thisfile, sizeof(struct FileList));
     }
 
-    CloseAsync(file);
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
+    {
+#endif
+#if OSVERMAX >= 36
+	CloseAsync(file);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	CloseAsyncR13(file);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
 }
+
+
+#if OSVERMIN < 36 && OSVERMAX >= 36
+LONG seekAsync( AsyncFile *filearg, LONG position, SeekModes mode )
+{
+    if (DOSBase->dl_lib.lib_Version >= 36)
+	return SeekAsync( filearg, position, mode );
+    else
+	return SeekAsyncR13( filearg, position, mode );
+}
+#endif
 
