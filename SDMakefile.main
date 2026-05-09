@@ -34,9 +34,9 @@ TYPE = Generic
 .endif
 
 .ifgt 1 $(INTERNAL_ASYNC)
-BD= build/$(TYPE)-needs_asyncio.library/
+BD= build/$(TYPE)-asyncio.library/
 .else
-BD= build/$(TYPE)-asyncio_integrated/
+BD= build/$(TYPE)-asyncio_internal/
 .endif
 
 OD= $(BD)obj/
