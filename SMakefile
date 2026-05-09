@@ -59,9 +59,9 @@ $(ODIR)console.o: console.c
 $(ODIR)system13.o: system13.c
 
 $(ODIR)async.o: async.c defs.h
+$(ODIR)OpenAsync.o: OpenAsync.c
 
 $(ODIR)OpenAsyncFH.o: asyncio/src/OpenAsyncFH.c
-$(ODIR)OpenAsync.o: asyncio/src/OpenAsync.c
 $(ODIR)SeekAsync.o: asyncio/src/SeekAsync.c
 $(ODIR)ReadAsync.o: asyncio/src/ReadAsync.c
 $(ODIR)CloseAsync.o: asyncio/src/CloseAsync.c

@@ -18,10 +18,11 @@ SRCS= $(SRCS) console.c system13.c
 .ifgt 1 $(INTERNAL_ASYNC)
 ASYNCSRCS=$(ASYNCDIR)AsyncLib.c $(ASYNCDIR)AsyncLibVer.c
 .else
-ASYNCSRCS=$(ASYNCDIR)OpenAsyncFH.c $(ASYNCDIR)OpenAsync.c $(ASYNCDIR)SeekAsync.c \
+ASYNCSRCS=$(ASYNCDIR)OpenAsyncFH.c $(ASYNCDIR)SeekAsync.c \
       $(ASYNCDIR)ReadAsync.c $(ASYNCDIR)CloseAsync.c $(ASYNCDIR)FGetsLenAsync.c \
       $(ASYNCDIR)ReadCharAsync.c $(ASYNCDIR)RecordAsyncFailure.c $(ASYNCDIR)SendPacket.c \
       $(ASYNCDIR)WaitPacket.c $(ASYNCDIR)RequeuePacket.c
+SRCS =$(SRCS) OpenAsync.c
 .endif
 
 GUIDE= sdmake.guide
