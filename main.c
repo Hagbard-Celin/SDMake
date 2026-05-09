@@ -105,6 +105,7 @@ Prototype short	DoAll;
 Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
+Prototype short	SMakeMode;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
 Prototype struct Process *mycli;
@@ -125,6 +126,7 @@ short	DoAll;
 short   DefIgnore;
 short   SomeWork;
 short	XSaveLockValid;
+short	SMakeMode;
 BPTR	XSaveLock;
 char     version[] = VERSTAG ", "VEREXTRA"\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
@@ -472,6 +474,8 @@ LONG realmain(void)
 		UnLock(deffile);
 		ParseFile("ENV:SDMake/SDMake-SMake.def");
 	    }
+
+	    SMakeMode = 1;
 	}
 
 	ParseFile(XFileName);

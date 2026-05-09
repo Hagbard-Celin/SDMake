@@ -730,7 +730,8 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			    ++LineNo;
 			    continue;
 			}
-			PutCmdListChar(cmdList, '\\');
+			if (!SMakeMode || c != '#')
+			    PutCmdListChar(cmdList, '\\');
 			PutCmdListChar(cmdList, c);
 			break;
 		    default:
