@@ -27,6 +27,7 @@ Prototype short	DoAll;
 Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
+Prototype short	SMakeMode;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
 Prototype struct Process *mycli;
