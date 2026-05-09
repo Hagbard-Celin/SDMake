@@ -1,10 +1,10 @@
 
 The code in this directory comes from https://aminet.net/package/dev/c/AsyncIO
 
-It was written by:
+The authors are, according to the included AmigaGuide:
 - Martin Taillefer
 - Magnus Holmgren
-- Olaf Barthel
+- Olaf Barthel (listed as inspiration)
 - Michael B. Smith
 
 
