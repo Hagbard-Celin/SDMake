@@ -95,7 +95,7 @@
 #ifdef INTERNAL_ASYNC
 #define VEREXTRA TYPESTR
 #else
-#define VEREXTRA TYPESTR", requires asyncio.library asyncio.library v39.2"
+#define VEREXTRA TYPESTR", requires asyncio.library v39.2"
 #endif
 
 typedef struct Node Node;
