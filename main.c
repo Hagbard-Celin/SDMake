@@ -215,6 +215,7 @@ void myexit(void)
     flushall();
 }
 
+#if OSVERMAX >= 36
 void procmsg(void)
 {
     struct climsg msg;
@@ -344,7 +345,7 @@ BOOL makecli(struct Process *sproc)
 
 	return TRUE;
 }
-
+#endif
 
 LONG realmain(void)
 {
