@@ -19,7 +19,7 @@ directive from DXMake.
 
 Most notable changes from DMake/DXMake so far:
 - Removed all not Amiga related code.
-- Replaced many POSIX functions with dos.library calls.
+- Replaced many ANSI/POSIX functions with dos.library calls.
 - Added cache to dependency-scanning to avoid multiple redundant Examine().
 - Added multiple internal commands.
 - Added multiple directives.

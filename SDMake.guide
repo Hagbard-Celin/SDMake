@@ -134,8 +134,17 @@
 
         One or more target(s) to run. If none are supplied SDMake
         will run the first target found during parsing of the
-        selected SDMakefile and any included files
-.
+        selected SDMakefile and any included files.
+
+
+  When started from shell without the "-q" option the return codes are:
+
+    - ERROR if a command list was terminated due to a command in the list
+      ending with a return code greater than the current failat level.
+
+    - FAIL if SDMake was terminated early due to any other error.
+
+    - OK in all other cases.
 
 @endnode
 @node WBUSAGE "Workbench Usage"
@@ -735,11 +744,12 @@
 
 				COMMAND SHELL
 
-    Under 2.0 commands that do not contain any sort of redirection are run
-    with RunCommand().  If a command is an alias or there is some sort of
-    redirection in the arguments it will be run with System().
+    Under 2.0 and newer commands that do not contain any sort of redirection
+    are run with RunCommand().  If a command is an alias or there is some
+    sort of redirection in the arguments it will be run with System().
 
-    Under 1.3 everything is run in a separate shell started with Execute().
+    Under 1.3 a separate shell is started with Execute(). And everything is
+    run in that shell.
 
     Commands may be prefixed.  The "@" prefix tells SDMake not to echo
     the command line before it executes it.  The "-" prefix tells SDMake
