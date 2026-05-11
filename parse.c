@@ -530,6 +530,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
     long len;
     short done;
     short eol = 1;
+    short append = 0;
     List tmpList;
 
     if (cond == 0 || FindVariable(varName, type) == NULL) {
@@ -567,16 +568,20 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	    for (i = 0; i < len && (AltBuf[i] == ' ' || AltBuf[i] == '\t'); ++i)
 		;
 	    /*
-	     * allow one whitespace in
+	     * allow one space in front if we are continuing a line due to '\\' + '\n'
 	     */
-	    if (i && ((AltBuf[i-1] == '\t') || (AltBuf[i] == ' ')))
-		--i;
+	    if (i && append && ((AltBuf[i-1] == '\t') || (AltBuf[i-1] == ' ')))
+		PutCmdListChar(&tmpList, ' ');
 	    for (; i < len; ++i)
 		PutCmdListChar(&tmpList, AltBuf[i]);
 
 	}
+
 	if (done > 0)
 	    break;
+	else
+	if (eol)
+	    append = 1;
     }
 
     /*
