@@ -584,6 +584,7 @@
         Reads the -h file filename, and parse any "#define" whose name
         contains REV or VER. If they define a value, or another "#define"
         whose name matches a existing variable, create a matching variable.
+        The define names must be made up of only uppercase A to Z.
         A file consisting of the following lines would create three
         variables, $(VERSION) containing '4', $(REVISION) containing '2'
         and $(OTHERVER) containing '4'.
@@ -591,6 +592,7 @@
            #define VERS		"prog v4.2"
            #define VERSION	4
            #define REVISION	2
+           #define aVERsion     5
            #define OTHERVER	VERSION
            #define SOMETHING	42
            #define SOMEVERE     SOMETHING
