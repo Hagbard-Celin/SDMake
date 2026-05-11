@@ -23,7 +23,7 @@ char *AllocPathBuffer()
     if ((node = RemHead(&PathBufList)) == NULL)
     {
 	if (!(node = PAlloc(PBUFSIZE)))
-	    error(FATAL, "memory allocation failed");
+	    error(FATAL, IoErr(), "memory allocation failed");
     }
     return((char *)node);
 }

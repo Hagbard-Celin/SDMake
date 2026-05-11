@@ -81,7 +81,7 @@ extern LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode );
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
-Prototype void error(short type, CONST_STRPTR ctl, ...);
+Prototype void error(short type, LONG ioerr, CONST_STRPTR ctl, ...);
 
 
 Prototype char SymBuf[256];
@@ -153,12 +153,12 @@ void ParseFile(STRPTR fileName)
 	CopyCmdList(&var->var_CmdList, &topdirList);
 	len = CmdListSize(&list);
 	if (!(tfileName = PAllocVec(len + strlen(fileName) + 1)))
-	    error(FATAL, "memory allocation failed");
+	    error(FATAL, IoErr(), "memory allocation failed");
 	CopyCmdListBuf(&list, tfileName);
 	strcpy(tfileName + len, fileName);
 
 	if ((fi = OpenAsyncR(tfileName)) == NULL)
-	    error(FATAL, "Unable to open %s", tfileName);
+	    error(FATAL, IoErr(), "Unable to open %s", tfileName);
 	PFreeVec(tfileName);
     }
 
@@ -205,14 +205,12 @@ void ParseFile(STRPTR fileName)
 			int maxl;
 
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .export!");
+			    error(FATAL, NULL, "Expected a symbol for .export!");
 
 			if ((var = FindVariable(SymBuf, '$')) == NULL) {
-			    error(
-				FATAL,
-				"export %s failed, variable not found",
-				SymBuf
-			    );
+			    error(FATAL, NULL,
+				  "export %s failed, variable not found",
+				  SymBuf);
 			}
 			{
 			    static List CmdList = {
@@ -223,7 +221,7 @@ void ParseFile(STRPTR fileName)
 			    CopyCmdList(&var->var_CmdList, &CmdList);
 			    maxl = CmdListSize(&CmdList) + 1;
 			    if (!(data = PAlloc(maxl)))
-				error(FATAL, "memory allocation failed");
+				error(FATAL, IoErr(), "memory allocation failed");
 			    CopyCmdListBuf(&CmdList, data);
 #if OSVERMIN < 36 && OSVERMAX >= 36
 			    if (DOSBase->dl_lib.lib_Version >= 36)
@@ -263,9 +261,9 @@ void ParseFile(STRPTR fileName)
 
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
-			error(FATAL, "Expected a symbol for .include!");
+			error(FATAL, NULL, "Expected a symbol for .include!");
 		    if (!(path = PAllocVec(SymBufLen + 1)))
-			error(FATAL, "memory allocation failed");
+			error(FATAL, NULL, "memory allocation failed");
 		    strcpy(path, SymBuf);
 		    ParseFile(path);
 		    PFreeVec(path);
@@ -276,7 +274,7 @@ void ParseFile(STRPTR fileName)
 
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
-			error(FATAL, "Expected newline after .include filename");
+			error(FATAL, NULL, "Expected newline after .include filename");
 		} else if (ifTrue && SymBufLen == 10 && strcmp(SymBuf, ".revheader") == 0) {
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
@@ -284,27 +282,27 @@ void ParseFile(STRPTR fileName)
 		    ParseRevInclude(SymBuf);
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
-			error(FATAL, "Expected newline after .revheader filename");
+			error(FATAL, NULL, "Expected newline after .revheader filename");
 		} else if (SymBufLen == 5 && strcmp(SymBuf, ".else") == 0) {
 		    if (ifBase == NULL)
-			error(FATAL, ".else without .if*");
+			error(FATAL, NULL, ".else without .if*");
 		    ifTrue = elseIf(&ifBase);
 		} else if (SymBufLen == 5 && strcmp(SymBuf, ".ifeq") == 0) {
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifeq!");
+			    error(FATAL, NULL, "Expected a symbol for .ifeq!");
 			strcpy(AltBuf2, SymBuf);
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a second symbol for .ifeq!");
+			    error(FATAL, NULL, "Expected a second symbol for .ifeq!");
 			if (stricmp(SymBuf, AltBuf2) == 0)
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
 			t = GetElement(ifTrue, &expansion);
 		        if (t != TokNewLine)
-			    error(FATAL, "Expected newline after .ifeq second argument");
+			    error(FATAL, NULL, "Expected newline after .ifeq second argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -314,18 +312,18 @@ void ParseFile(STRPTR fileName)
 
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifgt!");
+			    error(FATAL, NULL, "Expected a symbol for .ifgt!");
 			firstvalue = atol(SymBuf);
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a second symbol for .ifgt!");
+			    error(FATAL, NULL, "Expected a second symbol for .ifgt!");
 			if (firstvalue > atol(SymBuf))
 			    ifTrue = pushIf(&ifBase, 1);
 			else
 			    ifTrue = pushIf(&ifBase, 0);
 			t = GetElement(ifTrue, &expansion);
 		        if (t != TokNewLine)
-			    error(FATAL, "Expected newline after .ifgt second argument");
+			    error(FATAL, NULL, "Expected newline after .ifgt second argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -334,11 +332,11 @@ void ParseFile(STRPTR fileName)
 			STRPTR found = 0;
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifin!");
+			    error(FATAL, NULL, "Expected a symbol for .ifin!");
 			strcpy(AltBuf2, SymBuf);
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a second symbol for .ifin!");
+			    error(FATAL, NULL, "Expected a second symbol for .ifin!");
 			do
 			{
 			    if (!found)
@@ -349,7 +347,7 @@ void ParseFile(STRPTR fileName)
 			else
 			    ifTrue = pushIf(&ifBase, 0);
 			if (t != TokNewLine)
-			    error(FATAL, "Expected newline after .ifin last argument");
+			    error(FATAL, NULL, "Expected newline after .ifin last argument");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -357,7 +355,7 @@ void ParseFile(STRPTR fileName)
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifdef!");
+			    error(FATAL, NULL, "Expected a symbol for .ifdef!");
 			if (FindVariable(SymBuf, '$')) {
 			    ifTrue = pushIf(&ifBase, 1);
 			} else {
@@ -365,7 +363,7 @@ void ParseFile(STRPTR fileName)
 			}
 			t = GetElement(ifTrue, &expansion);
 		        if (t != TokNewLine)
-			    error(FATAL, "Expected newline after .ifdef variable-name");
+			    error(FATAL, NULL, "Expected newline after .ifdef variable-name");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
@@ -373,7 +371,7 @@ void ParseFile(STRPTR fileName)
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifos!");
+			    error(FATAL, NULL, "Expected a symbol for .ifos!");
 			if (stricmp(SymBuf, "AmigaOS") == 0) {
 			    ifTrue = pushIf(&ifBase, 1);
 			} else {
@@ -386,7 +384,7 @@ void ParseFile(STRPTR fileName)
 		    if (ifTrue) {
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .ifarch!");
+			    error(FATAL, NULL, "Expected a symbol for .ifarch!");
 			if (stricmp(SymBuf, "m68k") == 0) {
 			    ifTrue = pushIf(&ifBase, 1);
 			} else {
@@ -401,7 +399,7 @@ void ParseFile(STRPTR fileName)
 
 			t = GetElement(ifTrue, &expansion);
 			if (t != TokSym)
-			    error(FATAL, "Expected a symbol for .iffile!");
+			    error(FATAL, NULL, "Expected a symbol for .iffile!");
 
 			if (tmplock = Lock(SymBuf, ACCESS_READ))
 			{
@@ -412,22 +410,22 @@ void ParseFile(STRPTR fileName)
 			}
 			t = GetElement(ifTrue, &expansion);
 		        if (t != TokNewLine)
-			    error(FATAL, "Expected newline after .iffile filename");
+			    error(FATAL, NULL, "Expected newline after .iffile filename");
 		    } else {
 			ifTrue = pushIf(&ifBase, 0);
 		    }
 		} else if (SymBufLen == 6 && strcmp(SymBuf, ".endif") == 0) {
 		    if (ifBase == NULL)
-			error(FATAL, ".endif without .if");
+			error(FATAL, NULL, ".endif without .if");
 		    ifTrue = popIf(&ifBase);
 		} else if (ifTrue && strcmp(SymBuf, ".onerror") == 0) {
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
-			error(FATAL, "Expected a symbol for .onerror!");
+			error(FATAL, NULL, "Expected a symbol for .onerror!");
 		    if (OnError)
 			PFreeVec(OnError);
 		    if (!(OnError = PAllocVec(SymBufLen + 1)))
-			error(FATAL, "memory allocation failed");
+			error(FATAL, IoErr(), "memory allocation failed");
 		    strcpy(OnError, SymBuf);
 		} else if (ifTrue && SymBufLen == 12 && strcmp(SymBuf, ".leftislabel") == 0) {
 		    dbprintf(("Setting left label\n"));
@@ -442,7 +440,7 @@ void ParseFile(STRPTR fileName)
 		    lefttype &= ~LT_MASK;
 		    lefttype |= LT_FILE;
 		} else if (ifTrue) {
-		    error(FATAL, "unknown '.' directive");
+		    error(FATAL, NULL, "unknown '.' directive");
 		}
 
 		/*
@@ -471,7 +469,7 @@ void ParseFile(STRPTR fileName)
 		if (t == TokEq)
 		    t = ParseAssignment(AltBuf2, t, 1, '$');
 		else
-		    error(FATAL, "Expected '?=' got '?'");
+		    error(FATAL, NULL, "Expected '?=' got '?'");
 	    } else if (t == TokEq) {
 		t = ParseAssignment(AltBuf2, t, 0, '$');
 	    } else {
@@ -498,12 +496,12 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		continue;
 	    }
-	    error(FATAL, "Expected a symbol!");
+	    error(FATAL, NULL, "Expected a symbol!");
 	    break;
 	}
     }
     if (ifBase != NULL)
-	error(FATAL, "Dangling .if's at EOF");
+	error(FATAL, NULL, "Dangling .if's at EOF");
 
     /*
      * Restore TOPDIR
@@ -610,7 +608,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	len = CmdListSize(&tmpList) + 1;
 
 	if (!(buf = PAlloc(len)))
-	    error(FATAL, "memory allocation failed");
+	    error(FATAL, IoErr(), "memory allocation failed");
 
 	CopyCmdListBuf(&tmpList, buf);
 	if (newVar) {
@@ -639,7 +637,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     short   ncol = 0;
 
     if (!(cmdList = PAlloc(sizeof(List))))
-	error(FATAL, "memory allocation failed");
+	error(FATAL, IoErr(), "memory allocation failed");
 
     NewList(cmdList);
     NewList(&lhsList);
@@ -869,7 +867,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	    PFree(lhs, sizeof(DepRef));
 	}
     } else {
-	error(FATAL, "%ld items on the left, %ld on the right of colon!", nlhs, nrhs);
+	error(FATAL, NULL, "%ld items on the left, %ld on the right of colon!", nlhs, nrhs);
     }
     return(t);
 }
@@ -973,7 +971,7 @@ static void ParseVariable(List *cmdList, short c0)
 
     var = FindVariable(AltBuf, c0);
     if (var == NULL)
-	error(FATAL, "Variable %s does not exist", AltBuf);
+	error(FATAL, NULL, "Variable %s does not exist", AltBuf);
 
     dbprintf(("ParseVariable: (%c:%c) %s\n", c0, c, AltBuf));
 
@@ -986,7 +984,7 @@ static void ParseVariable(List *cmdList, short c0)
 	return;
     }
     if (c != ':')
-	error(FATAL, "Bad variable specification after name");
+	error(FATAL, NULL, "Bad variable specification after name");
 
     /*
      *	source operation
@@ -1018,7 +1016,7 @@ static void ParseVariable(List *cmdList, short c0)
     }
 
     if (c != ':')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     c = ReadCharAsync(Fi);
     if (c == '\"') {
@@ -1035,7 +1033,7 @@ static void ParseVariable(List *cmdList, short c0)
     }
 
     if (c != ')')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     CopyCmdListConvert(&var->var_CmdList, cmdList, AltBuf, SymBuf);
 }
@@ -1065,13 +1063,13 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     {
 	altBuf[i++] = c;
 	if (i >= PBUFSIZE)
-	    error(FATAL, "Symbol overflow: %s", altBuf);
+	    error(FATAL, NULL, "Symbol overflow: %s", altBuf);
     }
     altBuf[i] = 0;
 
     var = FindVariable(altBuf, c0);
     if (var == NULL)
-	error(FATAL, "Variable %s does not exist", altBuf);
+	error(FATAL, NULL, "Variable %s does not exist", altBuf);
 
     /*
      *	now, handle modifiers
@@ -1084,7 +1082,7 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	return(buf);
     }
     if (c != ':')
-	error(FATAL, "Bad variable specification after name %x", c);
+	error(FATAL, NULL, "Bad variable specification after name %x", c);
 
     /*
      *	source operation
@@ -1098,7 +1096,7 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	{
 	    symBuf[i++] = c;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
 	if (c == '\"')
 	    c = *buf++;
@@ -1108,7 +1106,7 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	    symBuf[i++] = c;
 	    c = *buf++;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
     }
 
@@ -1127,7 +1125,7 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
     }
 
     if (c != ':')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     c = *buf++;
 
@@ -1137,7 +1135,7 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	{
 	    symBuf[i++] = c;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
 	if (c == '\"')
 	    c = *buf++;
@@ -1147,13 +1145,13 @@ static STRPTR ParseVariableBuf(List *cmdList, ubyte *buf, short c0)
 	    symBuf[i++] = c;
 	    c = *buf++;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
     }
     symBuf[i] = 0;
 
     if (c != ')')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     dbprintf(("CopyConvert to %s %s (%s) %08lx\n", altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
 
@@ -1173,7 +1171,7 @@ STRPTR ExpandVariable(ubyte *buf, List *list)
     static int Levels;
 
     if (++Levels == 20)
-	error(FATAL, "Too many levels of variable recursion");
+	error(FATAL, NULL, "Too many levels of variable recursion");
 
     if (list) {
 	keepInList = 1;
@@ -1232,7 +1230,7 @@ STRPTR ExpandVariable(ubyte *buf, List *list)
     if (keepInList == 0) {
 	if (tmpListValid) {
 	    if (!(buf = PAllocVec(CmdListSize(list) + 1)))
-		    error(FATAL, "memory allocation failed");
+		    error(FATAL, IoErr(), "memory allocation failed");
 	    CopyCmdListBuf(list, buf);
 	}
     }
@@ -1288,7 +1286,7 @@ static token_t GetToken()
 	case '\"':
 	    for (i = 0; i < sizeof(SymBuf) - 1 && (c = ReadCharAsync(Fi)) != EOF; ++i) {
 		if (c == '\n')
-		    error(FATAL, "newline in control string");
+		    error(FATAL, NULL, "newline in control string");
 		if (c == '\"')
 		    break;
 		if (c == '\\')
@@ -1297,9 +1295,9 @@ static token_t GetToken()
 	    }
 	    SymBuf[i] = 0;
 	    if (i == sizeof(SymBuf) - 1)
-		error(FATAL, "Symbol overflow: %s", SymBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", SymBuf);
 	    if (c != '\"')
-		error(FATAL, "Expected closing quote");
+		error(FATAL, NULL, "Expected closing quote");
 	    return(TokStr);
 	case '\\':
 	    c = ReadCharAsync(Fi);
@@ -1339,7 +1337,7 @@ static token_t GetToken()
 	    }
 	    SymBuf[i] = 0;
 	    if (i == sizeof(SymBuf) - 1)
-		error(FATAL, "Symbol overflow: %s", SymBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", SymBuf);
 	    SymBufLen = i;
 	    return(TokSym);
 	}
@@ -1349,10 +1347,10 @@ static token_t GetToken()
 static void expect(token_t tgot, token_t twant)
 {
     if (tgot != twant)
-	error(FATAL, "Unexpected token");
+	error(FATAL, NULL, "Unexpected token");
 }
 
-void error(short type, CONST_STRPTR ctl, ...)
+void error(short type, LONG ioerr, CONST_STRPTR ctl, ...)
 {
     static char *TypeString[] = { "Fatal", "Warning", "Debug" };
     static char ExitAry[] = { 1, 0, 0 };
@@ -1375,8 +1373,9 @@ void error(short type, CONST_STRPTR ctl, ...)
     if (ExitAry[type])
     {
 	ExitCode = RETURN_FAIL;
+	ExitIoErr = ioerr;
 #if OSVERMAX >= 36
-	if (mycli == (struct Process *)FindTask(NULL))
+	if (WorkProc != StartProc)
 	    Exit(20);
 	else
 #endif

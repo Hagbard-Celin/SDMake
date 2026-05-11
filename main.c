@@ -106,9 +106,11 @@ Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
 Prototype short	SMakeMode;
+Prototype LONG  ExitIoErr;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
-Prototype struct Process *mycli;
+Prototype struct Process *StartProc;
+Prototype struct Process *WorkProc;
 Prototype BPTR StdOut;
 
 List	DoList;
@@ -132,8 +134,8 @@ char     version[] = VERSTAG ", "VEREXTRA"\0 Copyright 1994, O.I.C.\n";
 char	*XFileName = "SDMakefile";
 short	FileSpecified = 0;
 short	ExitCode;
+LONG    ExitIoErr;
 char *console = 0;
-struct Process *mycli = 0;
 BPTR StdIn;
 BPTR StdOut;
 BPTR OrgIn;
@@ -141,6 +143,8 @@ BPTR OrgOut;
 BPTR StdErr;
 BPTR OrgErr;
 struct MsgPort *OldPort;
+struct Process *StartProc;
+struct Process *WorkProc;
 struct climsg *clmsg;
 struct	Library *UtilityBase = 0;
 
@@ -213,6 +217,8 @@ void myexit(void)
 	Close(StdIn);
     }
     flushall();
+
+    StartProc->pr_Result2 = ExitIoErr;
 }
 
 #if OSVERMAX >= 36
@@ -226,7 +232,7 @@ void procmsg(void)
     msg.msg.mn_ReplyPort = reply;
     msg.data = getreg(REG_A4);
 
-    PutMsg(&mycli->pr_MsgPort, (struct Message *)&msg);
+    PutMsg(&WorkProc->pr_MsgPort, (struct Message *)&msg);
 
     WaitPort(reply);
     GetMsg(reply);
@@ -240,7 +246,7 @@ void cliproc(void)
     struct climsg *msg;
     struct Process *self;
 
-    self = (struct Process *)FindTask((char *)NULL);
+    self = (struct Process *)FindTask(NULL);
 
     WaitPort(&self->pr_MsgPort);
     msg	= (struct climsg *)GetMsg(&self->pr_MsgPort);
@@ -267,6 +273,7 @@ LONG  __asm cliproc_exit(register __d0 LONG rc, register __d1 LONG exitdata)
     putreg(REG_A4, exitdata);
 
     Forbid();
+    WorkProc = StartProc;
     ReplyMsg((struct Message *)clmsg);
 
     return rc;
@@ -275,6 +282,7 @@ LONG  __asm cliproc_exit(register __d0 LONG rc, register __d1 LONG exitdata)
 
 BOOL makecli(struct Process *sproc)
 {
+    WORD ok = 0;
     struct TagItem *tags;
     BPTR path;
 
@@ -326,7 +334,8 @@ BOOL makecli(struct Process *sproc)
 		tags[12].ti_Data=(ULONG)ctask;
 		tags[13].ti_Tag=TAG_END;
 
-		mycli = CreateNewProc(tags);
+		if (WorkProc = CreateNewProc(tags))
+		    ok = 1;
 	    }
 	    else
 		Close(StdIn);
@@ -335,8 +344,9 @@ BOOL makecli(struct Process *sproc)
 
     FreeVec(tags);
 
-    if (!mycli)
+    if (!ok)
     {
+	WorkProc = StartProc;
 	if (path)
 	    freepath(path);
 
@@ -461,7 +471,7 @@ LONG realmain(void)
 		UnLock(lock);
 	    else
 	    {
-		error(FATAL, "Unable to to open (SDM|DM|SM|M)akefile");
+		error(FATAL, ERROR_OBJECT_NOT_FOUND, "Unable to to open (SDM|DM|SM|M)akefile");
 
 	    }
 	}
@@ -490,7 +500,7 @@ LONG realmain(void)
 	    if ((node->rn_Dep->dn_Node.ln_Type != NT_RESOLVED) &&
 	       (GetHead(&node->rn_Dep->dn_DepCmdList) == NULL))
 	    {
-		error(FATAL, "Unable to find %s", node->rn_Node.ln_Name);
+		error(FATAL, NULL, "Unable to find %s", node->rn_Node.ln_Name);
 		break;
 	    }
 
@@ -522,6 +532,8 @@ LONG realmain(void)
 
 int main(ULONG argc, char *argv[])
 {
+    StartProc = (struct Process *)FindTask(NULL);
+    WorkProc = StartProc;
     InitStuff();
 
     if (argc == 0)
@@ -736,7 +748,7 @@ int main(ULONG argc, char *argv[])
 	    puts(VERS " (" DATE ")");
 
 	if (i > argc)
-	    error(FATAL, "Expected argument to command line option");
+	    error(FATAL, NULL, "Expected argument to command line option");
 
 	return realmain();
     }
@@ -765,8 +777,9 @@ void MemErr(void)
     PrintF("Fatal error: memory allocation failed");
 
     ExitCode = RETURN_FAIL;
+    ExitIoErr = ERROR_NO_FREE_STORE;
 #if OSVERMAX >= 36
-    if (mycli == (struct Process *)FindTask(NULL))
+    if (WorkProc != StartProc)
 	Exit(RETURN_FAIL);
     else
 #endif

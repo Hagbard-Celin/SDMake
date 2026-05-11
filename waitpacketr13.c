@@ -11,6 +11,7 @@
  */
 
 #include <stdio.h>
+#include <math.h>
 #include <clib/dos_protos.h>
 #include <pragmas/dos_pragmas.h>
 #include <proto/intuition.h>
@@ -18,7 +19,10 @@
 #define  SetIoErr setioerr
 #define  ErrorReport errorreport
 
+typedef struct CommandLineInterface CLI;
+
 extern struct IntuiText *ITextOf(char *ptr);
+extern struct Process *WorkProc;
 
 LONG errorreport( LONG code, LONG type, ULONG arg1, struct MsgPort *device );
 LONG setioerr(LONG code);
@@ -29,10 +33,9 @@ LONG setioerr(LONG code);
 LONG setioerr(LONG code)
 {
     LONG ret;
-    struct Process *self = (struct Process *)FindTask(NULL);
 
-    ret = self->pr_Result2;
-    self->pr_Result2 = code;
+    ret = WorkProc->pr_Result2;
+    WorkProc->pr_Result2 = code;
     return ret;
 }
 

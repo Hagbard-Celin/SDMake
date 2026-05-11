@@ -42,7 +42,6 @@ Prototype long _SearchPath(char *cmd);
 Prototype BPTR stealpath(struct Process *sproc);
 Prototype void freepath(BPTR list);
 
-typedef struct CommandLineInterface CLI;
 typedef struct Process Process;
 
 typedef struct LockList {
@@ -57,9 +56,9 @@ long _SearchPath(char *cmd)
     CLI *cli;
     LockList *ll;
 
-    if (SysBase->ThisTask->tc_Node.ln_Type != NT_PROCESS)
+    if (((struct Task *)WorkProc)->tc_Node.ln_Type != NT_PROCESS)
 	return(0);
-    if ((cli = (CLI *)BADDR(((Process *)SysBase->ThisTask)->pr_CLI)) == NULL)
+    if ((cli = (CLI *)BADDR(WorkProc->pr_CLI)) == NULL)
 	return(0);
 
     ll = (LockList *)BADDR(cli->cli_CommandDir);

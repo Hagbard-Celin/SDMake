@@ -68,7 +68,6 @@
 
 #include "defs.h"
 
-typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
 Prototype void InitCmdList(void);
@@ -426,7 +425,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 		    spec[c0] = c;
 		}
 		if (c != ')')
-		    error(FATAL, "bad variable spec in command list for %s", dep->dn_Node.ln_Name);
+		    error(FATAL, NULL, "bad variable spec in command list for %s", dep->dn_Node.ln_Name);
 		spec[c0++] = c;
 		spec[c0] = 0;
 		ExpandVariable(spec, &tmpDst);
@@ -447,7 +446,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	long n;
 	LONG lastret = 0;
 
-	((CLI *)BADDR(((Process *)FindTask(NULL))->pr_CLI))->cli_Result2 = 0;
+	((CLI *)BADDR((WorkProc)->pr_CLI))->cli_Result2 = 0;
 #if OSVERMAX >= 36
 #if OSVERMIN < 36
 	if (DOSBase->dl_lib.lib_Version >= 36)
@@ -468,7 +467,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	    if (n >= sizeof(CmdTmp1) - 2) {	/*  avoid malloc    */
 		cmdflags |= CMDF_ALLOCATED;
 		if (!(cmd = (char *)PAllocVec(n + 2)))
-		    error(FATAL, "memory allocation failed");
+		    error(FATAL, IoErr(), "memory allocation failed");
 	    } else {
 		cmd = CmdTmp1;
 	    }
@@ -521,7 +520,7 @@ long ExecuteCmdList(DepNode *dep, List *list)
 	}
 
 	if (cmdIfBase != NULL)
-	    error(FATAL, "missing endif(s) in command list for %s", dep->dn_Node.ln_Name);
+	    error(FATAL, NULL, "missing endif(s) in command list for %s", dep->dn_Node.ln_Name);
 
     }
 

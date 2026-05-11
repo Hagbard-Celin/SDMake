@@ -98,6 +98,8 @@
 #define VEREXTRA TYPESTR", requires asyncio.library v39.2"
 #endif
 
+typedef struct CommandLineInterface CLI;
+
 typedef struct Node Node;
 typedef struct List List;
 

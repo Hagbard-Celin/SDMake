@@ -28,9 +28,11 @@ Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
 Prototype short	SMakeMode;
+Prototype LONG  ExitIoErr;
 Prototype APTR  MemPool;
 Prototype WORD	  Break;
-Prototype struct Process *mycli;
+Prototype struct Process *StartProc;
+Prototype struct Process *WorkProc;
 Prototype BPTR StdOut;
 
 /* run.c                */
@@ -72,7 +74,7 @@ Prototype List DepList;
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
 Prototype STRPTR ExpandVariable(STRPTR, List *);
-Prototype void error(short type, CONST_STRPTR ctl, ...);
+Prototype void error(short type, LONG ioerr, CONST_STRPTR ctl, ...);
 Prototype char SymBuf[256];
 Prototype long LineNo;
 Prototype char SpecialChar[256];

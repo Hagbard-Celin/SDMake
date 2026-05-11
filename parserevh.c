@@ -43,7 +43,7 @@ WORD ParseRevInclude(STRPTR includefile)
 	    CloseAsyncR(revfile);
 	}
 	else
-	    error(FATAL, "Unable to open %s", revfile);
+	    error(FATAL, IoErr(), "Unable to open %s", revfile);
 
     return 1;
 }
@@ -161,7 +161,7 @@ static void GetVerRev(STRPTR define)
 	        }
 	        else
 	        {
-		    error(FATAL, ".revheader: Overflow, define \"%s\" too long!", define);
+		    error(FATAL, NULL, ".revheader: Overflow, define \"%s\" too long!", define);
 	        }
 	    }
 	}

@@ -34,7 +34,6 @@
 #include <dos/var.h>
 #include <dos/dostags.h>
 
-typedef struct CommandLineInterface CLI;
 typedef struct Process		    Process;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
@@ -61,7 +60,7 @@ void InitCommand()
 {
     BPTR path;
 
-    path = DupLock(((Process *)FindTask(NULL))->pr_CurrentDir);
+    path = DupLock(StartProc->pr_CurrentDir);
     SaveLock = CurrentDir(path);
 #if OSVERMIN >= 36
     NameFromLock(path, RootPath, sizeof(RootPath));
@@ -544,7 +543,6 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 #if OSVERMAX >= 36
 	struct FileHandle *fh = 0;
 	char *cmdArgs = 0;
-	Process *proc = (Process *)FindTask(NULL);
 
 	if (dosVer >= 36)
 	{
@@ -621,7 +619,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    struct Segment *seg;
 	    BPTR seglist, lock = 0;
 	    long stack;
-	    CLI *cli = (CLI *)BADDR(proc->pr_CLI);
+	    CLI *cli = (CLI *)BADDR(WorkProc->pr_CLI);
 	    static char OldCmd[128];
 
 	    GetProgramName(OldCmd, sizeof(OldCmd));
@@ -674,7 +672,7 @@ dosys:
 	    if (lock)
 		UnLock(lock);
 
-	    Flush(proc->pr_COS);
+	    Flush(WorkProc->pr_COS);
 	}
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36

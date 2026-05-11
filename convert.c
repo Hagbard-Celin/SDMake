@@ -32,7 +32,7 @@ int WildConvert(char *srcBuf, List *dstList, char *srcMat, char *dstMat)
     static char *SubStr[MAXLEVELS];
 
     if (Index == MAXLEVELS)
-	error(FATAL, "maximum recursion reached in WildConvert");
+	error(FATAL, NULL, "maximum recursion reached in WildConvert");
 
     db4printf(("WildConvert %-15s (%s -> %s)\n", srcBuf, srcMat, (dstMat) ? dstMat : "..."));
 
@@ -132,7 +132,7 @@ static void ExpandVariableList(List *srclist, List *list)
     static int Levels;
 
     if (++Levels == 20)
-	error(FATAL, "Too many levels of variable recursion");
+	error(FATAL, NULL, "Too many levels of variable recursion");
 
     c = PopCmdListChar(srclist);
     while (c != EOF) {
@@ -191,14 +191,14 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
     {
 	altBuf[i++] = c;
 	if (i >= PBUFSIZE)
-	    error(FATAL, "Symbol overflow: %s", altBuf);
+	    error(FATAL, NULL, "Symbol overflow: %s", altBuf);
     }
     altBuf[i] = 0;
     dbprintf(("%s finding var altBuf: %s\n", __FUNC__, altBuf));
 
     var = FindVariable(altBuf, c0);
     if (var == NULL)
-	error(FATAL, "Variable %s does not exist", altBuf);
+	error(FATAL, NULL, "Variable %s does not exist", altBuf);
 
     /*
      *	now, handle modifiers
@@ -211,7 +211,7 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
 	return;
     }
     if (c != ':')
-	error(FATAL, "Bad variable specification after name %x", c);
+	error(FATAL, NULL, "Bad variable specification after name %x", c);
 
     /*
      *	source operation
@@ -225,7 +225,7 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
 	{
 	    symBuf[i++] = c;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
 	if (c == '\"')
 	    c = PopCmdListChar(srcList);
@@ -235,7 +235,7 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
 	    symBuf[i++] = c;
 	    c = PopCmdListChar(srcList);
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
     }
 
@@ -255,7 +255,7 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
     }
 
     if (c != ':')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     c = PopCmdListChar(srcList);
 
@@ -265,7 +265,7 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
 	{
 	    symBuf[i++] = c;
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
 	if (c == '\"')
 	    c = PopCmdListChar(srcList);
@@ -275,13 +275,13 @@ static void ParseVariableList(List *srcList, List *dstList, short c0)
 	    symBuf[i++] = c;
 	    c = PopCmdListChar(srcList);
 	    if (i >= PBUFSIZE)
-		error(FATAL, "Symbol overflow: %s", symBuf);
+		error(FATAL, NULL, "Symbol overflow: %s", symBuf);
 	}
     }
     symBuf[i] = 0;
 
     if (c != ')')
-	error(FATAL, "Bad variable replacement spec: %c", c);
+	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
     dbprintf(("File: %s Line: %ld Func: %s CopyConvert to %s %s (%s) %08lx\n", __FILE__, __LINE__, __FUNC__, altBuf, symBuf, var->var_Node.ln_Name, GetHead(&var->var_CmdList)));
 

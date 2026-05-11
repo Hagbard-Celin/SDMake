@@ -20,7 +20,9 @@
 
 extern void *DosAllocMem(long bytes);
 extern void DosFree(void *vptr);
+extern struct Process *WorkProc;
 
+typedef struct CommandLineInterface CLI;
 
 AsyncFile *OpenAsyncR13( CONST_STRPTR fileName, LONG filesize,  LONG bufferSize );
 LONG CloseAsyncR13( AsyncFile *file );
@@ -138,7 +140,7 @@ AsyncFile *OpenAsyncR13( CONST_STRPTR fileName, LONG filesize,  LONG bufferSize 
 		file->af_PacketPort.mp_Node.ln_Name		= NULL;
 		file->af_PacketPort.mp_Flags			= PA_IGNORE;
 		file->af_PacketPort.mp_SigBit			= SIGB_SINGLE;
-		file->af_PacketPort.mp_SigTask			= FindTask( NULL );
+		file->af_PacketPort.mp_SigTask			= WorkProc;
 
 		file->af_Packet.sp_Pkt.dp_Link			= &file->af_Packet.sp_Msg;
 		file->af_Packet.sp_Pkt.dp_Arg1			= fh->fh_Arg1;
@@ -328,7 +330,7 @@ LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode )
 					 */
 					file->af_SeekPastEOF = TRUE;
 
-					((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_SEEK_ERROR;
+					WorkProc->pr_Result2 = ERROR_SEEK_ERROR;
 					AS_RecordSyncFailure( (AsyncFile *)file );
 					return( -1 );
 				}
@@ -484,7 +486,7 @@ LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode )
 		file->af_SeekPastEOF = FALSE;
 	}
 
-	((struct Process *)FindTask(NULL))->pr_Result2 = 0;
+	WorkProc->pr_Result2 = 0;
 	return( current );
 }
 

@@ -87,7 +87,7 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 	struct FileList *thisfile;
 
 	if (!(thisfile = PAlloc(sizeof(struct FileList))))
-	    error(FATAL, "memory allocation failed");
+	    error(FATAL, IoErr(), "memory allocation failed");
 
 	thisfile->File = file;
 

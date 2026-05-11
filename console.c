@@ -39,6 +39,8 @@
 
 Prototype BOOL OpenConsole(const char *str);
 
+extern struct Process *StartProc;
+
 typedef struct FileHandle   FileHandle;
 typedef struct Process	    Process;
 typedef struct List	    List;
@@ -78,7 +80,6 @@ void _STD_opencon_exit(void)
 
 BOOL OpenConsole(const char *str)
 {
-    Process *proc = (Process *)FindTask(NULL);
     FileHandle *fh;
     BOOL r = FALSE;
 
@@ -88,16 +89,16 @@ BOOL OpenConsole(const char *str)
 	if (fh->fh_Type) {
 	    r = TRUE;
 
-	    SaveConsoleTask = proc->pr_ConsoleTask;
-	    SaveCOS = proc->pr_COS;
-	    SaveCIS = proc->pr_CIS;
-	    proc->pr_ConsoleTask = fh->fh_Type;
-	    proc->pr_COS = CustomCOS = Open("*", 1005);
-	    proc->pr_CIS = CustomCIS;
+	    SaveConsoleTask = StartProc->pr_ConsoleTask;
+	    SaveCOS = StartProc->pr_COS;
+	    SaveCIS = StartProc->pr_CIS;
+	    StartProc->pr_ConsoleTask = fh->fh_Type;
+	    StartProc->pr_COS = CustomCOS = Open("*", 1005);
+	    StartProc->pr_CIS = CustomCIS;
 	    freopen("*", "r", stdin);
 	    freopen("*", "w", stdout);
 	    freopen("*", "w", stderr);
-	    /*proc->pr_ConsoleTask = SaveConsoleTask;*/
+	    /*StartProc->pr_ConsoleTask = SaveConsoleTask;*/
 	} else {
 	    Close(CustomCIS);
 	    CustomCIS = 0;
