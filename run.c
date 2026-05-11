@@ -43,8 +43,8 @@ Prototype void SetReturnVar(LONG rc, LONG return2);
 
 #if OSVERMAX >= 36
 static BPTR LoadSegLock(BPTR lock, char *cmd);
-#endif
 static void SetLocalVar(CONST_STRPTR var, LONG value);
+#endif
 
 BPTR SaveLock;
 char RootPath[512];
@@ -731,6 +731,7 @@ dosys:
     }
 }
 
+#if OSVERMAX >= 36
 void SetReturnVar(LONG rc, LONG return2)
 {
     SetLocalVar("RC", rc);
@@ -745,7 +746,6 @@ static void SetLocalVar(CONST_STRPTR var, LONG value)
     SetVar(var, buf, -1, LV_VAR|GVF_LOCAL_ONLY);
 }
 
-#if OSVERMAX >= 36
 static BPTR LoadSegLock(BPTR lock, char *cmd)
 {
     BPTR oldLock;
