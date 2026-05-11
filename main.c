@@ -789,10 +789,7 @@ static void InitStuff(void)
 	    PrintF("Fatal error: opening utility.library failed");
 
 	    ExitCode = RETURN_FAIL;
-	    if (mycli == (struct Process *)FindTask(NULL))
-		Exit(RETURN_FAIL);
-	    else
-		exit(RETURN_FAIL);
+	    exit(RETURN_FAIL);
 	}
 #endif
 	NewList(&DoList);
