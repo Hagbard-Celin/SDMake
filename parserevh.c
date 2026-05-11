@@ -58,7 +58,8 @@ static void GetVerRev(STRPTR define)
     while (*define && (*define == ' ' || *define == '\t'))
 	define++;
 
-    if (!define[0] || *define == '\n' || !(*define >= 'A' && *define <= 'Z'))
+    if (!define[0] || *define == '\n' ||
+	!((*define >= 'A' && *define <= 'Z') || (*define >= 'a' && *define <= 'z')))
 	return;
 
     varname = define;
@@ -99,9 +100,6 @@ static void GetVerRev(STRPTR define)
 		else
 		    verch = revch = 0;
 	    }
-	    else
-	    if (!(*define >= 'A' && *define <= 'Z'))
-		return;
 	}
 
 	define++;
@@ -127,7 +125,7 @@ static void GetVerRev(STRPTR define)
 	if (*define >= '0' && *define <= '9')
 	    type = VAR_NUM;
 	else
-	if (*define >= 'A' && *define <= 'Z')
+	if ((*define >= 'A' && *define <= 'Z') || (*define >= 'a' && *define <= 'z'))
 	    type = VAR_VAR;
 	else
 	    return;
