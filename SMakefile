@@ -9,8 +9,8 @@ OBJS= $(ODIR)depend.o $(ODIR)cmdlist.o $(ODIR)run.o $(ODIR)poolmem.o $(ODIR)stri
       $(ODIR)console.o $(ODIR)system13.o $(ODIR)parserevh.o $(ODIR)async.o\
       $(ODIR)asyncr13.o $(ODIR)waitpacketr13.o $(ODIR)OpenAsyncFH.o $(ODIR)OpenAsync.o\
       $(ODIR)SeekAsync.o $(ODIR)ReadAsync.o $(ODIR)CloseAsync.o $(ODIR)FGetsLenAsync.o\
-      $(ODIR)ReadCharAsync.o $(ODIR)RecordAsyncFailure.o $(ODIR)SendPacket.o\
-      $(ODIR)RequeuePacket.o
+      $(ODIR)ReadLineAsync.o $(ODIR)ReadCharAsync.o $(ODIR)RecordAsyncFailure.o\
+      $(ODIR)SendPacket.o $(ODIR)RequeuePacket.o
 
 bin/sdmake: $(OBJS)
    sc $(CFLAGS) link to bin/sdmake with <<
@@ -66,6 +66,7 @@ $(ODIR)OpenAsync.o: OpenAsync.c
 $(ODIR)OpenAsyncFH.o: asyncio/src/OpenAsyncFH.c
 $(ODIR)SeekAsync.o: asyncio/src/SeekAsync.c
 $(ODIR)ReadAsync.o: asyncio/src/ReadAsync.c
+$(ODIR)ReadLineAsync.o: asyncio/src/ReadLineAsync.c
 $(ODIR)CloseAsync.o: asyncio/src/CloseAsync.c
 $(ODIR)FGetsLenAsync.o: asyncio/src/FGetsLenAsync.c
 $(ODIR)ReadCharAsync.o: asyncio/src/ReadCharAsync.c

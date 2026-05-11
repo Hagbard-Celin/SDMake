@@ -277,10 +277,10 @@ void ParseFile(STRPTR fileName)
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)
 			error(FATAL, "Expected newline after .include filename");
-		} else if (ifTrue && SymBufLen == 11 && strcmp(SymBuf, ".revhheader") == 0) {
+		} else if (ifTrue && SymBufLen == 10 && strcmp(SymBuf, ".revheader") == 0) {
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokSym)
-			error(FATAL, "Expected a symbol for .revhheader!");
+			error(FATAL, NULL, "Expected a symbol for .revheader!");
 		    ParseRevInclude(SymBuf);
 		    t = GetElement(ifTrue, &expansion);
 		    if (t != TokNewLine)

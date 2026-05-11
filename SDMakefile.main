@@ -27,7 +27,8 @@ NOBUILD =
 .else
 
 ASYNCSRCS=$(ASYNCDIR)ReadAsync.c $(ASYNCDIR)CloseAsync.c $(ASYNCDIR)FGetsLenAsync.c \
-      $(ASYNCDIR)ReadCharAsync.c $(ASYNCDIR)RecordAsyncFailure.c $(ASYNCDIR)SendPacket.c \
+      $(ASYNCDIR)ReadLineAsync.c $(ASYNCDIR)ReadCharAsync.c \
+      $(ASYNCDIR)RecordAsyncFailure.c $(ASYNCDIR)SendPacket.c \
       $(ASYNCDIR)RequeuePacket.c
 
 .ifgt $(OSVERMAX) 35

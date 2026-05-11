@@ -23,7 +23,7 @@
 
 Prototype WORD ParseRevInclude(STRPTR includefile);
 
-static WORD GetVerRev(STRPTR define);
+static void GetVerRev(STRPTR define);
 
 WORD ParseRevInclude(STRPTR includefile)
 {
@@ -31,9 +31,9 @@ WORD ParseRevInclude(STRPTR includefile)
 
 	if (revfile = OpenAsyncR(includefile))
 	{
-	    TEXT line[128];
+	    TEXT line[64];
 
-	    while (FGetsAsync(revfile, line, 128))
+	    while (ReadLineAsync(revfile, line, 64) > 0)
 	    {
 		if (!(strncmp(line, "#define", 7 )))
 		    GetVerRev(line + 8);
@@ -48,7 +48,7 @@ WORD ParseRevInclude(STRPTR includefile)
     return 1;
 }
 
-static WORD GetVerRev(STRPTR define)
+static void GetVerRev(STRPTR define)
 {
     STRPTR varname;
     WORD verch, revch;
@@ -58,8 +58,8 @@ static WORD GetVerRev(STRPTR define)
     while (*define && (*define == ' ' || *define == '\t'))
 	define++;
 
-    if (!define[0] || *define == '\n')
-	return 0;
+    if (!define[0] || *define == '\n' || !(*define >= 'A' && *define <= 'Z'))
+	return;
 
     varname = define;
 
@@ -99,42 +99,49 @@ static WORD GetVerRev(STRPTR define)
 		else
 		    verch = revch = 0;
 	    }
+	    else
+	    if (!(*define >= 'A' && *define <= 'Z'))
+		return;
 	}
 
 	define++;
     }
 
-    if (!verch && !revch)
-	return 0;
+    if (!define[0] || *define == '\n' || (!verch && !revch))
+	return;
 
     *define = 0;
 
     while (*++define && (*define == ' ' || *define == '\t'));
 
     if (!define[0] || *define == '\n')
-	return 0;
+	return;
 
     {
 	LONG len = strlen(define);
 	Var *var;
 	WORD type = 0;
 
-	if (define[len - 1] == '\n')
-	    define[len-- - 1] = 0;
+	PrintF("Define before: \"%s\"\n", define);
 	
 	if (*define >= '0' && *define <= '9')
 	    type = VAR_NUM;
 	else
 	if (*define >= 'A' && *define <= 'Z')
 	    type = VAR_VAR;
+	else
+	    return;
 
-	if (!type)
-	    return 0;
-
-	var = MakeVariable(varname, '$');
+	while (define[len - 1] == '\n' || define[len - 1] == ' ' || define[len - 1] == '\t')
+	    define[--len] = 0;
+	PrintF("Define After: \"%s\"\n", define);
 	
 	if (type == VAR_NUM)
+	{
+	    PrintF("Making var \"%s\" value \"%s\"\n", varname, define);
+	    var = MakeVariable(varname, '$');
 	    AppendVariable(var, define, len);
+	}
 	else
 	{
 	    Var *defvar;
@@ -143,8 +150,11 @@ static WORD GetVerRev(STRPTR define)
 
 	    NewList(&tmplist);
 
+	    PrintF("Finding var \"%s\"\n", define);
 	    if (defvar = FindVariable(define, '$'))
 	    {
+		PrintF("Found var \"%s\", Making var: \"%s\"\n", define, varname);
+		var = MakeVariable(varname, '$');
 		if (CmdListSize(&defvar->var_CmdList) < sizeof(tmpbuf))
 	        {
 		    CopyCmdList(&defvar->var_CmdList, &tmplist);
@@ -153,13 +163,9 @@ static WORD GetVerRev(STRPTR define)
 	        }
 	        else
 	        {
-		    error(FATAL, "Overflow!");
+		    error(FATAL, ".revheader: Overflow, define \"%s\" too long!", define);
 	        }
 	    }
-	    else
-		error(FATAL, "No Var!");
-
 	}
     }
-    return 1;
 }
