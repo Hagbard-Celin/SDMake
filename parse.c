@@ -575,6 +575,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 
 	    for (i = 0; i < len && (AltBuf[i] == ' ' || AltBuf[i] == '\t'); ++i)
 		;
+
 	    /*
 	     * allow one space in front if we are continuing a line due to '\\' + '\n'
 	     */

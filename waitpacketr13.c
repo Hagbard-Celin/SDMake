@@ -18,11 +18,10 @@
 #define  SetIoErr setioerr
 #define  ErrorReport errorreport
 
-LONG errorreport( LONG code, LONG type, ULONG arg1, struct MsgPort *device );
-LONG setioerr(LONG code);
-
 extern struct IntuiText *ITextOf(char *ptr);
 
+LONG errorreport( LONG code, LONG type, ULONG arg1, struct MsgPort *device );
+LONG setioerr(LONG code);
 
 
 #include "AsyncIO/src/WaitPacket.c"

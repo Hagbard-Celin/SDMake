@@ -17,6 +17,7 @@
 #define INTERNAL_ASYNC
 #include "AsyncIO/src/async.h"
 #include "asyncior13.h"
+
 extern void *DosAllocMem(long bytes);
 extern void DosFree(void *vptr);
 
@@ -166,9 +167,7 @@ AsyncFile *OpenAsyncR13( CONST_STRPTR fileName, LONG filesize,  LONG bufferSize 
 
 		if( file->af_Handler )
 		{
-			//PrintF("Got to: AS_SendPacket()\n");
 			AS_SendPacket( (AsyncFile *)file, file->af_Buffers[ 0 ] );
-			//PrintF("Done: AS_SendPacket()\n");
 		}
 	}
 	else
