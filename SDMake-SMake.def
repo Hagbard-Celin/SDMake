@@ -1,5 +1,5 @@
-AS = asm
-CC = sc
-CFLAGS =
-LD = slink
+AS ?= asm
+CC ?= sc
+CFLAGS ?=
+LD ?= slink
 

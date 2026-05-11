@@ -128,7 +128,7 @@
 
     -h
 
-        Summarize the version and available command line options.
+        Summarize the version and available command-line arguments.
 
     targets...
 
@@ -311,7 +311,7 @@
 
     Finally, note that a dst* or src* symbol does not need to be a
     filename.  It is perfectly valid to make up dummy names which are then
-    used as the lhs of a dependency whos purpose is to collect other
+    used as the lhs of a dependency whose purpose is to collect other
     dependencies together.
 
 
@@ -381,7 +381,7 @@
 	a directory.
 
 	obj : obj
-	    mkakedir obj
+	    makedir obj
 
     SPECIAL CASE #2 - NO SOURCE SPECIFIED
 
@@ -545,8 +545,8 @@
     project hierarchy would then set up a few VAR='s and .include the master.
 
 
-    The other three are created once at startup and can be overridden by a
-    command-line argument or tool type:
+    The other three are created once at startup and can be overridden by "-D"
+    command-line argument or "DEFINE" tool type.
 
       $(HOST_OSVER)
 
@@ -564,10 +564,10 @@
     the file "ENV:SDMake/SDmake-SMake.def is parsed before "SMakefile".
     This file contains by default the following assignments:
 
-      AS = asm
-      CC = sc
-      CFLAGS =
-      LD = slink
+      AS ?= asm
+      CC ?= sc
+      CFLAGS ?=
+      LD ?= slink
 
 @endnode
 
@@ -717,7 +717,9 @@
         and if it matches SMakefile (case-insensitive) some adjustments
         are made:
         - The default macros AS, CC, LD, and CFLAGS are added by auto-
-          including the file "ENV:SDMake/SDMake-SMake.def".
+          including the file "ENV:SDMake/SDMake-SMake.def". These can
+          be overridden by "-D" command-line argument or "DEFINE" tool
+          type.
         - During parsing of command lists, $@ will be translated to
           %(left), matching SMake behavior.
         - During parsing of command lists, $* will be translated to
@@ -733,12 +735,13 @@
         - Comments that do not follow the rules explained in @{"SDMakefile" link "SDMAKEFILE"}
           and @{"Command Shell" link "COMMANDSHELL"}.
 
-        Aditionally comments must that does not start at the first character at the end of any non comment line.
+        Additionally comments must that does not start at the first
+        character at the end of any non comment line.
 
         Note: SMake runs the command lists of targets with a hard coded
         failat level of 1. While SDMake uses a default level of 6.
-        This can be changed with the "-F" command line option or "FAILAT"
-        tool type.
+        This can be changed with the "-F" command-line argument or
+        "FAILAT" tool type.
 
 @endnode
 
