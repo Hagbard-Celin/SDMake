@@ -531,6 +531,8 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
     short done;
     short eol = 1;
     short append = 0;
+    short endspace = 0;
+    short addspace = 0;
     List tmpList;
 
     if (cond == 0 || FindVariable(varName, type) == NULL) {
@@ -550,6 +552,12 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	    if (len && AltBuf[len-1] == '\\') {
 		--len;
 		done = 0;
+		if (len && AltBuf[len-1] == ' ')
+		    endspace = 1;
+		else
+		    endspace = 0;
+		while (len && AltBuf[len-1] == ' ')
+		    --len;
 	    } 
 	    else {
 		done = 1;
@@ -570,7 +578,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	    /*
 	     * allow one space in front if we are continuing a line due to '\\' + '\n'
 	     */
-	    if (i && append && ((AltBuf[i-1] == '\t') || (AltBuf[i-1] == ' ')))
+	    if (append && (i || addspace))
 		PutCmdListChar(&tmpList, ' ');
 	    for (; i < len; ++i)
 		PutCmdListChar(&tmpList, AltBuf[i]);
@@ -581,7 +589,13 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 	    break;
 	else
 	if (eol)
+	{
 	    append = 1;
+	    if (endspace)
+		addspace = 1;
+	    else
+		addspace = 0;
+	}
     }
 
     /*
