@@ -632,6 +632,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     List    lhsList;
     List    rhsList;
     List    *cmdList;
+    LONG    colline;
     long    nlhs = 0;
     long    nrhs = 0;
     short   ncol = 0;
@@ -644,6 +645,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     NewList(&rhsList);
 
     if (firstSym) {
+	colline = LineNo;
 	++nlhs;
 	lhs = CreateDepRef(&lhsList, firstSym);
 	if (lefttype == LT_DUMMY)
@@ -664,6 +666,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     }
     t = GetElement(1, NULL);
     if (t == TokColon) {
+	colline = LineNo;
 	++ncol;
 	t = GetElement(1, NULL);
     }
@@ -867,6 +870,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	    PFree(lhs, sizeof(DepRef));
 	}
     } else {
+	LineNo = colline;
 	error(FATAL, NULL, "%ld items on the left, %ld on the right of colon!", nlhs, nrhs);
     }
     return(t);
