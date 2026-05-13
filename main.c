@@ -649,7 +649,14 @@ int main(ULONG argc, char *argv[])
 #endif
 #if OSVERMAX >= 36
 	    if (makecli(wbs->sm_Message.mn_ReplyPort->mp_SigTask))
-	        procmsg();
+		procmsg();
+	    else
+	    {
+		PrintF("Fatal error: unable to start cli process");
+
+		ExitCode = RETURN_FAIL;
+		exit(RETURN_FAIL);
+	    }
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
 	}
