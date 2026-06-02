@@ -369,29 +369,117 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	} else
 	if (cmdlen == 6) {
-	    LONG mode;
+	    LONG append;
 
-	    if ((mode = strnicmp(cmd, "fwrite", 6)) == 0 ||
+	    if ((append = strnicmp(cmd, "fwrite", 6)) == 0 ||
 	    strnicmp(cmd, "fappnd", 6) == 0)
 	    {
 		char *t;
-		BPTR fh;
-		short err;
-
-		if (!mode)
-		    mode = MODE_NEWFILE;
-		else
-		    mode = MODE_OLDFILE;
+		LONG ioerr = 0;
+		BPTR file = 0;
+#if OSVERMIN <= 36 && OSVERMAX >= 36
+		struct FileHandle *fh = 0;
+#endif
+		BYTE multiline = 0;
+		short err = CMD_OK;
 
 		while (*ptr == ' ' || *ptr == '\t')
 		    ++ptr;
 		for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
 		if (*t) *t++ = '\0';
-		if (fh = Open(ptr, mode)) {
-		    int len;
 
-		    if (mode == MODE_OLDFILE)
-			Seek(fh, 0, OFFSET_END);
+		if (append)
+		{
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    if (DOSBase->dl_lib.lib_Version >= 36)
+		    {
+#endif
+#if OSVERMAX >= 36
+#if OSVERMIN >= 37
+			BPTR lock;
+
+			if (lock = Lock(ptr, ACCESS_WRITE))
+			{
+			    if (!(file = OpenFromLock(lock)))
+			    {
+				ioerr = IoErr();
+				UnLock(lock);
+			    }
+			}
+#else
+			BPTR lock;
+			struct FileLock *fl;
+
+			if (lock = Lock(ptr, ACCESS_WRITE))
+			{
+			    fh = AllocDosObject(DOS_FILEHANDLE, 0);
+			    file = MKBADDR(fh);
+
+			    fl = BADDR(lock);
+			    fh->fh_Type = fl->fl_Task;
+
+			    if (!(DoPkt2(fl->fl_Task, ACTION_FH_FROM_LOCK, file, lock)))
+			    {
+				ioerr = IoErr();
+				UnLock(lock);
+				FreeDosObject(DOS_FILEHANDLE, fh);
+				file = 0;
+				fh = 0;
+			    }
+			}
+#endif
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    }
+		    else
+		    {
+#endif
+#if OSVERMIN < 36
+			file = Open(ptr, MODE_READWRITE);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    }
+
+		    if (DOSBase->dl_lib.lib_Version >= 36)
+		    {
+#endif
+#if OSVERMAX >= 36
+			if (ioerr)
+			{
+			    if (ioerr == ERROR_ACTION_NOT_KNOWN)
+				file = Open(ptr, MODE_OLDFILE);
+			    else
+				err = CMD_ERROR;
+			}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    }
+#endif
+
+		    if (!err && !file)
+		    {
+			if ((ioerr = IoErr()) != ERROR_OBJECT_NOT_FOUND)
+			    err = CMD_ERROR;
+		    }
+
+		    if (file)
+		    {
+			Seek(file, 0, OFFSET_END);
+			if (ioerr = IoErr())
+			    err = CMD_ERROR;
+		    }
+		}
+
+
+		if (!err && !file)
+		{
+		    if (!(file = Open(ptr, MODE_NEWFILE)))
+			err = CMD_ERROR;
+		}
+
+		if (!err && file)
+		{
+		    int len;
 
 		    len = strlen(t);
 
@@ -399,6 +487,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		    {
 			t += 3;
 			len -= 3;
+			multiline = 1;
 		    }
 		    else
 		    {
@@ -408,17 +497,45 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 			len++;
 		    }
 
-		    Write(fh, t, len);
+		    Write(file, t, len);
+		    if (ioerr = IoErr())
+			err = CMD_ERROR;
+		}
 
-		    Close(fh);
-		    if (QuietCmd == 0)
-			PrintF("<\n");
-		    err = CMD_OK;
+#if OSVERMIN <= 36 && OSVERMAX >= 36
+		if (fh)
+		{
+		    DoPkt1(fh->fh_Type, ACTION_END, fh->fh_Arg1);
+		    FreeDosObject(DOS_FILEHANDLE, fh);
 		}
 		else
+#endif
+		if (file)
+		    Close(file);
+
+		if (QuietCmd == 0 && multiline)
+		    PrintF("<\n");
+
 		{
-		    PrintF("Unable to write %s\n", ptr);
-		    err = CMD_ERROR;
+		    CLI *cli = (CLI *)BADDR(WorkProc->pr_CLI);
+
+		    if (err)
+		    {
+			PrintF("Unable to write %s\n", ptr);
+			cli->cli_Result2 = ioerr;
+			*lastret = 20;
+		    }
+		    else
+		    {
+			*lastret = 0;
+			cli->cli_Result2 = 0;
+		    }
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    if (DOSBase->dl_lib.lib_Version >= 36)
+#endif
+#if OSVERMAX >= 36
+			SetReturnVar(*lastret, cli->cli_Result2);
+#endif
 		}
 		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    } else
