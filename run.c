@@ -723,17 +723,57 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	short i = 0;
 	short useSystem = 0;
 	short c = 0;
+	WORD quote = 0;
 
 	if (dosVer >= 36)
 	{
 	    short ci;
 
-	    for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
-		;
+	    {
+		WORD quoted;
+
+		if (cmd[0] == '\"')
+		{
+		    quoted = 1;
+		    cmd++;
+		}
+		else
+		    quoted = 0;
+
+		for (i = 0; cmd[i] && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
+		{
+		    if (!quoted)
+		    {
+			if (cmd[i] == ' ')
+			    break;
+		    }
+		    else
+		    {
+			if (cmd[i] == '\"')
+			{
+			    if (cmd[i + 1] && cmd[i + 1] != ' ' && cmd[i] != '\t' && cmd[i] != '\n')
+				break;
+			    quote = i;
+			    quoted = 0;
+			}
+		    }
+
+		}
+
+		if (quoted)
+		{
+		    PrintF("Fail: missing or misplaced '\"' in command list\n");
+		    return CMD_FAIL;
+		}
+	    }
+
 	    if (strpbrk(cmd + i, "<>|`&"))
 		useSystem = 1;
 	    else
 		useSystem = 0;
+
+	    if (quote)
+		cmd[quote] = 0;
 
 	    if (c = cmd[ci = i])
 		++ci;
@@ -810,18 +850,21 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 
 	    if (useSystem)
 		goto dosys;
-
-	    Forbid();
-	    if (seg = FindSegment(cmd, 0L, DOSFALSE))
+	    
+	    if (!quote)
 	    {
-		seg->seg_UC++;
+		Forbid();
+		if (seg = FindSegment(cmd, 0L, DOSFALSE))
+		{
+		    seg->seg_UC++;
+		}
+		else if (seg = FindSegment(cmd, 0L, DOSTRUE))
+		{
+		    if (seg->seg_UC != CMD_INTERNAL)
+			seg = 0;
+		}
+		Permit();
 	    }
-	    else if (seg = FindSegment(cmd, 0L, DOSTRUE))
-	    {
-		if (seg->seg_UC != CMD_INTERNAL)
-		    seg = 0;
-	    }
-	    Permit();
 
 	    if (seg) {
 		dbprintf(("A cmd = '%s' stack = %d\n", cmdArgs, stack));
@@ -855,6 +898,11 @@ dosys:
 
 		dbprintf(("D\n"));
 		cmd[i] = c;
+		if (quote)
+		{
+		    cmd[quote] = '\"';
+		    cmd--;
+		}
 		/*err = system13(cmd);*/
 		err = SystemTagList(cmd, tags);
 		cli->cli_Result2 = IoErr();
