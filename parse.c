@@ -632,7 +632,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
     List    lhsList;
     List    rhsList;
     List    *cmdList;
-    LONG    colline;
+    LONG    colline = 0;
     long    nlhs = 0;
     long    nrhs = 0;
     short   ncol = 0;
