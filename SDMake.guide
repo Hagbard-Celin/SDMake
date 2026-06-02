@@ -33,6 +33,7 @@
 
    @{"The Command Shell" link "COMMANDSHELL"}
    	@{"Environment variables" link "ENVIRONMENTVARIABLES"}
+        @{"Search Path" link "SEARCHPATH"}
 
    @{"License" link "LICENSE"}
 
@@ -750,8 +751,9 @@
 				COMMAND SHELL
 
     Under 2.0 and newer commands that do not contain any sort of redirection
-    are run with RunCommand().  If a command is an alias or there is some
-    sort of redirection in the arguments it will be run with System().
+    are run with RunCommand().  If a command is an alias, or a script, or
+    there is some sort of redirection in the arguments it will be run with
+    System().
 
     Under 1.3 a separate shell is started with Execute(). And everything is
     run in that shell.
@@ -777,6 +779,9 @@
         someotherfile: yetafile
         #    echo "SDMake will not touch someotherfile because no"
         #    echo "command-list exists for this dependency."
+
+    Commands with a space in the name or path must enclosed in
+    double-quotes.
 
     In addition to the fwrite/fappnd commands described below, SDMake also
     supports the simplest and most commonly used form of local input files
@@ -905,14 +910,58 @@
 			    ENVIRONMENT VARIABLES
 
     2.0 local variables and 1.3/2.0 ENV: variables are fully accessible.
-    Under 2.0 you can also modify local variables on the fly.
+    Under 2.0 and newer you can also modify local variables on the fly.
     SDMake-specific variables override 2.0 local variables override ENV:
     variables.
 
-    Under 2.0, any command containing '<', '>', '`', or '|', or is an
-    alias, will be run with System().  Thus, such commands may not be used
-    to modify local variables or the local environment.	Also, such commands
-    cannot be ^C'd due to the way AmigaDOS works.
+    Under 2.0 and newer, any command containing '<', '>', '`', '|', or '&',
+    or is an alias, or a script, will be run with System().  Thus, such
+    commands may not be used to modify local variables or the local
+    environment. Also, such commands cannot be ^C'd due to the way AmigaDOS
+     works.
+
+@endnode
+@node SEARCHPATH "Search Path"
+
+                                  SEARCH PATH
+
+    Under 1.3 the shell that runs the commands gets its search path from
+    the Workbench process on startup.
+
+
+    Under 2.0 and newer SDMake gets its search path from the current
+    shell if started from a shell, and from the sender of the WBStartup
+    message if not.
+
+
+    Under 2.0 and greater SDMake will first, for command lines that do not
+    contain any form of redirection, search for a command with a mathcing
+    name in the following order:
+
+      1. SDMake internal commands
+      2. Shell internal commands and resident commands
+      3. A executable with protection bit "e" set and "s" not set in the
+         current directory
+      4. A executable with protection bit "e" set and "s" not set in the
+         search path
+      5. A executable with protection bit "e" set and "s" not set in the
+         C: (multi-)assign.
+
+    If the command contains a relative or absolute path all steps except
+    step 3 will be skipped.
+
+    If the command is in double-quotes step 1 and 2 will be skipped.
+
+    If no matching command is found in these locations, the command line
+    will be passed to System() for the shell to attempt to resolve it in
+    case the command is a script.
+
+    NOTE: This might behave somewhat counterintuitive with multi-assigns.
+    If "C:" is assigned to "SYS:C" and "SYS:otherdir" in that order. And
+    "SYS:C/foo" is a script with "s" and "e" bits set while
+    "SYS:otherdir/foo" is a executable with "e" set and "s" not set, the
+    command "foo" would ignore the script and run the executable.
+
 
 @endnode
 
