@@ -113,6 +113,8 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
     /*
      *	Internal MakeDir because AmigaDOS 2.04's MakeDir is unreliable
      *	with RunCommand() (it can crash)
+     *  Internal makedir disabled by default for SDMake, can not reproduce
+     *  crash.
      *
      *	Internal CD, IF, ELSE and ENDIF because we special case it
      */
@@ -421,6 +423,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		PrintF(" (Skipped by if-condition)\n");
 	    return CMD_OK;
 	} else
+#ifdef INTERNAL_MAKEDIR
 	if (cmdlen == 7 && strnicmp(cmd, "makedir", 7) == 0) {
 	    long lock;
 	    short err = CMD_OK;
@@ -435,6 +438,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    }
 	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	} else
+#endif
 	if (cmdlen == 6) {
 	    LONG append;
 

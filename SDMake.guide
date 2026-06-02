@@ -887,6 +887,9 @@
       makedir dirname
 
          Make the directory dirname.
+         Only if compiled with INTERNAL_MAKEDIR defined. Was originally
+         implemented because 2.04 makedir was observed to crash with
+         RunCommand(). Disabled by default since I am unable to reproduce.
 
 
       quit return
