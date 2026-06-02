@@ -88,7 +88,7 @@ Prototype void AppendVariable(Var *, CONST_STRPTR, long);
 
 /* path.c               */
 
-Prototype long _SearchPath(char *cmd);
+Prototype BPTR LoadSegPath(char *cmd);
 Prototype BPTR stealpath(struct Process *sproc);
 Prototype void freepath(BPTR list);
 

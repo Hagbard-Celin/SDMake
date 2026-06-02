@@ -34,6 +34,13 @@
 #include <dos/var.h>
 #include <dos/dostags.h>
 
+struct bufdata {
+    struct FileHandle *fh;
+    BPTR oldBuf;
+    LONG oldPos;
+    LONG oldEnd;
+};
+
 typedef struct Process		    Process;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
@@ -41,7 +48,11 @@ Prototype void InitCommand(void);
 Prototype void SetReturnVar(LONG rc, LONG return2);
 
 #if OSVERMAX >= 36
-static BPTR LoadSegLock(BPTR lock, char *cmd);
+#if OSVERMIN < 37
+static void RunCleanup(char *cmdArgs, struct bufdata *fhb);
+#else
+static void RunCleanup(char *cmdArgs);
+#endif
 static void SetLocalVar(CONST_STRPTR var, LONG value);
 #endif
 
@@ -707,10 +718,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	UWORD dosVer = DOSBase->dl_lib.lib_Version;
 	char *cmdArgs = 0;
 #if OSVERMIN < 37
-	struct FileHandle *fh = 0;
-	BPTR oldBuf = 0;
-	LONG oldPos = 0;
-	LONG oldEnd = 0;
+	struct bufdata fhb = {0};
 #endif
 	short i = 0;
 	short useSystem = 0;
@@ -763,14 +771,14 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		    if (!(cmdArgs = AllocVec(max(arglen + 2, 104), MEMF_PUBLIC)))
 			MemErr();
 
-		    fh = BADDR(Input());
-		    oldBuf = fh->fh_Buf;
-		    oldPos = fh->fh_Pos;
-		    oldEnd = fh->fh_End;
+		    fhb.fh = BADDR(Input());
+		    fhb.oldBuf = fhb.fh->fh_Buf;
+		    fhb.oldPos = fhb.fh->fh_Pos;
+		    fhb.oldEnd = fhb.fh->fh_End;
 
-		    fh->fh_Buf = MKBADDR(cmdArgs);
-		    fh->fh_Pos = 0;
-		    fh->fh_End = arglen + 1;
+		    fhb.fh->fh_Buf = MKBADDR(cmdArgs);
+		    fhb.fh->fh_Pos = 0;
+		    fhb.fh->fh_End = arglen + 1;
 #endif
 #if OSVERMIN < 37 && OSVERMAX >= 37
 		}
@@ -790,8 +798,8 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 #endif
 #if OSVERMAX >= 36
 	{
-	    struct Segment *seg;
-	    BPTR seglist, lock = 0;
+	    struct Segment *seg = 0;
+	    BPTR seglist;
 	    long stack;
 	    CLI *cli = (CLI *)BADDR(WorkProc->pr_CLI);
 	    static char OldCmd[128];
@@ -821,12 +829,24 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		cli->cli_Result2 = IoErr();
 		if (seg->seg_UC > 0)
 		    seg->seg_UC--;
-	    } else if ((lock = _SearchPath(cmd)) && (seglist = LoadSegLock(lock, ""))) {
+	    } else if (seglist = LoadSegPath(cmd)) {
 		dbprintf(("B cmd = '%s' stack = %d\n", cmdArgs, stack));
 		err = RunCommand(seglist, stack, cmdArgs, strlen(cmdArgs));
 		cli->cli_Result2 = IoErr();
 		UnLoadSeg(seglist);
 	    } else
+	    if (IoErr() == ERROR_NO_FREE_STORE)
+	    {
+		ExitIoErr = ERROR_NO_FREE_STORE;
+		SetProgramName(OldCmd);
+#if OSVERMIN < 37
+		RunCleanup(cmdArgs, &fhb);
+#else
+		RunCleanup(cmdArgs);
+#endif
+		return CMD_FAIL;
+	    }
+	    else
 dosys:
 	    {
 		struct TagItem tags[] = {
@@ -842,9 +862,6 @@ dosys:
 
 	    SetProgramName(OldCmd);
 	    SetReturnVar(err, cli->cli_Result2);
-
-	    if (lock)
-		UnLock(lock);
 
 	    Flush(WorkProc->pr_COS);
 	}
@@ -862,32 +879,13 @@ dosys:
 #endif
 
 #if OSVERMAX >= 36
-	if (cmdArgs)
-	{
-#if OSVERMIN < 37 && OSVERMAX >= 37
-	    if (dosVer >= 37)
-#endif
-#if OSVERMAX >= 37
-		PFreeVec(cmdArgs);
-#endif
-#if OSVERMIN < 37 && OSVERMAX >= 37
-	    else
-	    {
-#endif
 #if OSVERMIN < 37
-		if(fh->fh_Buf == MKBADDR(cmdArgs))
-		{
-		    fh->fh_Buf = oldBuf;
-		    fh->fh_Pos = oldPos;
-		    fh->fh_End = oldEnd;
-		}
-		FreeVec(cmdArgs);
+		RunCleanup(cmdArgs, &fhb);
+#else
+		RunCleanup(cmdArgs);
 #endif
-#if OSVERMIN < 37 && OSVERMAX >= 37
-	    }
 #endif
-	}
-#endif
+
 	{
 	    LONG ret = CMD_OK;
 
@@ -914,6 +912,42 @@ dosys:
 }
 
 #if OSVERMAX >= 36
+#if OSVERMIN < 37
+static void RunCleanup(char *cmdArgs, struct bufdata *fhb)
+#else
+static void RunCleanup(char *cmdArgs)
+#endif
+{
+#if OSVERMAX >= 36
+    if (cmdArgs)
+    {
+#if OSVERMIN < 37 && OSVERMAX >= 37
+	if (DOSBase->dl_lib.lib_Version >= 37)
+#endif
+#if OSVERMAX >= 37
+	    PFreeVec(cmdArgs);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
+	else
+	{
+#endif
+#if OSVERMIN < 37
+	    if(fhb->fh->fh_Buf == MKBADDR(cmdArgs))
+	    {
+		fhb->fh->fh_Buf = fhb->oldBuf;
+		fhb->fh->fh_Pos = fhb->oldPos;
+		fhb->fh->fh_End = fhb->oldEnd;
+	    }
+	    FreeVec(cmdArgs);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
+	}
+#endif
+    }
+#endif
+}
+
+
 void SetReturnVar(LONG rc, LONG return2)
 {
     SetLocalVar("RC", rc);
@@ -926,16 +960,5 @@ static void SetLocalVar(CONST_STRPTR var, LONG value)
 
     stcl_d(buf, value);
     SetVar(var, buf, -1, LV_VAR|GVF_LOCAL_ONLY);
-}
-
-static BPTR LoadSegLock(BPTR lock, char *cmd)
-{
-    BPTR oldLock;
-    BPTR seg;
-
-    oldLock = CurrentDir(lock);
-    seg = LoadSeg(cmd);
-    CurrentDir(oldLock);
-    return(seg);
 }
 #endif

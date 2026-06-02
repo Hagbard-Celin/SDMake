@@ -800,7 +800,7 @@ static void InitStuff(void)
 
     if (Initialized == 0) {
 	Initialized = 1;
-	if (!(MemPool = PCreate(8192, 384)))
+	if (!(MemPool = PCreate(8192, 584)))
 	    MemErr();
 	atexit(myexit);
 	UtilityBase = OpenLibrary("utility.library", 37);
