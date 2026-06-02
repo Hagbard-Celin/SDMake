@@ -116,9 +116,9 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 
 	    if (!(flags&CMDF_QUIET) && !isif)
 	    {
-	        if (!(*cmdIfTrue))
+		if (!(*cmdIfTrue))
 		    PrintF(" (Skipped by if-condition)\n");
-	        else
+		else
 		    PrintF("\n");
 	    }
 
@@ -128,14 +128,14 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	{
 	    if (strnicmp(cmd, "if", 2) == 0)
 	    {
-	        char *t;
-	        short err = CMD_OK;
+		char *t;
+		short err = CMD_OK;
 		WORD notfound = 1;
 
-	        while (*ptr == ' ' || *ptr == '\t')
-	            ++ptr;
-	        if (*ptr)
-	        {
+		while (*ptr == ' ' || *ptr == '\t')
+		    ++ptr;
+		if (*ptr)
+		{
 		    LONG arglen;
 
 		    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
@@ -152,13 +152,13 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 			{
 			    if (*cmdIfTrue)
 			    {
-			        ptr = t;
+				ptr = t;
 
-			        while (*ptr == ' ' || *ptr == '\t')
-			            ++ptr;
+				while (*ptr == ' ' || *ptr == '\t')
+				    ++ptr;
 
-			        if (*ptr)
-			        {
+				if (*ptr)
+				{
 				    for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
 				    arglen = t - ptr;
 
@@ -191,13 +191,13 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 					    }
 
 					    if (result) {
-					        *cmdIfTrue = pushIf(cmdIfBase, 1);
+						*cmdIfTrue = pushIf(cmdIfBase, 1);
 					    } else {
-					        *cmdIfTrue = pushIf(cmdIfBase, 0);
+						*cmdIfTrue = pushIf(cmdIfBase, 0);
 					    }
 					}
 				    }
-			        }
+				}
 			    }
 			    else
 			    {
@@ -222,11 +222,11 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 
 				if (*lastret >= val)
 				{
-				        *cmdIfTrue = pushIf(cmdIfBase, 1);
-			            }
-			            else
-			            {
-				        *cmdIfTrue = pushIf(cmdIfBase, 0);
+					*cmdIfTrue = pushIf(cmdIfBase, 1);
+				    }
+				    else
+				    {
+					*cmdIfTrue = pushIf(cmdIfBase, 0);
 				}
 			    }
 			    else
@@ -244,28 +244,28 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 			{
 			    if (*cmdIfTrue)
 			    {
-			        ptr = t;
+				ptr = t;
 
 
-			        while (*ptr == ' ' || *ptr == '\t')
-			            ++ptr;
+				while (*ptr == ' ' || *ptr == '\t')
+				    ++ptr;
 
-			        if (*ptr)
-			        {
+				if (*ptr)
+				{
 				    BPTR lock;
 
 				    notfound = 0;
 
-			            if (lock = Lock(ptr, ACCESS_READ))
-			            {
-			                UnLock(lock);
-				        *cmdIfTrue = pushIf(cmdIfBase, 1);
-			            }
-			            else
-			            {
-				        *cmdIfTrue = pushIf(cmdIfBase, 0);
-			            }
-			        }
+				    if (lock = Lock(ptr, ACCESS_READ))
+				    {
+					UnLock(lock);
+					*cmdIfTrue = pushIf(cmdIfBase, 1);
+				    }
+				    else
+				    {
+					*cmdIfTrue = pushIf(cmdIfBase, 0);
+				    }
+				}
 			    }
 			    else
 			    {
@@ -282,21 +282,21 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 			{
 			    if (*cmdIfTrue)
 			    {
-			        ptr = t;
+				ptr = t;
 
-			        while (*ptr == ' ' || *ptr == '\t')
-			            ++ptr;
+				while (*ptr == ' ' || *ptr == '\t')
+				    ++ptr;
 
-			        if (*ptr)
-			        {
+				if (*ptr)
+				{
 				    notfound = 0;
 
 				    if (FindVariable(ptr, '$')) {
-				        *cmdIfTrue = pushIf(cmdIfBase, 1);
+					*cmdIfTrue = pushIf(cmdIfBase, 1);
 				    } else {
-				        *cmdIfTrue = pushIf(cmdIfBase, 0);
+					*cmdIfTrue = pushIf(cmdIfBase, 0);
 				    }
-			        }
+				}
 			    }
 			    else
 			    {
@@ -306,18 +306,18 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 			    }
 			}
 		    }
-	        }
+		}
 
 		if (*cmdIfTrue)
-	        {
+		{
 		    if (notfound)
 		    {
 			PrintF("Internal command if: Missing or unknown argument\n");
 			err = CMD_ERROR;
 		    }
-	        }
+		}
 
-	        return(err);
+		return(err);
 	    } else
 	    if (!(*cmdIfTrue)) {
 		if (!(flags&CMDF_QUIET))
@@ -325,28 +325,28 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		return CMD_OK;
 	    } else
 	    if (strnicmp(cmd, "cd", 2) == 0) {
-	        long lock;
-	        short err = CMD_OK;
+		long lock;
+		short err = CMD_OK;
 
-	        while (*ptr == ' ' || *ptr == '\t')
-	            ++ptr;
-	        {
-	            short len = strlen(ptr);    /*  XXX HACK HACK */
-	            if (len && ptr[len-1] == '\n')
-		        ptr[len-1] = 0;
-	        }
+		while (*ptr == ' ' || *ptr == '\t')
+		    ++ptr;
+		{
+		    short len = strlen(ptr);    /*  XXX HACK HACK */
+		    if (len && ptr[len-1] == '\n')
+			ptr[len-1] = 0;
+		}
 
-	        if (*ptr == 0)
-	            lock = DupLock(SaveLock);
-	        else
-	            lock = Lock(ptr, SHARED_LOCK);
-	        if (lock)
-	            UnLock(CurrentDir(lock));
-	        else {
-	            PrintF("Unable to cd %s\n", ptr);
-	            err = CMD_ERROR;
-	        }
-	        return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
+		if (*ptr == 0)
+		    lock = DupLock(SaveLock);
+		else
+		    lock = Lock(ptr, SHARED_LOCK);
+		if (lock)
+		    UnLock(CurrentDir(lock));
+		else {
+		    PrintF("Unable to cd %s\n", ptr);
+		    err = CMD_ERROR;
+		}
+		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    }
 	} else
 	if (!(*cmdIfTrue)) {
@@ -359,12 +359,12 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    short err = CMD_OK;
 
 	    while (*ptr == ' ' || *ptr == '\t')
-	        ++ptr;
+		++ptr;
 	    if (lock = CreateDir(ptr))
-	        UnLock(lock);
+		UnLock(lock);
 	    else {
-	        PrintF("Unable to makedir %s\n", ptr);
-	        err = CMD_ERROR;
+		PrintF("Unable to makedir %s\n", ptr);
+		err = CMD_ERROR;
 	    }
 	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	} else
@@ -374,35 +374,35 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    if ((mode = strnicmp(cmd, "fwrite", 6)) == 0 ||
 	    strnicmp(cmd, "fappnd", 6) == 0)
 	    {
-	        char *t;
-	        BPTR fh;
-	        short err;
+		char *t;
+		BPTR fh;
+		short err;
 
 		if (!mode)
 		    mode = MODE_NEWFILE;
 		else
 		    mode = MODE_OLDFILE;
 
-	        while (*ptr == ' ' || *ptr == '\t')
-	            ++ptr;
-	        for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
-	        if (*t) *t++ = '\0';
+		while (*ptr == ' ' || *ptr == '\t')
+		    ++ptr;
+		for (t = ptr; *t && *t != ' ' && *t != '\t'; t++);
+		if (*t) *t++ = '\0';
 		if (fh = Open(ptr, mode)) {
-	            int len;
+		    int len;
 
 		    if (mode == MODE_OLDFILE)
 			Seek(fh, 0, OFFSET_END);
 
-	            len = strlen(t);
+		    len = strlen(t);
 
 		    if (strnicmp(t, "<<\n", 3) == 0)
 		    {
-		        t += 3;
-		        len -= 3;
+			t += 3;
+			len -= 3;
 		    }
 		    else
 		    {
-		        for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
+			for(ptr = t; *ptr; ptr++) if (*ptr == ' ') *ptr = '\n';
 
 			t[len] = '\n';
 			len++;
@@ -410,16 +410,16 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 
 		    Write(fh, t, len);
 
-	            Close(fh);
+		    Close(fh);
 		    if (QuietCmd == 0)
 			PrintF("<\n");
-	            err = CMD_OK;
-	        }
-	        else
-	        {
-	            PrintF("Unable to write %s\n", ptr);
-	            err = CMD_ERROR;
-	        }
+		    err = CMD_OK;
+		}
+		else
+		{
+		    PrintF("Unable to write %s\n", ptr);
+		    err = CMD_ERROR;
+		}
 		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    } else
 	    if (strnicmp(cmd, "failat", 6) == 0)
@@ -427,8 +427,8 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		LONG failat;
 		short err = CMD_OK;
 
-	        while (*ptr == ' ' || *ptr == '\t')
-	            ++ptr;
+		while (*ptr == ' ' || *ptr == '\t')
+		    ++ptr;
 
 		if (stcd_l(ptr, &failat))
 		    Failat = failat;
@@ -445,7 +445,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    short err;
 
 	    while (*ptr == ' ' || *ptr == '\t')
-	        ++ptr;
+		++ptr;
 	    if (strnicmp(ptr, "OK", 2) == 0)
 		err = CMD_QUIT;
 	    else
@@ -453,7 +453,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		err = CMD_ERROR;
 	    else {
 		PrintF("Missing or invalid argument for quit\n");
-	        err = CMD_ERROR;
+		err = CMD_ERROR;
 	    }
 	    return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	}
@@ -504,10 +504,10 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		STRPTR tmp;
 
 		if (!(tmp =  PAllocVec(needsize)))
-	        {
+		{
 		    PrintF("Memory allocation error\n");
 		    return CMD_FAIL;
-	        }
+		}
 
 		stccpy(tmp, cmd, keepsize + 1);
 
@@ -715,7 +715,7 @@ dosys:
 		if (err == -1)
 		    ret = CMD_FAIL;
 		else
-	        if (flags&CMDF_IGNORE)
+		if (flags&CMDF_IGNORE)
 		    ret = CMD_IGNORED;
 		else
 		if (err >= Failat)
