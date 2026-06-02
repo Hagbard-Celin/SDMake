@@ -935,7 +935,7 @@
 
 
     Under 2.0 and greater SDMake will first, for command lines that do not
-    contain any form of redirection, search for a command with a mathcing
+    contain any form of redirection, search for a command with a matching
     name in the following order:
 
       1. SDMake internal commands
@@ -956,12 +956,14 @@
     will be passed to System() for the shell to attempt to resolve it in
     case the command is a script.
 
-    NOTE: This might behave somewhat counterintuitive with multi-assigns.
-    If "C:" is assigned to "SYS:C" and "SYS:otherdir" in that order. And
-    "SYS:C/foo" is a script with "s" and "e" bits set while
-    "SYS:otherdir/foo" is a executable with "e" set and "s" not set, the
-    command "foo" would ignore the script and run the executable.
+    NOTE: This might behave somewhat counterintuitive.
+    If "SYS:somedir" comes before "SYS:otherdir" either in the search path
+    or in a multi-assign. And "SYS:somedir/foo" is a script with "s" and
+    "e" bits set, while "SYS:otherdir/foo" is a executable with "e" set
+    and "s" not set, the following command line would ignore the script
+    and run the executable.
 
+        foo
 
 @endnode
 
