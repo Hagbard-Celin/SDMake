@@ -702,23 +702,24 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
      */
 
     {
+	LONG err;
 #if OSVERMAX >= 36
-	short i = 0;
-	short ci;
-	short c = 0;
-	short useSystem = 0;
 	UWORD dosVer = DOSBase->dl_lib.lib_Version;
+	char *cmdArgs = 0;
+#if OSVERMIN < 37
+	struct FileHandle *fh = 0;
 	BPTR oldBuf = 0;
 	LONG oldPos = 0;
 	LONG oldEnd = 0;
 #endif
-	LONG err;
-#if OSVERMAX >= 36
-	struct FileHandle *fh = 0;
-	char *cmdArgs = 0;
+	short i = 0;
+	short useSystem = 0;
+	short c = 0;
 
 	if (dosVer >= 36)
 	{
+	    short ci;
+
 	    for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
 		;
 	    if (strpbrk(cmd + i, "<>|`"))
@@ -863,10 +864,17 @@ dosys:
 #if OSVERMAX >= 36
 	if (cmdArgs)
 	{
+#if OSVERMIN < 37 && OSVERMAX >= 37
 	    if (dosVer >= 37)
+#endif
+#if OSVERMAX >= 37
 		PFreeVec(cmdArgs);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
 	    else
 	    {
+#endif
+#if OSVERMIN < 37
 		if(fh->fh_Buf == MKBADDR(cmdArgs))
 		{
 		    fh->fh_Buf = oldBuf;
@@ -874,7 +882,10 @@ dosys:
 		    fh->fh_End = oldEnd;
 		}
 		FreeVec(cmdArgs);
+#endif
+#if OSVERMIN < 37 && OSVERMAX >= 37
 	    }
+#endif
 	}
 #endif
 	{
