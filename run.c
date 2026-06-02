@@ -750,7 +750,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		{
 #endif
 #if OSVERMAX >= 37
-		    if (!(cmdArgs = PAllocVec(arglen + 3)))
+		    if (!(cmdArgs = PAllocVec(arglen + 2)))
 			MemErr();
 #endif
 #if OSVERMIN < 37 && OSVERMAX >= 37
@@ -759,7 +759,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		{
 #endif
 #if OSVERMIN < 37
-		    if (!(cmdArgs = AllocVec(max(arglen + 3, 104), MEMF_PUBLIC)))
+		    if (!(cmdArgs = AllocVec(max(arglen + 2, 104), MEMF_PUBLIC)))
 			MemErr();
 
 		    fh = BADDR(Input());
