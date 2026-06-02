@@ -47,7 +47,8 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 	D_S(struct FileInfoBlock, fib);
 	UWORD half = 4096;
 
-	Examine(lock, fib);
+	if (!(Examine(lock, fib)))
+	    return 0;
 #if OSVERMIN < 36
 	filesize = fib->fib_Size;
 #endif
@@ -61,26 +62,26 @@ AsyncFile *OpenAsyncR(const STRPTR fileName)
 	}
 
 	UnLock(lock);
-    }
 
 #if OSVERMIN < 36 && OSVERMAX >= 36
-    if (DOSBase->dl_lib.lib_Version >= 36)
-    {
+	if (DOSBase->dl_lib.lib_Version >= 36)
+	{
 #endif
 #if OSVERMAX >= 36
-	file = OpenAsync(fileName, MODE_READ, buffsize);
+	    file = OpenAsync(fileName, MODE_READ, buffsize);
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
-    }
-    else
-    {
+	}
+	else
+	{
 #endif
 #if OSVERMIN < 36
-	file = OpenAsyncR13(fileName, filesize, buffsize);
+	    file = OpenAsyncR13(fileName, filesize, buffsize);
 #endif
 #if OSVERMIN < 36 && OSVERMAX >= 36
-    }
+	}
 #endif
+    }
 
     if (file)
     {
