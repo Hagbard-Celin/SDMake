@@ -61,6 +61,7 @@
 #endif
 
 Prototype int system13(const char *buf);
+Prototype short ShellRunning;
 
 extern WORD    Break;
 
@@ -98,6 +99,8 @@ void WaitPktMask(void);
 
 long __asm _sys13SoftInt(register __a1 long a4);
 
+short ShellRunning;
+
 extern struct DosLibrary *DOSBase;
 
 static DosList *Dl;
@@ -110,7 +113,6 @@ static long	DummyRefs;
 static long	PktMask;
 static long	ReturnCode;
 static short	CmdStatus;	/*  0 none running, 1 in prog, -1 done	*/
-static short	ShellRunning;
 static short	ConsoleTaken;
 static short	TermFlag;
 static long	BreakMask;

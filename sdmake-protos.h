@@ -95,6 +95,7 @@ Prototype void freepath(BPTR list);
 /* system13.c           */
 
 Prototype int system13(const char *buf);
+Prototype short ShellRunning;
 
 /* console.c            */
 

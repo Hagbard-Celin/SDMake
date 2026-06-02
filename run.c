@@ -46,7 +46,9 @@ static void SetLocalVar(CONST_STRPTR var, LONG value);
 #endif
 
 BPTR SaveLock;
-char RootPath[512];
+#if OSVERMIN < 36
+char RootPath[256];
+#endif
 
 void ICExit(void)
 {
@@ -60,13 +62,25 @@ void InitCommand()
 {
     BPTR path;
 
+#if OSVERMIN < 36
+    if (DOSBase->dl_lib.lib_Version < 36)
+    {
+	char *ok;
+
+	strcpy(RootPath, "cd ");
+
+	ok = getcwd(RootPath + 3, sizeof(RootPath) - 3);
+
+	if (!ok)
+	{
+	    PrintF("CurrentDir error, path too long\n");
+	    exit(20);
+	}
+    }
+#endif
+
     path = DupLock(StartProc->pr_CurrentDir);
     SaveLock = CurrentDir(path);
-#if OSVERMIN >= 36
-    NameFromLock(path, RootPath, sizeof(RootPath));
-#else
-    getcwd(RootPath, sizeof(RootPath));
-#endif
 
     atexit(ICExit);
 }
@@ -326,6 +340,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 	    } else
 	    if (strnicmp(cmd, "cd", 2) == 0) {
 		long lock;
+		CLI *cli = (CLI *)BADDR(WorkProc->pr_CLI);
 		short err = CMD_OK;
 
 		while (*ptr == ' ' || *ptr == '\t')
@@ -340,12 +355,53 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		    lock = DupLock(SaveLock);
 		else
 		    lock = Lock(ptr, SHARED_LOCK);
+
 		if (lock)
+		{
 		    UnLock(CurrentDir(lock));
-		else {
-		    PrintF("Unable to cd %s\n", ptr);
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    if (ShellRunning && DOSBase->dl_lib.lib_Version < 36)
+		    {
+#endif
+#if OSVERMIN < 36
+			if (*ptr == 0)
+			{
+			    err = system13(RootPath);
+			}
+			else
+			{
+			    err = system13(cmd);
+			}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		    }
+#endif
+
+		    cli->cli_Result2 = 0;
+		    *lastret = 0;
+		}
+
+		if (!lock)
+		{
+		    cli->cli_Result2 = IoErr();
+		    *lastret = 20;
+		    PrintF("Unable to cd to %s\n", ptr);
 		    err = CMD_ERROR;
 		}
+#if OSVERMIN < 36
+		else
+		if (err)
+		{
+		    PrintF("SDMake: fatal error while changing CurrentDir to %s\n", (*ptr)?ptr:RootPath + 3);
+		    return CMD_FAIL;
+		}
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+		if (DOSBase->dl_lib.lib_Version >= 36)
+#endif
+#if OSVERMAX >= 36
+		    SetReturnVar(*lastret, cli->cli_Result2);
+#endif
 		return((flags&CMDF_IGNORE) ?  CMD_IGNORED : err);
 	    }
 	} else
