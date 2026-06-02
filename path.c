@@ -79,7 +79,6 @@ long _SearchPath(char *cmd)
     return(0);
 }
 
-#if OSVERMAX >= 36
 BPTR stealpath(struct Process *sproc)
 {
     struct CommandLineInterface	*scli;
@@ -137,4 +136,3 @@ void freepath(BPTR list)
 	path=next;
     }
 }
-#endif
