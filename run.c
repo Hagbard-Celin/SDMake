@@ -730,7 +730,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 
 	    for (i = 0; cmd[i] && cmd[i] != ' ' && cmd[i] != '\t' && cmd[i] != '\n'; ++i)
 		;
-	    if (strpbrk(cmd + i, "<>|`"))
+	    if (strpbrk(cmd + i, "<>|`&"))
 		useSystem = 1;
 	    else
 		useSystem = 0;
