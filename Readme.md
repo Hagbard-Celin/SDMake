@@ -83,7 +83,7 @@ inspirations of the following authors:
 * **Martin Taillefer** (Original Author, AmigaMail Vol. 2)
 * **Magnus Holmgren** (Aminet Package Maintainer)
 * **Olaf Barthel** (Code Inspiration)
-* **Michael B. Smith** (Historical Contributor / Maintainer)
+* **Michael B. Smith** (FGetsAsync() and FGetsLenAsync() functions)
 
 All modifications made to these AsyncIO files by the author of this project are
 explicitly dedicated to the Public Domain.

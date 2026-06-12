@@ -7,7 +7,7 @@ They are exempt from this project's main GPL license via a linking exception.
 * **Martin Taillefer**: Original implementation for AmigaMail
 * **Magnus Holmgren**: Aminet archival and enhancements
 * **Olaf Barthel**: Code Inspiration
-* **Michael B. Smith**: Historical development contributions
+* **Michael B. Smith**: FGetsAsync() and FGetsLenAsync() functions
 
 ### Project Modifications
 Any files modified by the author of this project have been copied to the parent
