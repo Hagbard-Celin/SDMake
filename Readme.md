@@ -51,6 +51,19 @@ relevant code from "asyncio/src/".
 
 ## License
 
+This project is a combined fork of upstream code originally derived from the
+DICE Amiga compiler and the DragonFly BSD project.
+
+* The overall project and all modifications made by the author are licensed
+  under the **GNU General Public License v2.0 or later** (see below).
+* Upstream code remains governed by its original copyright holders. See
+  `DICE-LICENSE.txt` for the DICE copyright terms, and individual file headers
+  for the DragonFly BSD Project terms.
+
+---
+
+### GPL-2.0-or-later
+
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 2 of the License, or (at your option) any later
