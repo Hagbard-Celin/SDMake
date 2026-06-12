@@ -69,7 +69,7 @@ codebase incorporates the historical contributions, maintenance, and
 inspirations of the following authors:
 * **Martin Taillefer** (Original Author, AmigaMail Vol. 2)
 * **Magnus Holmgren** (Aminet Package Maintainer)
-* **Olaf Barthel** (Technical Inspiration & Core Packet Routines)
+* **Olaf Barthel** (Code Inspiration)
 * **Michael B. Smith** (Historical Contributor / Maintainer)
 
 All modifications made to these AsyncIO files by the author of this project

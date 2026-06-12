@@ -5,7 +5,7 @@ The files in this directory are part of the historical "[AsyncIO](https://aminet
 ### Credits & Roles
 * **Martin Taillefer**: Original implementation for AmigaMail
 * **Magnus Holmgren**: Aminet archival and enhancements
-* **Olaf Barthel**: Code inspiration and architectural design
+* **Olaf Barthel**: Code Inspiration
 * **Michael B. Smith**: Historical development contributions
 
 ### Project Modifications
