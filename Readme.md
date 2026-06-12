@@ -49,8 +49,33 @@ build a version using that. In the opposite case it will compile and link the
 relevant code from "asyncio/src/".
 
 
+## License
+
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 2 of the License, or (at your option) any later
 version.
 
+### AsyncIO Subsystem Exception
+
+As a special exception to the GNU General Public License, permission is granted
+to link this program with the "AsyncIO" utility routines and distribute the
+resulting executable.
+
+The original "AsyncIO" source code files and their derivatives contained
+within this repository remain under their original historical Commodore
+AmigaMail developer release terms and are not covered by the GPL. This
+codebase incorporates the historical contributions, maintenance, and
+inspirations of the following authors:
+* **Martin Taillefer** (Original Author, AmigaMail Vol. 2)
+* **Magnus Holmgren** (Aminet Package Maintainer)
+* **Olaf Barthel** (Technical Inspiration & Core Packet Routines)
+* **Michael B. Smith** (Historical Contributor / Maintainer)
+
+All modifications made to these AsyncIO files by the author of this project
+(including backward-compatibility adjustments located in the root directory)
+are explicitly dedicated to the Public Domain.
+
+You must obey the GNU General Public License in all respects for all of
+the code used other than AsyncIO. If you modify the project files, you may
+extend this exception to your version, but you are not obligated to do so.
