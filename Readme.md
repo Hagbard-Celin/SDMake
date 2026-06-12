@@ -72,9 +72,8 @@ inspirations of the following authors:
 * **Olaf Barthel** (Code Inspiration)
 * **Michael B. Smith** (Historical Contributor / Maintainer)
 
-All modifications made to these AsyncIO files by the author of this project
-(including backward-compatibility adjustments located in the root directory)
-are explicitly dedicated to the Public Domain.
+All modifications made to these AsyncIO files by the author of this project are
+explicitly dedicated to the Public Domain.
 
 You must obey the GNU General Public License in all respects for all of
 the code used other than AsyncIO. If you modify the project files, you may
