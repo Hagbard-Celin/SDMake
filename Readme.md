@@ -55,7 +55,8 @@ This project is a combined fork of upstream code originally derived from the
 DICE Amiga compiler and the DragonFly BSD project.
 
 * The overall project and all modifications made by the author are licensed
-  under the **GNU General Public License v2.0 or later** (see below).
+  under the **GNU General Public License v2.0 or later** (see below), with the
+  explicit exception of the AsyncIO subsystem modifications detailed below.
 * Upstream code remains governed by its original copyright holders. See
   `DICE-LICENSE.txt` for the DICE copyright terms, and individual file headers
   for the DragonFly BSD Project terms.
@@ -76,17 +77,35 @@ to link this program with the "AsyncIO" utility routines and distribute the
 resulting executable.
 
 The original "AsyncIO" source code files and their derivatives contained
-within this repository remain under their original historical Commodore
-AmigaMail developer release terms and are not covered by the GPL. This
-codebase incorporates the historical contributions, maintenance, and
-inspirations of the following authors:
-* **Martin Taillefer** (Original Author, AmigaMail Vol. 2)
-* **Magnus Holmgren** (Aminet Package Maintainer)
-* **Olaf Barthel** (Code Inspiration)
-* **Michael B. Smith** (FGetsAsync() and FGetsLenAsync() functions)
+within this repository remain separate from the GPL. This subsystem has the
+following intellectual property and authorship profile:
 
-All modifications made to these AsyncIO files by the author of this project are
-explicitly dedicated to the Public Domain.
+* **Martin Taillefer (Core Author):** The core asynchronous I/O logic was
+  authored independently by Martin prior to Commodore's 1994 bankruptcy.
+  Martin has explicitly granted permission to treat his portion of the code
+  as **Public Domain**.
+* **Olaf Barthel (Contributor):** Extensive custom code changes integrated
+  from his `AIFF_dtc.lha v1.11` release were explicitly designated by him
+  as **Public Domain**.
+* **Legacy Header Discrepancies:** Users reviewing old Amiga Developer CDs
+  will find conflicting corporate copyright claims stamped on these files:
+  - *Commodore 1993:* This legacy header is superseded by Martin's personal
+    ownership and his explicit permission to treat his work as Public Domain.
+  - *Amiga, Inc. 1999:* This header was applied via automated compilation
+    scripts by a later entity. Because the logic was authored by Martin prior
+    to Commodore's 1994 bankruptcy, and he never held employment or contracts
+    with the 1999 Amiga, Inc. corporation, that boilerplate claim is void.
+* **Pending Community Approvals:** Key optimizations and extensions present in
+  the unmodified `AsyncIO/` subdirectory are held under a pending-clarification
+  status. Formal licensing inquiries to clear these blocks under compatible
+  open terms were sent in June 2026 to:
+  - **Magnus Holmgren:** For shared library code, bug-fixes and general
+    enhancements.
+  - **Michael B. Smith:** For the `FGetsAsync` and `FGetsLenAsync` functions.
+
+All modifications made to these AsyncIO files by the author of this project
+to ensure cross-version AmigaOS compatibility are explicitly dedicated to
+the **Public Domain**.
 
 You must obey the GNU General Public License in all respects for all of
 the code used other than AsyncIO. If you modify the project files, you may
