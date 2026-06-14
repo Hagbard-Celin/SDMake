@@ -95,10 +95,10 @@ following intellectual property and authorship profile:
     scripts by a later entity. Because the logic was authored by Martin prior
     to Commodore's 1994 bankruptcy, and he never held employment or contracts
     with the 1999 Amiga, Inc. corporation, that boilerplate claim is void.
-* **Pending Community Approvals:** Changes to this code present in the
-  unmodified `AsyncIO/` subdirectory are held under a pending-clarification
-  status. Formal licensing inquiries to clear these blocks under compatible
-  open terms were sent in June 2026 to:
+* **Pending Community Approvals:** Parts of the code present in the unmodified
+  `AsyncIO/` subdirectory are held under a pending-clarification status. Formal
+  licensing inquiries to clear these blocks under compatible open terms were
+  sent in June 2026 to:
   - **Magnus Holmgren:** For shared library code, bug-fixes and general
     enhancements.
   - **Michael B. Smith:** For the `FGetsAsync` and `FGetsLenAsync` functions.
