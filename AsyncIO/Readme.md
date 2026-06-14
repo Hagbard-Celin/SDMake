@@ -14,7 +14,7 @@ They are exempt from this project's main GPL license via a linking exception.
   integrated from his `AIFF_dtc.lha v1.11` release, which were explicitly
   designated by him as **Public Domain**.
 
-### Pending Community Approvals
+### Pending Approvals
 I am keeping the remaining code intact here while awaiting formal licensing
 confirmation from the respective authors:
 * **Magnus Holmgren:** For shared library code, bug-fixes and general
