@@ -7,9 +7,9 @@ They are exempt from this project's main GPL license via a linking exception.
 
 ### Core Codebase & Public Domain Clearances
 * **Martin Taillefer (Core Author):** Wrote the original implementation for
-  AmigaMail. Although various editions of the Amiga Developer CDs applied
-  automated corporate headers to these files, the underlying work is his.
-  He has granted explicit permission to treat his portion as **Public Domain**.
+  AmigaMail. He has granted explicit permission to treat his portion as
+  **Public Domain** (verifiable email correspondence is archived in
+  LICENSE.AsyncIO in the root directory).
 * **Olaf Barthel (Contributor):** Contributed extensive custom code changes
   integrated from his `AIFF_dtc.lha v1.11` release, which were explicitly
   designated by him as **Public Domain**.
@@ -23,6 +23,6 @@ confirmation from the respective authors:
   (Inquiry sent June 2026; response pending).
 
 ### Project Modifications
-Any files modified by the author of this project have been copied to the parent
+Any files modified by the author of this project have been copied to the root
 directory and edited there, and are explicitly dedicated to the Public Domain.
 

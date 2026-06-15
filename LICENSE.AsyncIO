@@ -1,0 +1,62 @@
+# AsyncIO Provenance Record: Martin Taillefer Permission
+
+The following email correspondence establishes the explicit Public Domain
+dedication of the core AsyncIO routines by the original author,
+Martin Taillefer, to me for use in the SDMake project and downstream
+distribution.
+
+---
+
+From: Me <address redacted>
+Date: Fri, Jun 12, 2026 at 1:48 PM
+To: Martin Taillefer
+
+Hi.
+I have the latest years been trying to fulfill my childhood dream of rally
+learning C on Amiga using SAS/C.
+At the moment I'm working on fork of dmake from the now BSD-3-Clause licensed
+DICE, with backports from dxmake from DragonFly BSD, for replacing smake.
+My project is GPL, and when I was trying to fix the Readme to make sure I was
+compliant with this mix, I realize I had made the mistake of assuming that
+AsyncIO.lha on Aminet was "Public Domain".
+I have imported it to my repo, stating it keeps it original license, fixed one
+bug and made some changes to make it work even with AmigaOS 1.3 for my use case.
+But I realize I did not have permission to do that. (I must add I tried to do
+the right thing, and made my changes to tose files Public Domain.)
+I tried the newest mail address of Magnus Holmgren I could find, but that did
+not exist.
+So since the .guide states that I got his permissions from you, and the fact you
+are the original author, I must ask.
+Can you please give me permission to use this code under a license that make
+what I have done legal?
+My project is located here: https://github.com/Hagbard-Celin/SDMake/tree/master
+
+signature redacted
+
+---
+
+From: Me <address redacted>
+Date: Fri, Jun 12, 2026 at 3:15 PM
+To: Martin Taillefer
+
+After thinking this through some more. (Sorry for not doing that first and
+keeping it all in one mail.)
+I should have phrased my question:
+Can you please give me permission to use the parts of this code that you wrote
+under a license that make what I have done legal?
+
+And in the meantime I think I have managed to track down current e-mail addresses
+for Magnus Holmgren and Michael B. Smith.
+So if your answer is affirmative, I can ask for their permission for their
+respective contributions under the license you choose.
+
+signature redacted
+
+---
+
+From: Martin Taillefer
+Date: Fri, Jun 12, 2026 at 3:29 PM
+To: Me
+
+Hi there, Of course, please consider the code public domain. Use, modify, and
+distribute in any way you'd like.

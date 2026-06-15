@@ -83,18 +83,11 @@ following intellectual property and authorship profile:
 * **Martin Taillefer (Core Author):** The core asynchronous I/O logic was
   authored independently by Martin prior to Commodore's 1994 bankruptcy.
   Martin has explicitly granted permission to treat his portion of the code
-  as **Public Domain**.
+  as **Public Domain** (verifiable email correspondence is archived in
+  LICENSE.AsyncIO).
 * **Olaf Barthel (Contributor):** Extensive custom code changes integrated
   from his `AIFF_dtc.lha v1.11` release were explicitly designated by him
   as **Public Domain**.
-* **Legacy Header Discrepancies:** Users reviewing old Amiga Developer CDs
-  will find conflicting corporate copyright claims stamped on these files:
-  - *Commodore 1993:* This legacy header is superseded by Martin's personal
-    ownership and his explicit permission to treat his work as Public Domain.
-  - *Amiga, Inc. 1999:* This header was applied via automated compilation
-    scripts by a later entity. Because the logic was authored by Martin prior
-    to Commodore's 1994 bankruptcy, and he never held employment or contracts
-    with the 1999 Amiga, Inc. corporation, that boilerplate claim is void.
 * **Pending Approvals:** Parts of the code present in the unmodified `AsyncIO/`
   subdirectory are held under a pending-clarification status. Formal licensing
   inquiries to clear these blocks under compatible open terms were sent in June
