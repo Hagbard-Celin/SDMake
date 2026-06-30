@@ -55,8 +55,7 @@ This project is a combined fork of upstream code originally derived from the
 DICE Amiga compiler and the DragonFly BSD project.
 
 * The overall project and all modifications made by the author are licensed
-  under the **GNU General Public License v2.0 or later** (see below), with the
-  explicit exception of the AsyncIO subsystem modifications detailed below.
+  under the **GNU General Public License v2.0 or later** (see below).
 * Upstream code remains governed by its original copyright holders. See
   `DICE-LICENSE.txt` for the DICE copyright terms, and individual file headers
   for the DragonFly BSD Project terms.
@@ -69,35 +68,6 @@ This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 2 of the License, or (at your option) any later
 version.
-
-### AsyncIO Subsystem Exception
-
-As a special exception to the GNU General Public License, permission is granted
-to link this program with the "AsyncIO" utility routines and distribute the
-resulting executable.
-
-The original "AsyncIO" source code files and their derivatives contained
-within this repository remain separate from the GPL. This subsystem has the
-following intellectual property and authorship profile:
-
-* **Martin Taillefer (Core Author):** The core asynchronous I/O logic was
-  authored independently by Martin prior to Commodore's 1994 bankruptcy.
-  Martin has explicitly granted permission to treat his portion of the code
-  as **Public Domain** (verifiable email correspondence is archived in
-  LICENSE.AsyncIO).
-* **Olaf Barthel (Contributor):** Extensive custom code changes integrated
-  from his `AIFF_dtc.lha v1.11` release were explicitly designated by him
-  as **Public Domain**.
-* **Pending Approvals:** Parts of the code present in the unmodified `AsyncIO/`
-  subdirectory are held under a pending-clarification status. Formal licensing
-  inquiries to clear these blocks under compatible open terms were sent in June
-  2026 to:
-  - **Magnus Holmgren:** For shared library code, bug-fixes and general
-    enhancements.
-  - **Michael B. Smith:** For the `FGetsAsync` and `FGetsLenAsync` functions.
-
-All modifications made to these AsyncIO files by the author of this project
-are explicitly dedicated to the **Public Domain**.
 
 You must obey the GNU General Public License in all respects for all of
 the code used other than AsyncIO. If you modify the project files, you may
