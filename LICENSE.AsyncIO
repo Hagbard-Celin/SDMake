@@ -5,6 +5,12 @@ dedication of the core AsyncIO routines by the original author,
 Martin Taillefer, to me for use in the SDMake project and downstream
 distribution.
 
+My follow up question was made before i realized the file-dates
+on asyncio.c and asyncio.h in NDK_3.1 matched the file date on asyncio.doc in
+NDK_3.5. And that the latest date in the changelog in the latter was only one
+day later than said file-dates. And it seems the changes described in the
+changelog are included in the version in NDK_3.1.
+
 ---
 
 From: Me <address redacted>
@@ -45,8 +51,8 @@ I should have phrased my question:
 Can you please give me permission to use the parts of this code that you wrote
 under a license that make what I have done legal?
 
-And in the meantime I think I have managed to track down current e-mail addresses
-for Magnus Holmgren and Michael B. Smith.
+And in the meantime I think I have managed to track down current e-mail
+addresses for Magnus Holmgren and Michael B. Smith.
 So if your answer is affirmative, I can ask for their permission for their
 respective contributions under the license you choose.
 
@@ -60,3 +66,29 @@ To: Me
 
 Hi there, Of course, please consider the code public domain. Use, modify, and
 distribute in any way you'd like.
+
+---
+
+From: Me <address redacted>
+Date: Tue, Jun 16, 2026 at 6:31 PM
+To: Martin Taillefer
+
+Hi, sorry for bothering you again.
+But, while trying to reconstruct the history of the AsyncIO code, I discovered
+that some of the fixes from your later versions where never integrated into the
+version on Aminet.
+Since my previous question referred to the Aminet archive when I asked about the
+parts of the code you wrote, my understanding is that to incorporate those fixes
+in my repo, I'm legally required to ask:
+Can you please confirm if I can consider all versions of the AsyncIO code for
+AmigaDOS written by you public domain.
+
+signature redacted
+
+---
+
+From: Martin Taillefer
+Date: Tue, Jun 16, 2026 at 7:02 PM
+To: Me
+
+Yes, consider all versions, editions, corrections, as being public domain.
