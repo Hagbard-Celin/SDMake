@@ -25,7 +25,7 @@ Most notable changes from DMake/DXMake so far:
 - Added multiple directives.
 - Converted to use memory pools.
 - Fixed starting from Workbench.
-- Converted to asyncio.library/compiled in AsyncIO.
+- Converted to use asyncronious read code based on AsyncIO by Martin Taillefer.
 
 For details, see SDMake.guide. Sorry about no detailed change-log yet except for
 the messy commit history, I will try to make one before I make first official
@@ -57,11 +57,6 @@ integrated with original modifications by the author.
 * **DragonFly BSD Project Code:** Upstream code remains governed by its original
   copyright holders under the **BSD 3-Clause License**. See individual file
   headers for specific terms.
-* **AsyncIO Subsystem:** The `AsyncIO/` directory is entirely **Public Domain**
-  and is completely exempt from the GPL. This subsystem is based on code by
-  Martin Taillefer (permission archived in `LICENSE.AsyncIO`). All modifications
-  made to this subsystem by the author are also explicitly dedicated to the
-  Public Domain.
 * **AsyncIO Subsystem:** The `AsyncIO/` directory is entirely **Public Domain**
   and is completely exempt from the GPL. This subsystem is based on code by
   Martin Taillefer (permission archived in `LICENSE.AsyncIO`). All modifications
