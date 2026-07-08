@@ -13,9 +13,20 @@
 #include <exec/ports.h>
 #endif
 
-#ifndef DOS_DOS_H
-#include <dos/dos.h>
+#ifndef DOS_DOSEXTENS_H
+#include <dos/dosextens.h>
 #endif
+
+
+/*****************************************************************************/
+
+typedef char enum PacketState
+{
+    PKT_START = -1,   /* initial buffer fill pending            */
+    PKT_IDLE,         /* no packet pending                      */
+    PKT_PENDING,      /* packet sent, pending reply             */
+    PKT_READY         /* other buffer ready for sequential read */
+} PacketState;
 
 
 /*****************************************************************************/
@@ -27,30 +38,27 @@
 typedef struct AsyncFile
 {
     BPTR                  af_File;
-    ULONG                 af_BlockSize;
     struct MsgPort       *af_Handler;
     APTR                  af_Offset;
     LONG                  af_BytesLeft;
     ULONG                 af_BufferSize;
     APTR                  af_Buffers[2];
+    ULONG                 af_BufMin[2];
+    ULONG                 af_BytesArrived[2];
     struct StandardPacket af_Packet;
     struct MsgPort        af_PacketPort;
     ULONG                 af_CurrentBuf;
     ULONG                 af_SeekOffset;
-    UBYTE                 af_PacketPending;
-    UBYTE                 af_ReadMode;
+    ULONG                 af_FilesysPos;
+    ULONG                 af_BufferPos;
+    ULONG                 af_FileSize;
+    UWORD                 af_SequentialBytes;
+    PacketState		  af_PacketPending;
 } AsyncFile;
 
 
 /*****************************************************************************/
 
-
-typedef enum OpenModes
-{
-    MODE_READ,      /* read an existing file                             */
-    MODE_WRITE,     /* create a new file, delete existing file if needed */
-    MODE_APPEND     /* append to end of existing file, or create new     */
-} OpenModes;
 
 typedef enum SeekModes
 {
@@ -63,12 +71,10 @@ typedef enum SeekModes
 /*****************************************************************************/
 
 
-AsyncFile *OpenAsync(const STRPTR fileName, OpenModes mode, LONG bufferSize);
-LONG CloseAsync(AsyncFile *file);
+AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize);
+void CloseAsync(AsyncFile *file);
 LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes);
 LONG ReadCharAsync(AsyncFile *file);
-LONG WriteAsync(AsyncFile *file, APTR buffer, LONG numBytes);
-LONG WriteCharAsync(AsyncFile *file, UBYTE ch);
 LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode);
 
 

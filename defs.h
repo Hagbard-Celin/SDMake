@@ -65,11 +65,7 @@
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/lists.h>
-#ifdef INTERNAL_ASYNC
-#include <clib/asyncio_protos.h>
-#else
-#include <proto/asyncio.h>
-#endif
+#include <asyncr.h>
 #include "lists.h"
 #include "poolmem.h"
 

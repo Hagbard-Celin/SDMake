@@ -5,84 +5,91 @@
 /*****************************************************************************/
 
 
-AsyncFile *OpenAsync(const STRPTR fileName, OpenModes mode, LONG bufferSize)
+AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize)
 {
     AsyncFile         *file;
-    struct FileHandle *fh;
     BPTR               handle;
-    BPTR               lock;
-    LONG               blockSize;
-    D_S(struct InfoData,infoData);
+    LONG               blockSize = 0;
+    ULONG              fileSize = 0;
+    LONG               err = 0;
 
-    handle = NULL;
     file   = NULL;
-    lock   = NULL;
 
-    if (mode == MODE_READ)
     {
+	BPTR lock;
+	LONG lockerr = 0;
+	LONG infoerr = 0;
+	LONG examerr = 0;
+	D_S(struct InfoData,infoData);
+	D_S(struct FileInfoBlock,fib);
+
 	if (handle = Open(fileName,MODE_OLDFILE))
-	    lock = Lock(fileName,ACCESS_READ);
-    }
-    else
-    {
-	if (mode == MODE_WRITE)
 	{
-	    handle = Open(fileName,MODE_NEWFILE);
-	}
-	else if (mode == MODE_APPEND)
-	{
-	    /* in append mode, we open for writing, and then seek to the
-	     * end of the file. That way, the initial write will happen at
-	     * the end of the file, thus extending it
-	     */
-
-	    if (handle = Open(fileName,MODE_READWRITE))
+	    if (lock = Lock(fileName,ACCESS_READ))
 	    {
-		if (Seek(handle,0,OFFSET_END) < 0)
-		{
-		    Close(handle);
-		    handle = NULL;
-		}
-	    }
-	}
+	        if (Info(lock,infoData))
+	        {
+		    blockSize  = infoData->id_BytesPerBlock;
+	        }
+		else
+		    infoerr = IoErr();
 
-	/* we want a lock on the same device as where the file is. We can't
-	 * use DupLockFromFH() for a write-mode file though. So we get sneaky
-	 * and get a lock on the parent of the file
-	 */
-	if (handle)
-	    lock = ParentOfFH(handle);
+
+	        if (Examine(lock, fib))
+	        {
+	            fileSize = fib->fib_Size;
+	        }
+		else
+		    examerr = IoErr();
+
+	        UnLock(lock);
+	    }
+	    else
+		lockerr = IoErr();
+	}
+	else
+	    err = IoErr();
+
+	if (lockerr == ERROR_NO_FREE_STORE ||
+	    infoerr == ERROR_NO_FREE_STORE ||
+	    examerr == ERROR_NO_FREE_STORE)
+	{
+	    err = ERROR_NO_FREE_STORE;
+	    Close(handle);
+	    handle = 0;
+	}
     }
+
 
     if (handle)
     {
+	struct FileHandle *fh;
+
 	/* if it was possible to obtain a lock on the same device as the
 	 * file we're working on, get the block size of that device and
 	 * round up our buffer size to be a multiple of the block size.
 	 * This maximizes DMA efficiency.
 	 */
 
-	blockSize = 512;
-	if (lock)
+	if (!blockSize)
+	    blockSize = 512;
+
+	/* we do this even if Info() failed to avoid excessive overhead
+	 * from too small buffers
+	 */
 	{
-	    if (Info(lock,infoData))
-	    {
-		blockSize  = infoData->id_BytesPerBlock;
-		bufferSize = (((bufferSize + (blockSize*2) - 1) / (blockSize*2)) * (blockSize*2));
-	    }
-	    UnLock(lock);
+	    LONG doubleblocksize = blockSize * 2;
+	    bufferSize = (((bufferSize + doubleblocksize - 1) / doubleblocksize) * doubleblocksize);
 	}
 
 	/* now allocate the ASyncFile structure, as well as the read buffers.
 	 * Add 15 bytes to the total size in order to allow for later
-	 * quad-longword alignement of the buffers
+	 * quad-longword alignment of the buffers
 	 */
 
 	if (file = AllocVec(sizeof(AsyncFile) + bufferSize + 15,MEMF_PUBLIC | MEMF_ANY))
 	{
 	    file->af_File      = handle;
-	    file->af_ReadMode  = (mode == MODE_READ);
-	    file->af_BlockSize = blockSize;
 
 	    /* initialize the ASyncFile structure. We do as much as we can here,
 	     * in order to avoid doing it in more critical sections
@@ -97,21 +104,28 @@ AsyncFile *OpenAsync(const STRPTR fileName, OpenModes mode, LONG bufferSize)
 	     * most 15 bytes of ram.
 	     */
 
-	    fh                     = BADDR(file->af_File);
-	    file->af_Handler       = fh->fh_Type;
-	    file->af_BufferSize    = bufferSize / 2;
-	    file->af_Buffers[0]    = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
-	    file->af_Buffers[1]    = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
-	    file->af_Offset        = file->af_Buffers[0];
-	    file->af_CurrentBuf    = 0;
-	    file->af_SeekOffset    = 0;
-	    file->af_PacketPending = FALSE;
+	    fh                       = BADDR(file->af_File);
+	    file->af_Handler         = fh->fh_Type;
+	    file->af_BufferSize      = bufferSize / 2;
+	    file->af_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
+	    file->af_Buffers[1]      = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
+	    file->af_Offset          = file->af_Buffers[0];
+	    file->af_BufMin[0]       = 0;
+	    file->af_BufMin[1]       = 0;
+	    file->af_BytesArrived[0] = 0;
+	    file->af_BytesArrived[1] = 0;
+	    file->af_CurrentBuf      = 0;
+	    file->af_SeekOffset      = 0;
+	    file->af_FilesysPos      = 0;
+	    file->af_BufferPos       = 0;
+	    file->af_FileSize        = fileSize;
+	    file->af_SequentialBytes = 0;
 
 	    /* this is the port used to get the packets we send out back.
 	     * It is initialized to PA_IGNORE, which means that no signal is
 	     * generated when a message comes in to the port. The signal bit
 	     * number is initialized to SIGB_SINGLE, which is the special bit
-	     * that can be used for one-shot signalling. The signal will never
+	     * that can be used for one-shot signaling. The signal will never
 	     * be set, since the port is of type PA_IGNORE. We'll change the
 	     * type of the port later on to PA_SIGNAL whenever we need to wait
 	     * for a message to come in.
@@ -123,6 +137,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, OpenModes mode, LONG bufferSize)
 	    file->af_PacketPort.mp_MsgList.lh_Head     = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Tail;
 	    file->af_PacketPort.mp_MsgList.lh_Tail     = NULL;
 	    file->af_PacketPort.mp_MsgList.lh_TailPred = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Head;
+	    file->af_PacketPort.mp_Node.ln_Name        = NULL;
 	    file->af_PacketPort.mp_Node.ln_Type        = NT_MSGPORT;
 	    file->af_PacketPort.mp_Flags               = PA_IGNORE;
 	    file->af_PacketPort.mp_SigBit              = SIGB_SINGLE;
@@ -137,32 +152,29 @@ AsyncFile *OpenAsync(const STRPTR fileName, OpenModes mode, LONG bufferSize)
 	    file->af_Packet.sp_Msg.mn_Node.ln_Type  = NT_MESSAGE;
 	    file->af_Packet.sp_Msg.mn_Length        = sizeof(struct StandardPacket);
 
-	    if (mode == MODE_READ)
-	    {
-		/* if we are in read mode, send out the first read packet to
-		 * the file system. While the application is getting ready to
-		 * read data, the file system will happily fill in this buffer
-		 * with DMA transfers, so that by the time the application
-		 * needs the data, it will be in the buffer waiting
-		 */
+	    /* send out the first read packet to the file system. While
+	     * the application is getting ready to read data, the file
+	     * system will happily fill in this buffer with DMA
+	     * transfers, so that by the time the application needs the
+	     * data, it will be in the buffer waiting
+	     */
 
-		file->af_Packet.sp_Pkt.dp_Type = ACTION_READ;
-		file->af_BytesLeft             = 0;
-		if (file->af_Handler)
-		    SendPacket(file,file->af_Buffers[0]);
-	    }
-	    else
+	    file->af_Packet.sp_Pkt.dp_Type = ACTION_READ;
+	    file->af_BytesLeft             = 0;
+	    if (file->af_Handler)
 	    {
-		file->af_Packet.sp_Pkt.dp_Type = ACTION_WRITE;
-		file->af_BytesLeft             = file->af_BufferSize;
+		SendPacket(file,file->af_Buffers[0], 0);
+		file->af_PacketPending   = PKT_START;
 	    }
 	}
 	else
 	{
+	    err = ERROR_NO_FREE_STORE;
 	    Close(handle);
 	}
     }
 
+    SetIoErr(err);
     return(file);
 }
 

@@ -1,29 +1,27 @@
 
-#include <exec/types.h>
-#include <exec/memory.h>
-#include <dos/dos.h>
-#include <dos/dosextens.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
 
-#include <clib/exec_protos.h>
-#include <clib/dos_protos.h>
-
-#include <pragmas/exec_pragmas.h>
-#include <pragmas/dos_pragmas.h>
-
-#include "asyncio.h"
+#include <asyncr.h>
 
 
 /*****************************************************************************/
-
-
-extern struct Library *DOSBase;
-extern struct Library *SysBase;
-
-
-/*****************************************************************************/
-
 
 /* this macro lets us long-align structures on the stack */
 #define D_S(type,name) char a_##name[sizeof(type)+3]; \
-		       type *name = (type *)((LONG)(a_##name+3) & ~3);
+		       type *name = (type *)((ULONG)(a_##name+3) & ~3UL)
+
+
+/*****************************************************************************/
+
+/* this is tuned for the SDMake use-case */
+#define SEQBYTESTHRESH 3
+
+/* SDMake does not actually need this, as it never seeks forward.
+ * It is a safety valve to ensure forward seeks do not break future code.
+ */
+#define BYTESLEFTTHRESH 4
+
+LONG SendPacket(AsyncFile *file, APTR buffer, LONG filesyspos);
+LONG WaitPacket(AsyncFile *file);
 

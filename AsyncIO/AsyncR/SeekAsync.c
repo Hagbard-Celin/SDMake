@@ -1,155 +1,154 @@
+#include "async_internal.h"
 
 /*****************************************************************************/
 
 
 LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 {
-LONG  current, target;
-LONG  minBuf, maxBuf;
-LONG  bytesArrived;
-LONG  diff;
-LONG  filePos;
-LONG  roundTarget;
-D_S(struct FileInfoBlock,fib);
+    ULONG  current, target;
+    ULONG  minBuf, maxBuf;
+    LONG   bytesArrived;
+    LONG   diff;
+    ULONG  roundTarget;
 
-    bytesArrived = WaitPacket(file);
+    /* we fail if one of the following is true:
+     * 1. locking an open file failed
+     * 2. Examine() failed
+     * 3. Examine() reported fib_Size of 0
+     * The first two indicates we are probably dealing with a interactive file.
+     * The third can be either that or a empty file, which are treated the
+     * same for simplicity.
+     */
+    if (!file->af_FileSize)
+	goto err;
 
-    if (bytesArrived < 0)
-	return(-1);
-
-    if (file->af_ReadMode)
+    if (file->af_PacketPending == PKT_START)
     {
-	/* figure out what the actual file position is */
-	filePos = Seek(file->af_File,0,OFFSET_CURRENT);
-	if (filePos < 0)
+	bytesArrived = WaitPacket(file);
+	if (bytesArrived <= 0)
+	    goto err;
+
+	file->af_BytesLeft   = bytesArrived;
+    }
+
+    current = file->af_BufferPos;
+
+    /* figure out the absolute offset within the file where we must seek to */
+    if (mode == MODE_CURRENT)
+    {
+	if (!position)
+	    goto end;
+
+
+	target = file->af_BufferPos + position;
+    }
+    else if (mode == MODE_START)
+    {
+	target = position;
+    }
+    else /* if (mode == MODE_END) */
+    {
+	target = file->af_FileSize + position;
+    }
+
+    if (target >= file->af_FileSize)
+	goto err;
+
+    file->af_SequentialBytes = 0;
+
+    /* figure out what range of the file is in our current buffer */
+    minBuf = file->af_BufMin[file->af_CurrentBuf];
+    maxBuf = file->af_BufferPos + file->af_BytesLeft;  /* WARNING: this is one too big */
+
+    diff = target - file->af_BufferPos;
+
+    if ((target >= minBuf) && (target < maxBuf))
+    {
+	/* one of the two following things is true:
+	 *
+	 * 1. The target seek location is within the current read buffer,
+	 * but before the current location within the buffer. Move back
+	 * within the buffer.
+	 *
+	 * 2. The target seek location is ahead within the current
+	 * read buffer. Advance to that location.
+	 */
+
+	file->af_BytesLeft -= diff;
+	file->af_BufferPos  = target;
+	file->af_Offset     = (APTR)((ULONG)file->af_Offset + diff);
+	goto end;
+    }
+    else
+    if (file->af_PacketPending == PKT_PENDING && (bytesArrived = WaitPacket(file)) > 0)
+    {
+	/* the other buffer is being filled by the filesystem. Wait for this to be done,
+	 * then figure out what range of the file appeared in the buffer, and check if
+	 * the target location is within that range.
+	 */
+
+	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
+	maxBuf = minBuf + bytesArrived;  /* WARNING: this is one too big */
+
+	if ((target >= minBuf) && (target < maxBuf))
 	{
-	    RecordSyncFailure(file);
-	    return(-1);
-	}
-
-	/* figure out what the caller's file position is */
-	current = filePos - (file->af_BytesLeft+bytesArrived) + file->af_SeekOffset;
-	file->af_SeekOffset = 0;
-
-	/* figure out the absolute offset within the file where we must seek to */
-	if (mode == MODE_CURRENT)
-	{
-	    target = current + position;
-	}
-	else if (mode == MODE_START)
-	{
-	    target = position;
-	}
-	else /* if (mode == MODE_END) */
-	{
-	    if (!ExamineFH(file->af_File,fib))
-	    {
-		RecordSyncFailure(file);
-		return(-1);
-	    }
-
-	    target = fib->fib_Size + position;
-	}
-
-	/* figure out what range of the file is currently in our buffers */
-	minBuf = current - (LONG)((ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf]);
-	maxBuf = current + file->af_BytesLeft + bytesArrived;  /* WARNING: this is one too big */
-
-	diff = target - current;
-
-	if ((target < minBuf) || (target >= maxBuf))
-	{
-	    /* the target seek location isn't currently in our buffers, so
-	     * move the actual file pointer to the desired location, and then
-	     * restart the async read thing...
-	     */
-
-	    /* this is to keep our file reading block-aligned on the device.
-	     * block-aligned reads are generally quite a bit faster, so it is
-	     * worth the trouble to keep things aligned
-	     */
-	    roundTarget = (target / file->af_BlockSize) * file->af_BlockSize;
-
-	    if (Seek(file->af_File,roundTarget-filePos,OFFSET_CURRENT) < 0)
-	    {
-		RecordSyncFailure(file);
-		return(-1);
-	    }
-
-	    SendPacket(file,file->af_Buffers[0]);
-
-	    file->af_SeekOffset = target-roundTarget;
-	    file->af_BytesLeft  = 0;
-	    file->af_CurrentBuf = 0;
-	    file->af_Offset     = file->af_Buffers[0];
-	}
-	else if ((target < current) || (diff <= file->af_BytesLeft))
-	{
-	    /* one of the two following things is true:
-	     *
-	     * 1. The target seek location is within the current read buffer,
-	     * but before the current location within the buffer. Move back
-	     * within the buffer and pretend we never got the pending packet,
-	     * just to make life easier, and faster, in the read routine.
-	     *
-	     * 2. The target seek location is ahead within the current
-	     * read buffer. Advance to that location. As above, pretend to
-	     * have never received the pending packet.
-	     */
-
-	    RequeuePacket(file);
-
-	    file->af_BytesLeft -= diff;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + diff);
-	}
-	else
-	{
-	    /* at this point, we know the target seek location is within
-	     * the buffer filled in by the packet that we just received
-	     * at the start of this function. Throw away all the bytes in the
-	     * current buffer, send a packet out to get the async thing going
-	     * again, readjust buffer pointers to the seek location, and return
-	     * with a grin on your face... :-)
-	     */
-
-	    diff -= file->af_BytesLeft;
-
-	    SendPacket(file,file->af_Buffers[file->af_CurrentBuf]);
-
+	    diff = target - minBuf;
+	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 	    file->af_Offset    = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
-	    file->af_BytesLeft = bytesArrived - diff;
+	    file->af_BytesLeft = maxBuf - diff;
+	    file->af_BufferPos  = target;
+	    goto end;
 	}
     }
     else
+    if (file->af_BytesArrived[1 - file->af_CurrentBuf] &&
+	(file->af_PacketPending == PKT_IDLE || file->af_PacketPending == PKT_READY))
     {
-	if (file->af_BufferSize > file->af_BytesLeft)
-	{
-	    if (Write(file->af_File,file->af_Buffers[file->af_CurrentBuf],file->af_BufferSize - file->af_BytesLeft) < 0)
-	    {
-		RecordSyncFailure(file);
-		return(-1);
-	    }
-	}
-
-	/* this will unfortunately generally result in non block-aligned file
-	 * access. We could be sneaky and try to resync our file pos at a
-	 * later time, but we won't bother. Seeking in write-only files is
-	 * relatively rare (except when writing IFF files with unknown chunk
-	 * sizes, where the chunk size has to be written after the chunk data)
+	/* the other buffer contains valid data. Figure out what range of the file is
+	 * in that buffer, and check if the target location is within that range.
 	 */
 
-	current = Seek(file->af_File,position,mode);
+	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
+	maxBuf = minBuf + file->af_BytesArrived[1 - file->af_CurrentBuf];  /* WARNING: this is one too big */
 
-	if (current < 0)
+	if ((target >= minBuf) && (target < maxBuf))
 	{
-	    RecordSyncFailure(file);
-	    return(-1);
+	    diff = target - minBuf;
+	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
+	    file->af_Offset    = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
+	    file->af_BytesLeft = maxBuf - diff;
+	    file->af_BufferPos  = target;
+	    goto end;
 	}
-
-	file->af_BytesLeft  = file->af_BufferSize;
-	file->af_CurrentBuf = 0;
-	file->af_Offset     = file->af_Buffers[0];
     }
 
-    return(current);
+    /* if we arrive here the target seek location isn't currently in
+     * our buffers, so move the actual file pointer to the desired
+     * location, and then restart the async read thing...
+     */
+
+    /* this is to keep our file reading block-aligned on the device.
+     * block-aligned reads are generally quite a bit faster, so it is
+     * worth the trouble to keep things aligned
+     */
+
+    /* changed to align to af_BufferSize, this helps avoid unnecessary
+     * reads under some conditions
+     */
+    roundTarget = (target / file->af_BufferSize) * file->af_BufferSize;
+
+    if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], roundTarget))
+	goto err_gotIoErr;
+
+    file->af_BufferPos  = target;
+    file->af_BytesLeft  = 0;
+    file->af_SeekOffset = target - roundTarget;
+
+end:
+    return((LONG)current);
+
+err:
+    SetIoErr(ERROR_SEEK_ERROR);
+err_gotIoErr:
+    return -1;
 }
