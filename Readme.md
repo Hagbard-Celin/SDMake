@@ -25,7 +25,7 @@ Most notable changes from DMake/DXMake so far:
 - Added multiple directives.
 - Converted to use memory pools.
 - Fixed starting from Workbench.
-- Converted to use asyncronious read code based on AsyncIO by Martin Taillefer.
+- Converted to use asynchronous read code based on AsyncIO by Martin Taillefer.
 
 For details, see SDMake.guide. Sorry about no detailed change-log yet except for
 the messy commit history, I will try to make one before I make first official
