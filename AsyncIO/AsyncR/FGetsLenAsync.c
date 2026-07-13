@@ -2,14 +2,37 @@
 
 /*****************************************************************************/
 
+static ULONG CopyLine(CONST_STRPTR source, STRPTR dest, ULONG size);
 
-LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
+
+STRPTR FGetsAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes)
+{
+    return (FGetsLenAsync(file, buffer, numBytes, NULL));
+}
+
+
+STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 {
     LONG totalBytes;
     LONG bytesArrived;
+    LONG lineBytes;
     WORD reFill = FALSE;
 
     totalBytes = 0;
+
+    if (!numBytes)
+    {
+	buffer = 0;
+	SetIoErr(0);
+	goto end;
+    }
+
+    if (!--numBytes)
+    {
+	buffer = 0;
+	SetIoErr(ERROR_LINE_TOO_LONG);
+	goto end;
+    }
 
     /* wait for the buffer to fill if this is the first read after open */
     if (file->af_PacketPending == PKT_START)
@@ -17,13 +40,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	bytesArrived = WaitPacket(file);
 	if (bytesArrived <= 0)
 	{
-	    if (bytesArrived == 0)
-	    {
-	        SetIoErr(0);
-		goto end;
-	    }
-
-	    totalBytes = -1;
+	    buffer = 0;
 	    goto end;
 	}
 
@@ -33,7 +50,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
     /* do we need to send packet to fill other buffer? */
     if (file->af_PacketPending == PKT_IDLE)
     {
-	LONG nextpos;
+	ULONG nextpos;
 
 	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
 
@@ -51,7 +68,10 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	        numBytes > file->af_BytesLeft)
 	    {
 		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
-		    return(-1);
+		{
+		    buffer = 0;
+		    goto end;
+		}
 
 	        reFill = TRUE;
 	    }
@@ -65,12 +85,12 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	    if (file->af_PacketPending == PKT_IDLE && reFill)
 		SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
 
-
-	    CopyMem(file->af_Offset,buffer,numBytes);
-	    file->af_BytesLeft -= numBytes;
-	    file->af_BufferPos += numBytes;
-	    totalBytes         += numBytes;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + numBytes);
+	    lineBytes = CopyLine((STRPTR)file->af_Offset, buffer, numBytes);
+	    buffer[lineBytes]   = 0;
+	    file->af_BytesLeft -= lineBytes;
+	    file->af_BufferPos += lineBytes;
+	    totalBytes         += lineBytes;
+	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
 	    break;
 	}
 	else
@@ -78,14 +98,21 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	    /* drain buffer */
 	    if (file->af_BytesLeft)
 	    {
-		CopyMem(file->af_Offset,buffer,file->af_BytesLeft);
+		lineBytes = CopyLine((STRPTR)file->af_Offset, (STRPTR)buffer, file->af_BytesLeft);
 
-		numBytes           -= file->af_BytesLeft;
-		file->af_BufferPos += file->af_BytesLeft;
-		buffer              = (APTR)((ULONG)buffer + file->af_BytesLeft);
-		totalBytes         += file->af_BytesLeft;
-		file->af_BytesLeft  = 0;
+		numBytes           -= lineBytes;
+		file->af_BufferPos += lineBytes;
+		buffer              = (APTR)((ULONG)buffer + lineBytes);
+		totalBytes         += lineBytes;
+		file->af_BytesLeft -= lineBytes;
+		if (buffer[lineBytes - 1] == '\n')
+		{
+		    buffer[lineBytes] = 0;
+		    break;
+		}
 	    }
+	    else
+		lineBytes = 0;
 
 	    if (file->af_PacketPending == PKT_READY)
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
@@ -94,20 +121,30 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 
 	    if (bytesArrived <= 0)
 	    {
-	        if (bytesArrived == 0)
+		if (totalBytes)
 		{
-		    SetIoErr(0);
-		    break;
+		    buffer[lineBytes] = 0;
+
+		    if (bytesArrived == 0)
+		        break;
 		}
 
-		totalBytes = -1;
+		buffer = 0;
 		break;
 	    }
 
 	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
 
 	    if (numBytes > file->af_BytesLeft)
-		SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[1 - file->af_CurrentBuf] + bytesArrived);
+	    {
+		if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[1 - file->af_CurrentBuf] + bytesArrived))
+		{
+		    if (totalBytes)
+			buffer[lineBytes] = 0;
+		    buffer = 0;
+		    break;
+		}
+	    }
 
 	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
@@ -115,5 +152,21 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	}
     } while (numBytes);
 end:
-    return (totalBytes);
+    if (len)
+	*len = totalBytes;
+
+    return (buffer);
 }
+
+static ULONG CopyLine(CONST_STRPTR source, STRPTR dest, ULONG size)
+{
+    ULONG i = 0;
+
+    do
+    {
+	*dest++ = *source;
+    } while (++i < size && *source++ != '\n');
+
+    return i;
+}
+

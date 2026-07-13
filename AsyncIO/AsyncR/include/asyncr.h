@@ -75,6 +75,8 @@ AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize);
 void CloseAsync(AsyncFile *file);
 LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes);
 LONG ReadCharAsync(AsyncFile *file);
+STRPTR FGetsAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes);
+STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len);
 LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode);
 
 
