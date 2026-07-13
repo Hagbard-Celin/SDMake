@@ -45,7 +45,7 @@ LONG ReadCharAsync(AsyncFile *file)
 
     if (file->af_PacketPending == PKT_IDLE)
     {
-	LONG nextpos;
+	ULONG nextpos;
 
 	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
 

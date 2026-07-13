@@ -22,6 +22,6 @@
  */
 #define BYTESLEFTTHRESH 4
 
-LONG SendPacket(AsyncFile *file, APTR buffer, LONG filesyspos);
+LONG SendPacket(AsyncFile *file, APTR buffer, ULONG filesyspos);
 LONG WaitPacket(AsyncFile *file);
 

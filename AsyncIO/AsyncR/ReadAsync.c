@@ -30,7 +30,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
     /* do we need to send packet to fill other buffer? */
     if (file->af_PacketPending == PKT_IDLE)
     {
-	LONG nextpos;
+	ULONG nextpos;
 
 	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
 

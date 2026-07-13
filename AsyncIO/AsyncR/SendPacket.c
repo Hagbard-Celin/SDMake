@@ -5,7 +5,7 @@
 
 
 /* send out an async packet to the file system. */
-LONG SendPacket(AsyncFile *file, APTR buffer, LONG filesyspos)
+LONG SendPacket(AsyncFile *file, APTR buffer, ULONG filesyspos)
 {
     if (filesyspos != file->af_FilesysPos)
     {

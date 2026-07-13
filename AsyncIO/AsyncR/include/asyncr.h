@@ -52,7 +52,7 @@ typedef struct AsyncFile
     ULONG                 af_FilesysPos;
     ULONG                 af_BufferPos;
     ULONG                 af_FileSize;
-    UWORD                 af_SequentialBytes;
+    ULONG		  af_SequentialBytes;
     PacketState		  af_PacketPending;
 } AsyncFile;
 
