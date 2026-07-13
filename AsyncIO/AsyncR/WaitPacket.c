@@ -14,7 +14,7 @@
  */
 LONG WaitPacket(AsyncFile *file)
 {
-    LONG bytes;
+    LONG bytes = 0;
 
     while (TRUE)
     {
@@ -53,19 +53,21 @@ LONG WaitPacket(AsyncFile *file)
 		    file->af_BufMin[1 - file->af_CurrentBuf] = file->af_FilesysPos;
 		    file->af_BytesArrived[1 - file->af_CurrentBuf] = bytes;
 		}
+
+		file->af_FilesysPos += bytes;
 	    }
 
 	    file->af_PacketPending = PKT_IDLE;
-
-	    file->af_FilesysPos += bytes;
-
-	    /* packet didn't report an error, so bye... */
-	    return(bytes);
+	    SetIoErr(0);
+	    break;
 	}
+
+	/* packet's error code */
+	SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
 
 	/* see if the user wants to try again... */
 	if (ErrorReport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
-	    return(-1);
+	    break;
 
 	/* user wants to try again, resend the packet */
 	if (file->af_PacketPending == PKT_START)
@@ -74,9 +76,6 @@ LONG WaitPacket(AsyncFile *file)
 	    SendPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
      }
 
-    /* packet's error code */
-    SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
-
-    return(file->af_Packet.sp_Pkt.dp_Res1);
+    return(bytes);
 }
 

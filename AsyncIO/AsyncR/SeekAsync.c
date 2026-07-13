@@ -39,19 +39,31 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	if (!position)
 	    goto end;
 
+	/* catch seek past BOF */
+	if (position < 0 && -position > file->af_BufferPos)
+	    goto err;
 
 	target = file->af_BufferPos + position;
     }
     else if (mode == MODE_START)
     {
+	/* catch seek past BOF */
+	if (position < 0)
+	    goto err;
+
 	target = position;
     }
     else /* if (mode == MODE_END) */
     {
+	/* catch seek past BOF */
+	if (-position > file->af_FileSize)
+	    goto err;
+
 	target = file->af_FileSize + position;
     }
 
-    if (target >= file->af_FileSize)
+    /* catch seek past EOF */
+    if (target > file->af_FileSize)
 	goto err;
 
     file->af_SequentialBytes = 0;
@@ -145,6 +157,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     file->af_SeekOffset = target - roundTarget;
 
 end:
+    SetIoErr(0);
     return((LONG)current);
 
 err:

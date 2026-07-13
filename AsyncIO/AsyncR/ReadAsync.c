@@ -18,10 +18,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	if (bytesArrived <= 0)
 	{
 	    if (bytesArrived == 0)
-	    {
-	        SetIoErr(0);
 		goto end;
-	    }
 
 	    totalBytes = -1;
 	    goto end;
@@ -51,7 +48,10 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	        numBytes > file->af_BytesLeft)
 	    {
 		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
-		    return(-1);
+		{
+		    totalBytes = -1;
+		    goto end;
+		}
 
 	        reFill = TRUE;
 	    }
@@ -95,10 +95,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	    if (bytesArrived <= 0)
 	    {
 	        if (bytesArrived == 0)
-		{
-		    SetIoErr(0);
 		    break;
-		}
 
 		totalBytes = -1;
 		break;
@@ -107,7 +104,13 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
 
 	    if (numBytes > file->af_BytesLeft)
-		SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[1 - file->af_CurrentBuf] + bytesArrived);
+	    {
+		if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[1 - file->af_CurrentBuf] + bytesArrived))
+		{
+		    totalBytes = -1;
+		    break;
+		}
+	    }
 
 	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);

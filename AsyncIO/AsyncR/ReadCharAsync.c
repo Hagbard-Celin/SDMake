@@ -16,13 +16,9 @@ LONG ReadCharAsync(AsyncFile *file)
 	if (file->af_PacketPending == PKT_START)
 	{
 	    bytesArrived = WaitPacket(file);
-	    if (bytesArrived <= 0)
-	    {
-	        if (bytesArrived == 0)
-		    SetIoErr(0);
 
+	    if (bytesArrived <= 0)
 	        goto end;
-	    }
 
 	    file->af_BytesLeft   = bytesArrived;
 	}
@@ -34,12 +30,7 @@ LONG ReadCharAsync(AsyncFile *file)
 		bytesArrived = WaitPacket(file);
 
 	    if (bytesArrived <= 0)
-	    {
-	        if (bytesArrived == 0)
-		    SetIoErr(0);
-
 	        goto end;
-	    }
 
 	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
 
