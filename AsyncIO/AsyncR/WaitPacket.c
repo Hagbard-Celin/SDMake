@@ -57,7 +57,6 @@ LONG WaitPacket(AsyncFile *file)
 		file->af_FilesysPos += bytes;
 	    }
 
-	    file->af_PacketPending = PKT_IDLE;
 	    SetIoErr(0);
 	    break;
 	}
@@ -74,7 +73,9 @@ LONG WaitPacket(AsyncFile *file)
 	    SendPacket(file,file->af_Buffers[file->af_CurrentBuf], file->af_FilesysPos);
 	else
 	    SendPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
-     }
+    }
+
+    file->af_PacketPending = PKT_IDLE;
 
     return(bytes);
 }
