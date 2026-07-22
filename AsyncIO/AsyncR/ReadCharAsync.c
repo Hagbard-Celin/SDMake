@@ -25,7 +25,11 @@ LONG ReadCharAsync(AsyncFile *file)
 	else
 	{
 	    if (file->af_PacketPending == PKT_READY)
+	    {
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
+
+		file->af_PacketPending = PKT_IDLE;
+	    }
 	    else
 		bytesArrived = WaitPacket(file);
 
