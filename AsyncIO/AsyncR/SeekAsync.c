@@ -41,6 +41,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	}
 
 	file->af_BytesLeft   = bytesArrived;
+
     }
 
     bytesArrived = 0;

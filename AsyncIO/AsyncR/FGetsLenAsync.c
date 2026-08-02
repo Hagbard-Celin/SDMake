@@ -178,11 +178,11 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		    fillBuffer           = 1 - file->af_CurrentBuf;
 		}
 
-	        /* send packet if we will exhaust the other buffer in next iteration,
-	         * or if the sequential read detection heuristics has triggered
-	         */
-	        if (numBytes > file->af_BytesLeft || reFill)
-	        {
+		/* send packet if we will exhaust the other buffer in next iteration,
+		 * or if the sequential read detection heuristics has triggered
+		 */
+		if (numBytes > file->af_BytesLeft || reFill)
+		{
 		    if (SendPacket(file, file->af_Buffers[fillBuffer], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
 		    {
 			if (totalBytes)
