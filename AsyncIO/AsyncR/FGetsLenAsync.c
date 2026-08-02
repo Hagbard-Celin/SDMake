@@ -83,7 +83,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    {
 		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
 		{
-		    buffer = 0;
+		    ret	= NULL;
 		    goto end;
 		}
 
