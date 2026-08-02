@@ -28,6 +28,18 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	if (bytesArrived <= 0)
 	    goto err;
 
+	if (file->af_FileSize)
+	{
+	    /* handle small file and single buffer modes */
+	    if (file->af_FileSize > file->af_BufferSize)
+	    {
+		if (file->af_FileSize < file->af_BufferSize << 1)
+		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
+	    }
+	    else
+		file->af_PacketPending = PKT_READY;
+	}
+
 	file->af_BytesLeft   = bytesArrived;
     }
 
@@ -62,8 +74,13 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	target = file->af_FileSize + position;
     }
 
-    /* catch seek past EOF */
-    if (target > file->af_FileSize)
+    /* catch seek to or past EOF, we catch both since allowing seek
+     * to EOF would break single buffer mode for small files.
+     * And intentionally sending a packet to fill a buffer from
+     * EOF does not make sense anyway.
+     */
+
+    if (target >= file->af_FileSize)
 	goto err;
 
     file->af_SequentialBytes = 0;

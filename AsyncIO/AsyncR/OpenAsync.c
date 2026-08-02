@@ -68,6 +68,21 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
     if (handle)
     {
 	struct FileHandle *fh;
+	LONG halfbuffersize = 0;
+
+	if (fileSize)
+	{
+	    ULONG half = bufferSize >> 1;
+
+	    /* reduce buffer size for small files */
+	    while (fileSize <= half)
+	    {
+		if (half < 1024)
+		    break;
+		bufferSize = half;
+		half >>= 1;
+	    }
+	}
 
 	/* if it was possible to obtain a lock on the same device as the
 	 * file we're working on, get the block size of that device and
@@ -85,6 +100,20 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	    LONG doubleblocksize = blockSize * 2;
 	    bufferSize = (((bufferSize + doubleblocksize - 1) / doubleblocksize) * doubleblocksize);
 	}
+
+	if (fileSize)
+	{
+	    /* in case of large blocksize and small file, reduce buffer size
+	     * and degrade to single buffer mode if file is not bigger than
+	     * one block
+	     */
+	    if (fileSize < bufferSize)
+	    {
+		halfbuffersize = bufferSize >> 1;
+		bufferSize = fileSize;
+	    }
+	}
+
 
 	/* now allocate the ASyncFile structure, as well as the read buffers.
 	 * Add 15 bytes to the total size in order to allow for later
@@ -110,10 +139,27 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 
 	    fh                       = BADDR(file->af_File);
 	    file->af_Handler         = fh->fh_Type;
-	    file->af_BufferSize      = bufferSize / 2;
 	    file->af_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
-	    file->af_Buffers[1]      = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
+	    if (halfbuffersize)
+	    {
+		if (halfbuffersize < bufferSize)
+		{
+		    file->af_BufferSize  = halfbuffersize;
+		    file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + fileSize - halfbuffersize);
+		}
+		else
+		{
+		    file->af_BufferSize  = bufferSize;
+		    file->af_Buffers[1]  = 0;
+		}
+	    }
+	    else
+	    {
+		file->af_BufferSize  = bufferSize >> 1;
+		file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
+	    }
 	    file->af_Offset          = file->af_Buffers[0];
+	    file->af_BytesLeft       = 0;
 	    file->af_BufMin[0]       = 0;
 	    file->af_BufMin[1]       = 0;
 	    file->af_BytesArrived[0] = 0;
@@ -148,6 +194,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	    file->af_PacketPort.mp_SigTask             = FindTask(NULL);
 
 	    file->af_Packet.sp_Pkt.dp_Link          = &file->af_Packet.sp_Msg;
+	    file->af_Packet.sp_Pkt.dp_Type          = ACTION_READ;
 	    file->af_Packet.sp_Pkt.dp_Arg1          = fh->fh_Arg1;
 	    file->af_Packet.sp_Pkt.dp_Arg3          = file->af_BufferSize;
 	    file->af_Packet.sp_Pkt.dp_Res1          = 0;
@@ -163,13 +210,13 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	     * data, it will be in the buffer waiting
 	     */
 
-	    file->af_Packet.sp_Pkt.dp_Type = ACTION_READ;
-	    file->af_BytesLeft             = 0;
 	    if (file->af_Handler)
 	    {
 		SendPacket(file,file->af_Buffers[0], 0);
 		file->af_PacketPending   = PKT_START;
 	    }
+	    else
+		file->af_PacketPending   = PKT_READY; /* this makes NIL: return EOF on every read */
 	}
 	else
 	{

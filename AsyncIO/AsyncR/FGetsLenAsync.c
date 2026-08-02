@@ -46,6 +46,18 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    goto end;
 	}
 
+	if (file->af_FileSize)
+	{
+	    /* handle small file and single buffer modes */
+	    if (file->af_FileSize > file->af_BufferSize)
+	    {
+		if (file->af_FileSize < file->af_BufferSize << 1)
+		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
+	    }
+	    else
+		file->af_PacketPending = PKT_READY;
+	}
+
 	file->af_BytesLeft   = bytesArrived;
     }
 
@@ -116,7 +128,8 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    {
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
-		file->af_PacketPending = PKT_IDLE;
+		if (file->af_FileSize > file->af_BufferSize)
+		    file->af_PacketPending = PKT_IDLE;
 	    }
 	    else
 		bytesArrived = WaitPacket(file);
