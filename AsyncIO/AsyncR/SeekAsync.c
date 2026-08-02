@@ -43,6 +43,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	file->af_BytesLeft   = bytesArrived;
     }
 
+    bytesArrived = 0;
     current = file->af_BufferPos;
 
     /* figure out the absolute offset within the file where we must seek to */
