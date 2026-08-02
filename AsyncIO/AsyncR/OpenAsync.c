@@ -31,22 +31,22 @@ AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize)
 	{
 	    if (lock = Lock(fileName,ACCESS_READ))
 	    {
-	        if (Info(lock,infoData))
-	        {
+		if (Info(lock,infoData))
+		{
 		    blockSize  = infoData->id_BytesPerBlock;
-	        }
+		}
 		else
 		    infoerr = IoErr();
 
 
-	        if (Examine(lock, fib))
-	        {
-	            fileSize = fib->fib_Size;
-	        }
+		if (Examine(lock, fib))
+		{
+		    fileSize = fib->fib_Size;
+		}
 		else
 		    examerr = IoErr();
 
-	        UnLock(lock);
+		UnLock(lock);
 	    }
 	    else
 		lockerr = IoErr();

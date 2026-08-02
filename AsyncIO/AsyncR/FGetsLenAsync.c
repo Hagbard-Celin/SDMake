@@ -128,7 +128,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		    *buffer = 0;
 
 		    if (bytesArrived == 0)
-		        break;
+			break;
 		}
 
 		ret = NULL;

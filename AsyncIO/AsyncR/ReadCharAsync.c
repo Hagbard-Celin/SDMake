@@ -99,7 +99,6 @@ bad_handler:
     }
 
     /* copy from buffer and also update all counters */
-
     ch = *(char *)file->af_Offset;
     file->af_BytesLeft--;
     file->af_BufferPos++;

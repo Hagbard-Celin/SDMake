@@ -41,7 +41,7 @@ LONG WaitPacket(AsyncFile *file)
 	    /* if bytes == 0, we want to keep the previous buffer contents valid
 	     * to avoid possible unnecessary reads later
 	     */
-	    if (bytes > 0 )
+	    if (bytes > 0)
 	    {
 		if (file->af_PacketPending == PKT_START)
 		{
