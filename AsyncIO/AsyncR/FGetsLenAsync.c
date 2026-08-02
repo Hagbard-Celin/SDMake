@@ -85,11 +85,11 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	if (numBytes <= file->af_BytesLeft)
 	{
 	    lineBytes = CopyLine((STRPTR)file->af_Offset, buffer, numBytes);
-	    buffer[lineBytes]   = 0;
 	    file->af_BytesLeft -= lineBytes;
 	    file->af_BufferPos += lineBytes;
 	    totalBytes         += lineBytes;
 	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
+	    *buffer = 0;
 	    break;
 	}
 	else
@@ -104,14 +104,13 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		buffer              = (APTR)((ULONG)buffer + lineBytes);
 		totalBytes         += lineBytes;
 		file->af_BytesLeft -= lineBytes;
-		if (buffer[lineBytes - 1] == '\n')
+
+		if (buffer[-1] == '\n' || !numBytes)
 		{
-		    buffer[lineBytes] = 0;
+		    *buffer = 0;
 		    break;
 		}
 	    }
-	    else
-		lineBytes = 0;
 
 	    if (file->af_PacketPending == PKT_READY)
 	    {
