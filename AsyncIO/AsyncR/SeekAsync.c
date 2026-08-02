@@ -113,6 +113,11 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	}
     }
     else
+    if (bytesArrived == -1)
+    {
+	goto err;
+    }
+    else
     if (file->af_BytesArrived[1 - file->af_CurrentBuf] &&
 	(file->af_PacketPending == PKT_IDLE || file->af_PacketPending == PKT_READY))
     {

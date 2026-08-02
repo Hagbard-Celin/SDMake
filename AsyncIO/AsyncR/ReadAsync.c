@@ -7,9 +7,18 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 {
     LONG totalBytes;
     LONG bytesArrived;
-    WORD reFill = FALSE;
+    BOOL reFill = FALSE;
+
+    if (numBytes <= 0)
+    {
+	totalBytes = -1;
+	SetIoErr(ERROR_LINE_TOO_LONG);
+	goto end;
+    }
 
     totalBytes = 0;
+
+    SetIoErr(0);
 
     /* wait for the buffer to fill if this is the first read after open */
     if (file->af_PacketPending == PKT_START)
@@ -98,10 +107,9 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 
 	    if (bytesArrived <= 0)
 	    {
-	        if (bytesArrived == 0)
-		    break;
+		if (bytesArrived < 0)
+		    totalBytes = -1;
 
-		totalBytes = -1;
 		break;
 	    }
 

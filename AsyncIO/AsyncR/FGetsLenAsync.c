@@ -16,20 +16,22 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
     LONG totalBytes;
     LONG bytesArrived;
     LONG lineBytes;
-    WORD reFill = FALSE;
+    STRPTR ret = buffer;
+    BOOL reFill = FALSE;
 
     totalBytes = 0;
 
+    SetIoErr(0);
+
     if (!numBytes)
     {
-	buffer = 0;
-	SetIoErr(0);
+	ret = NULL;
 	goto end;
     }
 
     if (!--numBytes)
     {
-	buffer = 0;
+	ret = NULL;
 	SetIoErr(ERROR_LINE_TOO_LONG);
 	goto end;
     }
@@ -40,7 +42,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	bytesArrived = WaitPacket(file);
 	if (bytesArrived <= 0)
 	{
-	    buffer = 0;
+	    ret	= NULL;
 	    goto end;
 	}
 
@@ -127,13 +129,13 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    {
 		if (totalBytes)
 		{
-		    buffer[lineBytes] = 0;
+		    *buffer = 0;
 
 		    if (bytesArrived == 0)
 		        break;
 		}
 
-		buffer = 0;
+		ret = NULL;
 		break;
 	    }
 
@@ -159,7 +161,7 @@ end:
     if (len)
 	*len = totalBytes;
 
-    return (buffer);
+    return (ret);
 }
 
 static ULONG CopyLine(CONST_STRPTR source, STRPTR dest, ULONG size)

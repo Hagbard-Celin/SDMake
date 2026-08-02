@@ -7,13 +7,17 @@
 
 AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize)
 {
-    AsyncFile         *file;
+    AsyncFile         *file = NULL;
     BPTR               handle;
     LONG               blockSize = 0;
     ULONG              fileSize = 0;
     LONG               err = 0;
 
-    file   = NULL;
+    if (!bufferSize)
+    {
+	err = ERROR_LINE_TOO_LONG;
+	goto end;
+    }
 
     {
 	BPTR lock;

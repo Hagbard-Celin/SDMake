@@ -8,6 +8,8 @@ LONG ReadCharAsync(AsyncFile *file)
     unsigned char ch;
     LONG ret = -1;
 
+    SetIoErr(0);
+
     if (!file->af_BytesLeft)
     {
 	LONG bytesArrived;
