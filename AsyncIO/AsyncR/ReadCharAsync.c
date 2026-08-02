@@ -5,85 +5,33 @@
 
 LONG ReadCharAsync(AsyncFile *file)
 {
-    unsigned char ch;
     LONG ret = -1;
+    LONG bytesArrived;
+    unsigned char ch;
 
     SetIoErr(0);
 
-    if (!file->af_BytesLeft)
+    /* wait for the buffer to fill if this is the first read after open */
+    if (file->af_PacketPending == PKT_START)
     {
-	LONG bytesArrived;
+	bytesArrived = WaitPacket(file);
 
-	/* wait for the buffer to fill if this is the first read after open */
-	if (file->af_PacketPending == PKT_START)
+	if (bytesArrived <= 0)
+	    goto end;
+
+	if (file->af_FileSize)
 	{
-	    bytesArrived = WaitPacket(file);
-
-	    if (bytesArrived <= 0)
-	        goto end;
-
-	    if (file->af_FileSize)
+	    /* handle small file and single buffer modes */
+	    if (file->af_FileSize > file->af_BufferSize)
 	    {
-		/* handle small file and single buffer modes */
-	        if (file->af_FileSize > file->af_BufferSize)
-	        {
-		    if (file->af_FileSize < file->af_BufferSize << 1)
-			file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
-	        }
-	        else
-		    file->af_PacketPending = PKT_READY;
-	    }
-
-	    file->af_BytesLeft   = bytesArrived;
-	}
-	else
-	{
-	    if (file->af_PacketPending == PKT_READY)
-	    {
-		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
-
-	        if (file->af_FileSize > file->af_BufferSize)
-		    file->af_PacketPending = PKT_IDLE;
+		if (file->af_FileSize < file->af_BufferSize << 1)
+		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
 	    }
 	    else
-	    {
-bad_handler:
-		bytesArrived = WaitPacket(file);
-	    }
-
-	    if (bytesArrived <= 0)
-	        goto end;
-
-	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-
-	    if (file->af_SeekOffset > bytesArrived)
-	    {
-	        /* we arrive here if we have been seeking and the handler we read from
-	         * does not wait until the requested buffer is filled or EOF before replying.
-	         * We recycle the buffer we just filled to minimize the damage.
-	         * But this code is NOT suited for reading from such handlers.
-	         */
-	        file->af_BytesLeft   = 0;
-		file->af_Offset      = (APTR)((ULONG)file->af_Buffers[1 - file->af_CurrentBuf] + file->af_BytesArrived[1 - file->af_CurrentBuf]);
-	        file->af_SeekOffset -= bytesArrived;
-
-		if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
-		    goto end;
-
-		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-
-		goto bad_handler;
-	    }
-	    else
-	    {
-	        file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
-	        file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
-	        file->af_SeekOffset  = 0;
-	    }
-
-	    /* reset prefetch trigger in case next operation is a short seek backwards */
-	    file->af_SequentialBytes = 0;
+		file->af_PacketPending = PKT_READY;
 	}
+
+	file->af_BytesLeft   = bytesArrived;
     }
 
     if (file->af_PacketPending == PKT_IDLE)
@@ -109,6 +57,55 @@ bad_handler:
 		    goto end;
 	    }
 	}
+    }
+
+    if (!file->af_BytesLeft)
+    {
+	if (file->af_PacketPending == PKT_READY)
+	{
+	    bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
+
+	    if (file->af_FileSize > file->af_BufferSize)
+		file->af_PacketPending = PKT_IDLE;
+	}
+	else
+	{
+bad_handler:
+	    bytesArrived = WaitPacket(file);
+	}
+
+	if (bytesArrived <= 0)
+	    goto end;
+
+	file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+
+	if (file->af_SeekOffset > bytesArrived)
+	{
+	    /* we arrive here if we have been seeking and the handler we read from
+	     * does not wait until the requested buffer is filled or EOF before replying.
+	     * We recycle the buffer we just filled to minimize the damage.
+	     * But this code is NOT suited for reading from such handlers.
+	     */
+	    file->af_BytesLeft   = 0;
+	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]);
+	    file->af_SeekOffset -= bytesArrived;
+
+	    if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+		goto end;
+
+	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+
+	    goto bad_handler;
+	}
+	else
+	{
+	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
+	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
+	    file->af_SeekOffset  = 0;
+	}
+
+	/* reset prefetch trigger in case next operation is a short seek backwards */
+	file->af_SequentialBytes = 0;
     }
 
     /* copy from buffer and also update all counters */
