@@ -177,7 +177,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	    Close(handle);
 	}
     }
-
+end:
     SetIoErr(err);
     return(file);
 }
