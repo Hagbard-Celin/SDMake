@@ -75,11 +75,15 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	}
 	else
 	{
-	    if (file->af_SequentialBytes < SEQBYTESTHRESH)
-	        file->af_SequentialBytes += numBytes;
+	    BOOL sequential = FALSE;
 
-	    if (file->af_SequentialBytes >= SEQBYTESTHRESH ||
-	        numBytes > file->af_BytesLeft)
+	    if (file->af_SequentialBytes < SEQBYTESTHRESH)
+		file->af_SequentialBytes += numBytes;
+
+	    if (file->af_SequentialBytes >= SEQBYTESTHRESH)
+		sequential = TRUE;
+
+	    if (sequential || numBytes > file->af_BytesLeft || file->af_BytesLeft < BYTESLEFTTHRESH)
 	    {
 		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
 		{
@@ -87,7 +91,8 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		    goto end;
 		}
 
-	        reFill = TRUE;
+		if (sequential)
+		    reFill = TRUE;
 	    }
 	}
     }
