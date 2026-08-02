@@ -40,10 +40,10 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	    goto end;
 
 	/* catch seek past BOF */
-	if (position < 0 && -position > file->af_BufferPos)
+	if (position < 0 && -position > current)
 	    goto err;
 
-	target = file->af_BufferPos + position;
+	target = current + position;
     }
     else if (mode == MODE_START)
     {
@@ -70,10 +70,10 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
     /* figure out what range of the file is in our current buffer */
     minBuf = file->af_BufMin[file->af_CurrentBuf];
-    maxBuf = minBuf - 1 + file->af_BytesArrived[file->af_CurrentBuf];
+    maxBuf = minBuf + file->af_BytesArrived[file->af_CurrentBuf] - 1;
 
 
-    if ((target >= minBuf) && (target <= maxBuf))
+    if (target >= minBuf && target <= maxBuf)
     {
 	/* one of the two following things is true:
 	 *
@@ -85,7 +85,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	 * read buffer. Advance to that location.
 	 */
 
-	diff                = target - minBuf;
+	diff                = target - current;
 	file->af_BytesLeft -= diff;
 	file->af_BufferPos  = target;
 	file->af_Offset     = (APTR)((ULONG)file->af_Offset + diff);
@@ -100,14 +100,14 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	 */
 
 	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
-	maxBuf = minBuf - 1 + bytesArrived;
+	maxBuf = minBuf + file->af_BytesArrived[1 - file->af_CurrentBuf] - 1;
 
-	if ((target >= minBuf) && (target <= maxBuf))
+	if (target >= minBuf && target <= maxBuf)
 	{
-	    diff = target - minBuf;
+	    diff                = target - minBuf;
 	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset    = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
-	    file->af_BytesLeft = maxBuf - diff;
+	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
+	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
 	    goto end;
 	}
@@ -126,14 +126,14 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	 */
 
 	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
-	maxBuf = minBuf - 1 + file->af_BytesArrived[1 - file->af_CurrentBuf];
+	maxBuf = minBuf + file->af_BytesArrived[1 - file->af_CurrentBuf] - 1;
 
-	if ((target >= minBuf) && (target <= maxBuf))
+	if (target >= minBuf && target <= maxBuf)
 	{
-	    diff = target - minBuf;
+	    diff                = target - minBuf;
 	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset    = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
-	    file->af_BytesLeft = maxBuf - diff;
+	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
+	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
 	    goto end;
 	}
