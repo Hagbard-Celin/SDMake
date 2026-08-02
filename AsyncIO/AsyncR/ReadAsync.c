@@ -71,10 +71,6 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
     {
 	if (numBytes <= file->af_BytesLeft)
 	{
-	    if (file->af_PacketPending == PKT_IDLE && reFill)
-		SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
-
-
 	    CopyMem(file->af_Offset,buffer,numBytes);
 	    file->af_BytesLeft -= numBytes;
 	    file->af_BufferPos += numBytes;
@@ -112,21 +108,44 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 
 		break;
 	    }
-
-	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
-
-	    if (numBytes > file->af_BytesLeft)
+	    else
 	    {
-		if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[1 - file->af_CurrentBuf] + bytesArrived))
-		{
-		    totalBytes = -1;
-		    break;
-		}
-	    }
+		UWORD fillBuffer = file->af_CurrentBuf;
 
-	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
-	    file->af_SeekOffset  = 0;
+		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+
+		if (file->af_SeekOffset > bytesArrived)
+		{
+		    /* we arrive here if we have been seeking and the handler we read from
+		     * does not wait until the requested buffer is filled or EOF before replying.
+		     * We recycle the buffer we just filled to minimize the damage.
+		     * But this code is NOT suited for reading from such handlers.
+		     */
+		    file->af_BytesLeft   = 0;
+		    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]);
+		    file->af_SeekOffset -= bytesArrived;
+		    fillBuffer           = file->af_CurrentBuf;
+		}
+		else
+		{
+		    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
+		    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
+		    file->af_SeekOffset  = 0;
+		    fillBuffer           = 1 - file->af_CurrentBuf;
+		}
+
+		/* send packet if we will exhaust the other buffer in next iteration,
+		 * or if the sequential read detection heuristics has triggered
+		 */
+		if (numBytes > file->af_BytesLeft || reFill)
+		{
+		    if (SendPacket(file, file->af_Buffers[fillBuffer], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+		    {
+			totalBytes = -1;
+			break;
+		    }
+	        }
+	    }
 	}
     } while (numBytes);
 end:

@@ -33,16 +33,40 @@ LONG ReadCharAsync(AsyncFile *file)
 		file->af_PacketPending = PKT_IDLE;
 	    }
 	    else
+	    {
+bad_handler:
 		bytesArrived = WaitPacket(file);
+	    }
 
 	    if (bytesArrived <= 0)
 	        goto end;
 
-	    file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
-
 	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
-	    file->af_SeekOffset  = 0;
+
+	    if (file->af_SeekOffset > bytesArrived)
+	    {
+	        /* we arrive here if we have been seeking and the handler we read from
+	         * does not wait until the requested buffer is filled or EOF before replying.
+	         * We recycle the buffer we just filled to minimize the damage.
+	         * But this code is NOT suited for reading from such handlers.
+	         */
+	        file->af_BytesLeft   = 0;
+		file->af_Offset      = (APTR)((ULONG)file->af_Buffers[1 - file->af_CurrentBuf] + file->af_BytesArrived[1 - file->af_CurrentBuf]);
+	        file->af_SeekOffset -= bytesArrived;
+
+		if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+		    goto end;
+
+		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+
+		goto bad_handler;
+	    }
+	    else
+	    {
+	        file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
+	        file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
+	        file->af_SeekOffset  = 0;
+	    }
 
 	    /* reset prefetch trigger in case next operation is a short seek backwards */
 	    file->af_SequentialBytes = 0;
