@@ -70,7 +70,10 @@ LONG WaitPacket(AsyncFile *file)
 
 	/* user wants to try again, resend the packet */
 	if (file->af_PacketPending == PKT_START)
+	{
 	    SendPacket(file,file->af_Buffers[file->af_CurrentBuf], file->af_FilesysPos);
+	    file->af_PacketPending = PKT_START;
+	}
 	else
 	    SendPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
     }
