@@ -20,7 +20,7 @@
 
 /*****************************************************************************/
 
-typedef char enum PacketState
+typedef short enum PacketState
 {
     PKT_START = -1,   /* initial buffer fill pending            */
     PKT_IDLE,         /* no packet pending                      */
@@ -47,13 +47,13 @@ typedef struct AsyncFile
     ULONG                 af_BytesArrived[2];
     struct StandardPacket af_Packet;
     struct MsgPort        af_PacketPort;
-    ULONG                 af_CurrentBuf;
     ULONG                 af_SeekOffset;
+    UWORD                 af_CurrentBuf;
+    PacketState		  af_PacketPending;
     ULONG                 af_FilesysPos;
     ULONG                 af_BufferPos;
     ULONG                 af_FileSize;
-    ULONG		  af_SequentialBytes;
-    PacketState		  af_PacketPending;
+    ULONG                 af_SequentialBytes;
 } AsyncFile;
 
 
@@ -71,7 +71,7 @@ typedef enum SeekModes
 /*****************************************************************************/
 
 
-AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize);
+AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize);
 void CloseAsync(AsyncFile *file);
 LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes);
 LONG ReadCharAsync(AsyncFile *file);

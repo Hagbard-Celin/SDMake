@@ -5,7 +5,7 @@
 /*****************************************************************************/
 
 
-AsyncFile *OpenAsync(const STRPTR fileName, LONG bufferSize)
+AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 {
     AsyncFile         *file = NULL;
     BPTR               handle;
