@@ -145,7 +145,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 		if (halfbuffersize < bufferSize)
 		{
 		    file->af_BufferSize  = halfbuffersize;
-		    file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + fileSize - halfbuffersize);
+		    file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + halfbuffersize);
 		}
 		else
 		{
