@@ -121,6 +121,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		buffer              = (APTR)((ULONG)buffer + lineBytes);
 		totalBytes         += lineBytes;
 		file->af_BytesLeft -= lineBytes;
+		file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
 
 		if (buffer[-1] == '\n' || !numBytes)
 		{
