@@ -1,4 +1,5 @@
 #include "async_internal.h"
+#include <limits.h>
 
 /*****************************************************************************/
 
@@ -51,6 +52,10 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     {
 	if (!position)
 	    goto end;
+
+	/* catch seek past UINT_MAX  */
+	if (position > 0 && current > UINT_MAX - position)
+	    goto err;
 
 	/* catch seek past BOF */
 	if (position < 0 && -position > current)
