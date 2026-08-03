@@ -154,7 +154,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    }
 	    else
 	    {
-		UWORD fillBuffer = file->af_CurrentBuf;
+		UWORD fillBuffer;
 
 		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 
