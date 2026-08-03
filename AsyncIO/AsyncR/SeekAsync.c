@@ -8,7 +8,6 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     ULONG  current, target;
     ULONG  minBuf, maxBuf;
     LONG   bytesArrived;
-    LONG   diff;
     ULONG  roundTarget;
 
     /* we fail if one of the following is true:
@@ -104,10 +103,9 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	 * read buffer. Advance to that location.
 	 */
 
-	diff                = target - current;
-	file->af_BytesLeft -= diff;
+	file->af_BytesLeft  = maxBuf + 1 - target;
 	file->af_BufferPos  = target;
-	file->af_Offset     = (APTR)((ULONG)file->af_Offset + diff);
+	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 	goto end;
     }
     else
@@ -123,9 +121,8 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
 	if (target >= minBuf && target <= maxBuf)
 	{
-	    diff                = target - minBuf;
 	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
+	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
 	    goto end;
@@ -149,9 +146,8 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
 	if (target >= minBuf && target <= maxBuf)
 	{
-	    diff                = target - minBuf;
 	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
+	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
 	    goto end;
