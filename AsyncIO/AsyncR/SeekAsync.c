@@ -155,6 +155,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
+	    file->af_PacketPending = PKT_IDLE;
 	    goto end;
 	}
     }
