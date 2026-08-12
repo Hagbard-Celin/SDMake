@@ -128,7 +128,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	    }
 	    else
 	    {
-		UWORD fillBuffer = file->af_CurrentBuf;
+		UWORD fillBuffer;
 
 		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 
