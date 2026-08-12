@@ -28,17 +28,14 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	if (bytesArrived <= 0)
 	    goto err;
 
-	if (file->af_FileSize)
+	/* handle small file and single buffer modes */
+	if (file->af_FileSize > file->af_BufferSize)
 	{
-	    /* handle small file and single buffer modes */
-	    if (file->af_FileSize > file->af_BufferSize)
-	    {
-		if (file->af_FileSize < file->af_BufferSize << 1)
-		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
-	    }
-	    else
-		file->af_PacketPending = PKT_READY;
+	    if (file->af_FileSize < file->af_BufferSize << 1)
+		file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
 	}
+	else
+	    file->af_PacketPending = PKT_READY;
 
 	file->af_BytesLeft   = bytesArrived;
 
