@@ -66,7 +66,14 @@ LONG WaitPacket(AsyncFile *file)
 
 	/* see if the user wants to try again... */
 	if (ErrorReport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
+	{
+	    if (file->af_PacketPending == PKT_PENDING)
+	    {
+		file->af_BufMin[1 - file->af_CurrentBuf] = 0;
+		file->af_BytesArrived[1 - file->af_CurrentBuf] = 0;
+	    }
 	    break;
+	}
 
 	/* user wants to try again, resend the packet */
 	if (file->af_PacketPending == PKT_START)
