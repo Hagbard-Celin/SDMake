@@ -8,7 +8,6 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 {
     ULONG  current, target;
     ULONG  minBuf, maxBuf;
-    LONG   bytesArrived;
     ULONG  roundTarget;
 
     /* we fail if one of the following is true:
@@ -24,6 +23,8 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
     if (file->af_PacketPending == PKT_START)
     {
+	LONG   bytesArrived;
+
 	bytesArrived = WaitPacket(file);
 	if (bytesArrived <= 0)
 	    goto err;
@@ -41,7 +42,6 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
     }
 
-    bytesArrived = 0;
     current = file->af_BufferPos;
 
     /* figure out the absolute offset within the file where we must seek to */
@@ -97,12 +97,25 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     if (file->af_Buffers[1] == 0 && target > file->af_BytesArrived[file->af_CurrentBuf])
 	goto err;
 
+    file->af_SeekOffset = 0;
     file->af_SequentialBytes = 0;
+
+    /* we must handle pending packets here or we might get wrong data on
+     * next sequentioal buffer fill
+     */
+    if (file->af_PacketPending == PKT_PENDING)
+    {
+	/* but we keep the IoErr from the read on error, since the target
+	 * might not be in the buffer that failed. So IoErr other than
+	 * ERROR_SEEK_ERROR indicates a retry might succeed.
+	 */
+	if (WaitPacket(file) == -1)
+	    goto err_gotIoErr;
+    }
 
     /* figure out what range of the file is in our current buffer */
     minBuf = file->af_BufMin[file->af_CurrentBuf];
     maxBuf = minBuf + file->af_BytesArrived[file->af_CurrentBuf] - 1;
-
 
     if (target >= minBuf && target <= maxBuf)
     {
@@ -122,33 +135,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	goto end;
     }
     else
-    if (file->af_PacketPending == PKT_PENDING && (bytesArrived = WaitPacket(file)) > 0)
-    {
-	/* the other buffer is being filled by the filesystem. Wait for this to be done,
-	 * then figure out what range of the file appeared in the buffer, and check if
-	 * the target location is within that range.
-	 */
-
-	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
-	maxBuf = minBuf + file->af_BytesArrived[1 - file->af_CurrentBuf] - 1;
-
-	if (target >= minBuf && target <= maxBuf)
-	{
-	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
-	    file->af_BytesLeft  = maxBuf + 1 - target;
-	    file->af_BufferPos  = target;
-	    goto end;
-	}
-    }
-    else
-    if (bytesArrived == -1)
-    {
-	goto err;
-    }
-    else
-    if (file->af_BytesArrived[1 - file->af_CurrentBuf] &&
-	(file->af_PacketPending == PKT_IDLE || file->af_PacketPending == PKT_READY))
+    if (file->af_BytesArrived[1 - file->af_CurrentBuf])
     {
 	/* the other buffer contains valid data. Figure out what range of the file is
 	 * in that buffer, and check if the target location is within that range.
