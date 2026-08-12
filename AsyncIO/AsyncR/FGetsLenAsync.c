@@ -192,6 +192,9 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 			ret = NULL;
 			break;
 		    }
+
+		    if (fillBuffer == file->af_CurrentBuf)
+			file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 		}
 	    }
 	}

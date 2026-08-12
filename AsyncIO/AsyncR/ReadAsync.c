@@ -162,6 +162,9 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 			totalBytes = -1;
 			break;
 		    }
+
+		    if (fillBuffer == file->af_CurrentBuf)
+			file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 	        }
 	    }
 	}
