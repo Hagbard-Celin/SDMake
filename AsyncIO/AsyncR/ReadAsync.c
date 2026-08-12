@@ -133,7 +133,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 
 		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
 
-		if (file->af_SeekOffset > bytesArrived)
+		if (file->af_SeekOffset >= bytesArrived)
 		{
 		    /* we arrive here if we have been seeking and the handler we read from
 		     * does not wait until the requested buffer is filled or EOF before replying.
