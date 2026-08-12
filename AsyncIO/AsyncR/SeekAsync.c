@@ -90,6 +90,13 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     if (target >= file->af_FileSize)
 	goto err;
 
+    /* if we are in single buffer mode and the handler returned a partly
+     * filled buffer and the target is past what was returned, the only
+     * option is to fail
+     */
+    if (file->af_Buffers[1] == 0 && target > file->af_BytesArrived[file->af_CurrentBuf])
+	goto err;
+
     file->af_SequentialBytes = 0;
 
     /* figure out what range of the file is in our current buffer */
