@@ -89,6 +89,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	if (numBytes <= file->af_BytesLeft)
 	{
 	    CopyMem(file->af_Offset,buffer,numBytes);
+
 	    file->af_BytesLeft -= numBytes;
 	    file->af_BufferPos += numBytes;
 	    totalBytes         += numBytes;

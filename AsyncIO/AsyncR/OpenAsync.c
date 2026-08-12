@@ -105,7 +105,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	{
 	    /* in case of large blocksize and small file, reduce buffer size
 	     * and degrade to single buffer mode if file is not bigger than
-	     * one block
+	     * one buffer
 	     */
 	    if (fileSize < bufferSize)
 	    {
