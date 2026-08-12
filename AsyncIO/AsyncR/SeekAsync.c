@@ -70,6 +70,10 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     }
     else /* if (mode == MODE_END) */
     {
+	/* catch seek to or past EOF */
+	if (position >= 0)
+	    goto err;
+
 	/* catch seek past BOF */
 	if (-position > file->af_FileSize)
 	    goto err;
