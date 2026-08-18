@@ -117,7 +117,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     minBuf = file->af_BufMin[file->af_CurrentBuf];
     maxBuf = minBuf + file->af_BytesArrived[file->af_CurrentBuf] - 1;
 
-    if (target >= minBuf && target <= maxBuf)
+    if (file->af_BytesArrived[file->af_CurrentBuf] && target >= minBuf && target <= maxBuf)
     {
 	/* one of the two following things is true:
 	 *
