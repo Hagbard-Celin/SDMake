@@ -2,36 +2,26 @@
 
 /*****************************************************************************/
 
-static ULONG CopyLine(CONST_STRPTR source, STRPTR dest, ULONG size);
+static ULONG CopyLineEOL(CONST_STRPTR source, STRPTR dest, ULONG size, BOOL *got_eol);
+static ULONG GetEOL(CONST_STRPTR buffer, ULONG size, BOOL *spilled_eol);
+static BOOL SpillToEOL(AsyncFile *file, BOOL *got_eol);
 
 
-STRPTR FGetsAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes)
-{
-    return (FGetsLenAsync(file, buffer, numBytes, NULL));
-}
-
-
-STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
+LONG ReadLineAsync(AsyncFile *file, STRPTR buffer, LONG numBytes)
 {
     LONG totalBytes;
     LONG bytesArrived;
     LONG lineBytes;
-    STRPTR ret = buffer;
     BOOL reFill = FALSE;
+    BOOL got_eol = FALSE;
 
     totalBytes = 0;
 
     SetIoErr(0);
 
-    if (!numBytes)
+    if (numBytes <= 0 || !--numBytes)
     {
-	ret = NULL;
-	goto end;
-    }
-
-    if (!--numBytes)
-    {
-	ret = NULL;
+	totalBytes = -1;
 	SetIoErr(ERROR_LINE_TOO_LONG);
 	goto end;
     }
@@ -42,7 +32,10 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	bytesArrived = WaitPacket(file);
 	if (bytesArrived <= 0)
 	{
-	    ret	= NULL;
+	    if (bytesArrived == 0)
+		goto end;
+
+	    totalBytes = -1;
 	    goto end;
 	}
 
@@ -87,7 +80,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    {
 		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
 		{
-		    ret	= NULL;
+		    totalBytes = -1;
 		    goto end;
 		}
 
@@ -101,13 +94,14 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
     {
 	if (numBytes <= file->af_BytesLeft)
 	{
-	    lineBytes = CopyLine((STRPTR)file->af_Offset, buffer, numBytes);
+	    lineBytes = CopyLineEOL((STRPTR)file->af_Offset, buffer, numBytes, &got_eol);
 
-	    file->af_BytesLeft -= lineBytes;
 	    file->af_BufferPos += lineBytes;
+	    buffer              = (APTR)((ULONG)buffer + lineBytes);
 	    totalBytes         += lineBytes;
+	    file->af_BytesLeft -= lineBytes;
 	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
-	    buffer[lineBytes] = 0;
+	    *buffer             = 0;
 	    break;
 	}
 	else
@@ -115,7 +109,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    /* drain buffer */
 	    if (file->af_BytesLeft)
 	    {
-		lineBytes = CopyLine((STRPTR)file->af_Offset, (STRPTR)buffer, file->af_BytesLeft);
+		lineBytes = CopyLineEOL((STRPTR)file->af_Offset, (STRPTR)buffer, file->af_BytesLeft, &got_eol);
 
 		numBytes           -= lineBytes;
 		file->af_BufferPos += lineBytes;
@@ -124,7 +118,7 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		file->af_BytesLeft -= lineBytes;
 		file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
 
-		if (buffer[-1] == '\n' || !numBytes)
+		if (got_eol || !numBytes)
 		{
 		    *buffer = 0;
 		    break;
@@ -143,15 +137,12 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 
 	    if (bytesArrived <= 0)
 	    {
-		if (totalBytes)
+		if (bytesArrived < 0)
 		{
-		    *buffer = 0;
-
-		    if (bytesArrived == 0)
-			break;
+		    totalBytes = -1;
+		    goto end;
 		}
 
-		ret = NULL;
 		break;
 	    }
 	    else
@@ -187,11 +178,8 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 		{
 		    if (SendPacket(file, file->af_Buffers[fillBuffer], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
 		    {
-			if (totalBytes)
-			    *buffer = 0;
-
-			ret = NULL;
-			break;
+			totalBytes = -1;
+			goto end;
 		    }
 
 		    if (fillBuffer == file->af_CurrentBuf)
@@ -200,22 +188,131 @@ STRPTR FGetsLenAsync(AsyncFile *file, STRPTR buffer, ULONG numBytes, ULONG *len)
 	    }
 	}
     }
-end:
-    if (len)
-	*len = totalBytes;
 
-    return (ret);
+    if (totalBytes > 0 && !got_eol)
+    {
+	if (SpillToEOL(file, &got_eol))
+	{
+	    if (got_eol)
+		buffer[-1] = '\n';
+	}
+	else
+	    totalBytes = -1;
+    }
+
+end:
+    return (totalBytes);
 }
 
-static ULONG CopyLine(CONST_STRPTR source, STRPTR dest, ULONG size)
+static ULONG CopyLineEOL(CONST_STRPTR source, STRPTR dest, ULONG size, BOOL *got_eol)
 {
     ULONG i = 0;
 
-    do
+    while (i < size)
     {
+	i++;
 	*dest++ = *source;
-    } while (++i < size && *source++ != '\n');
+
+	if (*source++ == '\n')
+	    break;
+    }
+
+    if (dest[-1] == '\n')
+	*got_eol = TRUE;
 
     return i;
+}
+
+static ULONG GetEOL(CONST_STRPTR buffer, ULONG size, BOOL *spilled_eol)
+{
+    ULONG i = 0;
+
+    while (i < size)
+    {
+	i++;
+	if (*buffer++ == '\n')
+	    break;
+    }
+
+    if (buffer[-1] == '\n')
+	*spilled_eol = TRUE;
+
+    return i;
+}
+
+static BOOL SpillToEOL(AsyncFile *file, BOOL *got_eol)
+{
+    LONG bytesArrived;
+    LONG spilledBytes;
+    BOOL ret = TRUE;
+
+    if (file->af_PacketPending == PKT_IDLE)
+    {
+	if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]))
+	    ret = FALSE;
+    }
+
+    while (ret)
+    {
+	/* spill buffer */
+	if (file->af_BytesLeft)
+	{
+	    spilledBytes = GetEOL((STRPTR)file->af_Offset, file->af_BytesLeft, got_eol);
+
+	    file->af_BufferPos       += spilledBytes;
+	    file->af_BytesLeft       -= spilledBytes;
+	    file->af_Offset           = (APTR)((ULONG)file->af_Offset + spilledBytes);
+	    file->af_SequentialBytes += spilledBytes;
+	    if (*got_eol)
+	    {
+		if (file->af_PacketPending == PKT_IDLE)
+		{
+		    if (file->af_SequentialBytes >= SEQBYTESTHRESH ||
+			file->af_BytesLeft < BYTESLEFTTHRESH)
+		    {
+			if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]))
+			{
+			    ret = FALSE;
+			    break;
+			}
+		    }
+		}
+		break;
+	    }
+	}
+
+	if (file->af_PacketPending == PKT_READY)
+	{
+	    bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
+
+	    if (file->af_FileSize > file->af_BufferSize)
+		file->af_PacketPending = PKT_IDLE;
+	}
+	else
+	    bytesArrived = WaitPacket(file);
+
+	if (bytesArrived <= 0)
+	{
+	    if (bytesArrived < 0)
+		ret = FALSE;
+
+	    break;
+	}
+	else
+	{
+	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+	    file->af_BytesLeft   = bytesArrived;
+	    file->af_Offset      = file->af_Buffers[file->af_CurrentBuf];
+
+	    /* we have no idea where the line ends, so the packet must be sent in case we exhaust the other buffer */
+	    if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+	    {
+		ret = FALSE;
+		break;
+	    }
+	}
+    }
+
+    return (ret);
 }
 
