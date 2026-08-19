@@ -9,6 +9,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     ULONG current, target;
     ULONG minBuf, maxBuf;
     ULONG roundTarget;
+    ULONG seekOffset;
 
     /* we fail if one of the following is true:
      * 1. locking an open file failed
@@ -97,6 +98,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     if (file->af_Buffers[1] == 0 && target > file->af_BytesArrived[file->af_CurrentBuf])
 	goto err;
 
+    seekOffset = file->af_SeekOffset;
     file->af_SeekOffset = 0;
     file->af_SequentialBytes = 0;
 
@@ -105,12 +107,24 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
      */
     if (file->af_PacketPending == PKT_PENDING)
     {
+	LONG bytesArrived;
+
+	bytesArrived = WaitPacket(file);
+
 	/* but we keep the IoErr from the read on error, since the target
 	 * might not be in the buffer that failed. So IoErr other than
 	 * ERROR_SEEK_ERROR indicates a retry might succeed.
 	 */
-	if (WaitPacket(file) == -1)
+	if (bytesArrived == -1)
 	    goto err_gotIoErr;
+
+	/* in case of multiple SeekAsync() calls back to back end in SendPacket()
+	 * and the last Seek() fails, this keeps the state consistent so a read
+	 * following a failed seek will read from the position of the last
+	 * successful seek
+	 */
+	if (bytesArrived > 0)
+	    file->af_PacketPending = PKT_READY;
     }
 
     /* figure out what range of the file is in our current buffer */
@@ -132,6 +146,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	file->af_BytesLeft  = maxBuf + 1 - target;
 	file->af_BufferPos  = target;
 	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
+	file->af_PacketPending = PKT_IDLE;
 	goto end;
     }
     else
@@ -171,7 +186,10 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     roundTarget = (target / file->af_BufferSize) * file->af_BufferSize;
 
     if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], roundTarget))
+    {
+	file->af_SeekOffset = seekOffset;
 	goto err_gotIoErr;
+    }
 
     file->af_BufferPos  = target;
     file->af_BytesLeft  = 0;
