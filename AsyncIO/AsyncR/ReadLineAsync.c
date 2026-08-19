@@ -143,6 +143,7 @@ LONG ReadLineAsync(AsyncFile *file, STRPTR buffer, LONG numBytes)
 		    goto end;
 		}
 
+		*buffer = 0;
 		break;
 	    }
 	    else
