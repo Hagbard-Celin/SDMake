@@ -68,7 +68,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
     if (handle)
     {
 	struct FileHandle *fh;
-	LONG halfbuffersize = 0;
+	ULONG halfbuffersize = 0;
 
 	if (fileSize)
 	{
