@@ -6,9 +6,9 @@
 
 LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 {
-    ULONG  current, target;
-    ULONG  minBuf, maxBuf;
-    ULONG  roundTarget;
+    ULONG current, target;
+    ULONG minBuf, maxBuf;
+    ULONG roundTarget;
 
     /* we fail if one of the following is true:
      * 1. locking an open file failed
@@ -23,7 +23,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
     if (file->af_PacketPending == PKT_START)
     {
-	LONG   bytesArrived;
+	LONG bytesArrived;
 
 	bytesArrived = WaitPacket(file);
 	if (bytesArrived <= 0)
@@ -101,7 +101,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     file->af_SequentialBytes = 0;
 
     /* we must handle pending packets here or we might get wrong data on
-     * next sequentioal buffer fill
+     * next sequential buffer fill
      */
     if (file->af_PacketPending == PKT_PENDING)
     {
