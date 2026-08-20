@@ -107,6 +107,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 		file->af_BufferPos += file->af_BytesLeft;
 		buffer              = (APTR)((ULONG)buffer + file->af_BytesLeft);
 		totalBytes         += file->af_BytesLeft;
+		file->af_Offset     = (APTR)((ULONG)file->af_Offset + file->af_BytesLeft);
 		file->af_BytesLeft  = 0;
 	    }
 

@@ -69,8 +69,17 @@ LONG WaitPacket(AsyncFile *file)
 	{
 	    if (file->af_PacketPending == PKT_PENDING)
 	    {
+		ULONG offset;
+
 		file->af_BufMin[1 - file->af_CurrentBuf] = 0;
 		file->af_BytesArrived[1 - file->af_CurrentBuf] = 0;
+
+		offset = (ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf];
+
+		/* reset state of current buffer in case the read was initated from SeekAsync() */
+		file->af_BytesLeft = file->af_BytesArrived[file->af_CurrentBuf] - offset;
+		file->af_BufferPos = file->af_BufMin[file->af_CurrentBuf] + offset;
+		file->af_SeekOffset = 0;
 	    }
 	    break;
 	}
