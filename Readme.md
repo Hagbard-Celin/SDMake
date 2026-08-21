@@ -76,7 +76,7 @@ You must obey the GNU General Public License in all respects for the combined
 project, all author modifications (outside `AsyncIO/`), and any works derived
 from them.
 
-*Note: Unmodified upstream files from the DICE and DragonFly BSD projects remain
+*Note: Unmodified upstream code from the DICE and DragonFly BSD projects remain
 available under their original, permissive BSD terms if extracted and used
 independently from this combined work.*
 
