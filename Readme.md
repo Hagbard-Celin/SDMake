@@ -82,10 +82,10 @@ independently from this combined work.*
 
 ### AsyncIO Subsystem (Public Domain)
 
-The `AsyncIO/` subsystem included with this repository is entirely dedicated
-to the **Public Domain**.
+The `AsyncIO` subsystem and the `AsyncR` fork included with this repository is
+entirely dedicated to the **Public Domain**.
 
-As a result, all source files contained within the `AsyncIO/` subsystem may
+As a result, all source files contained within the `AsyncIO/` directory may
 be used, modified, copied, redistributed, or incorporated into other works
 without any copyleft restrictions or obligations under the GPL.
 
