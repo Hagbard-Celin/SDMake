@@ -1,17 +1,32 @@
 TABLE OF CONTENTS
 
-asyncio/--background--
-asyncio/--history--
-asyncio/CloseAsync
-asyncio/OpenAsync
-asyncio/ReadAsync
-asyncio/ReadCharAsync
-asyncio/SeekAsync
-asyncio/WriteAsync
-asyncio/WriteCharAsync
-asyncio/--background--                                 asyncio/--background--
+asyncr/--introduction--
+asyncr/--historical background--
+asyncr/CloseAsyncR
+asyncr/FGetsAsyncR
+asyncr/FGetsLenAsyncR
+asyncr/OpenAsyncR
+asyncr/ReadAsyncR
+asyncr/ReadCharAsyncR
+asyncr/ReadLineAsyncR
+asyncr/SeekAsyncR
+asyncr/----introduction----                       asyncr/----introduction----
 
-This documentation and source code was written by Martin Taillefer.
+This is a read-only fork of the original AsyncIO aka. "Fast AmigaDOS I/O".
+
+This fork implements functionality similar to the original read mode of
+AsyncIO, along with a subset of read features later added to asyncio.library.
+But despite the similarities, the API and behavior of these functions differ
+from the originals. Using this as a drop-in replacement may yield unexpected
+results.
+
+Some functionality needed for general-purpose use is still unimplemented.
+
+This fork comes with no warranty.
+
+asyncr/--historical background--             asyncr/--historical background--
+
+Original introduction as written by Martin Taillefer.
 
 Reading and writing data is crucial to most applications and is in many cases
 a major bottleneck. Using AmigaDOS' sophisticated file system architecture
@@ -78,140 +93,220 @@ The set of functions presented below offers high-performance IO using the
 technique described above. The interface is very similar to standard AmigaDOS
 files. These routines enable full asynchronous read/write of any file.
 
-asyncio/--history--                                       asyncio/--history--
-
-23-Mar-94
----------
-
-  - When seeking within the current read buffer, the wrong packet would be
-    sent out to be filled asynchronously. Depending on the data read from
-    the buffer, and how fast it was read, you could end up getting incorrect
-    data on subsequent ReadAsync() calls.
-
-  - There was actually bufferSize*2 bytes allocated for IO buffers instead
-    of just bufferSize. This is fixed. So if you want the same effective
-    buffer size as before, you must double the value of the bufferSize
-    argument supplied to OpenAsync().
-
-  - MEMF_PUBLIC is now specified for the IO buffers. This is in support
-    of VM hacks such as GigaMem.
-
-  - A Seek() call had the mode and offset parameters reversed. The code worked,
-    because both values were luckily always 0, but it was not very clean.
-
-  - Now uses a typedef for the AsyncFile structure, and enums for the
-    open modes and seek modes.
-
-16-Feb-94
----------
-
-  - SeekAsync() now consistently works. It was getting confused when called
-    multiple times in a row with no intervening IO.
-
-  - WriteAsync() would produce garbage in the destination file if it had
-    to bring up a "Disk is full" requester, and the user freed some room on
-    the disk and selected "Retry".
-
-asyncio/CloseAsync                                         asyncio/CloseAsync
+asyncr/CloseAsyncR                                         asyncr/CloseAsyncR
 
    NAME
-	CloseAsync -- close an async file.
+	CloseAsyncR -- close an async file.
 
    SYNOPSIS
-	success = CloseAsync(file);
+	CloseAsyncR(file);
 
-	LONG CloseAsync(struct AsyncFile *);
+	void CloseAsyncR(struct AsyncRFile *);
 
    FUNCTION
-	Closes a file, flushing any pending writes. Once this call has been
-	made, the file can no longer be accessed.
+	Closes a file. Once this call has been made, the file can no longer be
+	accessed.
 
    INPUTS
 	file - the file to close. May be NULL, in which case this function
-	       returns -1 and sets the IoErr() code to ERROR_INVALID_LOCk.
-
-   RESULT
-	result - < 0 for an error, >= 0 for success. Indicates whether closing
-		 the file worked or not. If the file was opened in read-mode,
-	         then this call will always work. In case of error,
-	         dos.library/IoErr() can give more information.
+	       is a no-op.
 
    SEE ALSO
-	OpenAsync(), dos.library/Close()
+	OpenAsyncR(), dos.library/Close()
 
-asyncio/OpenAsync                                           asyncio/OpenAsync
+asyncr/FGetsAsyncR                                         asyncr/FGetsAsyncR
 
    NAME
-	OpenAsync -- open a file for asynchronous IO.
+	FGetsAsyncR -- Reads a line from an async file (buffered). (V40)
 
    SYNOPSIS
-	file = OpenAsync(fileName, accessMode, bufferSize);
+	buffer = FGetsAsyncR( file, buffer, numBytes );
+	d0                   a0    a1      d0
 
-	struct AsyncFile OpenAsync(const STRPTR, UBYTE, LONG);
+	STRPTR FGetsAsyncR( struct AsyncRFile *, STRPTR, ULONG );
 
    FUNCTION
-	The named file is opened and an async file handle returned. If the
-	accessMode is MODE_READ, an existing file is opened for reading.
-	If accessMode is MODE_WRITE, a new file is created for writing. If
-	a file of the same name already exists, it is first deleted. If
-	accessMode is MODE_APPEND, an existing file is prepared for writing.
-	Data written is added to the end of the file. If the file does not
-	exists, it is created.
+	This routine reads a single line of text from the specified async file,
+	stopping when a NEWLINE character or the End-Of-File (EOF) is reached.
 
-	'fileName' is a filename and CANNOT be a window specification such as
-	CON: or RAW:, or "*"
+	Up to (numBytes - 1) characters will be copied into the buffer. If
+	characters are successfully read into the buffer, the resulting string
+	is guaranteed to be null-terminated. If the line is terminated by a
+	newline, the newline character will be included in the buffer.
+
+	If a read error or an immediate EOF occurs before any characters are
+	read, the function returns NULL and the buffer is left unmodified.
+
+   INPUTS
+	file     - Pointer to an AsyncRFile structure opened for reading.
+	buffer   - Pointer to the memory area to receive the line.
+	numBytes - The size of the destination buffer in bytes.
+
+   RESULT
+	buffer   - Pointer to the buffer passed in, or NULL on failure or
+		   immediate EOF.
+		   If NULL is returned due to an immediate EOF, IoErr() will
+		   return 0. If NULL is returned due to a read error, IoErr()
+		   will contain the relevant error code.
+
+   NOTES
+	This function is a wrapper around FGetsLenAsyncR() and closely mirrors
+	the behavior of dos.library/FGets(), including V47+ bug-fixes, with
+	the following predictable safety constraints:
+
+	- If a mid-stream read error occurs after characters have already been
+	  copied, the function returns NULL. However, the data already read
+	  will be null-terminated in the buffer to prevent undefined behavior
+	  if the buffer is accidentally read.
+
+	- If 'numBytes' is 0, the function immediately returns NULL. IoErr()
+	  will be set to 0, and no memory is modified. (Matches dos.library
+	  V47.27 behavior).
+
+	- If 'numBytes' is 1, the function immediately returns NULL. IoErr()
+	  will be set to ERROR_LINE_TOO_LONG, and no memory is modified.
+
+   SEE ALSO
+	asyncr.library/FGetsLenAsyncR(), dos.library/FGets()
+
+asyncr/FGetsLenAsyncR                                     asyncr/FGetsLenAsyncR
+
+   NAME
+	FGetsLenAsyncR -- Reads a line from an async file with length. (V40)
+
+   SYNOPSIS
+	buffer = FGetsLenAsyncR( file, buffer, numBytes, len );
+	d0                      a0    a1      d0        a2
+
+	STRPTR FGetsLenAsyncR( struct AsyncRFile *, STRPTR, ULONG, ULONG * );
+
+   FUNCTION
+	This routine reads a single line of text from the specified async file,
+	stopping when a NEWLINE character or the End-Of-File (EOF) is reached.
+
+	Up to (numBytes - 1) characters will be copied into the buffer. If
+	characters are successfully read into the buffer, the resulting string
+	is guaranteed to be null-terminated. If the line is terminated by a
+	newline, the newline character will be included in the buffer.
+
+	If a read error or an immediate EOF occurs before any characters are
+	read, the function returns NULL and the buffer is left unmodified.
+
+   INPUTS
+	file     - Pointer to an AsyncRFile structure opened for reading.
+	buffer   - Pointer to the memory area to receive the line.
+	numBytes - The size of the destination buffer in bytes.
+	len      - Optional pointer to a ULONG to store the number of characters
+		   written to the buffer (excluding the terminating null byte).
+		   Can be NULL if the length is not needed.
+
+   RESULT
+	buffer	 - Pointer to the buffer passed in, or NULL on failure or
+		   immediate EOF.
+		   If NULL is returned due to an immediate EOF, IoErr() will
+		   return 0. If NULL is returned due to a read error, IoErr()
+		   will contain the relevant error code.
+
+   NOTES
+	This function closely mirrors the behavior of dos.library/FGets(),
+	including V47+ bug-fixes, with the following predictable behaviors
+	designed to eliminate the standard FGets() blind-spots:
+
+	- If a mid-stream read error occurs after characters have already been
+	  copied, the function returns NULL. However, the data already read
+	  will be null-terminated in the buffer, and 'len' (if provided) will
+	  hold the exact count of those characters. This allows the caller to
+	  recover partial data.
+
+	- If 'len' is provided, it is ALWAYS updated. It will contain 0 if no
+	  characters were read (due to immediate EOF, error, or invalid arguments),
+	  or the valid character count if data was written.
+
+	- If 'numBytes' is 0, the function immediately returns NULL. IoErr()
+	  will be set to 0, no memory is modified, and 'len' (if provided)
+	  is set to 0. (Matches dos.library V47.27 behavior).
+
+	- If 'numBytes' is 1, the function immediately returns NULL. IoErr()
+	  will be set to ERROR_LINE_TOO_LONG, no memory is modified, and 'len'
+	  (if provided) is set to 0.
+
+   SEE ALSO
+	dos.library/FGets()
+
+asyncr/OpenAsyncR                                             asyncr/OpenAsyncR
+
+   NAME
+	OpenAsyncR -- open a file for asynchronous IO.
+
+   SYNOPSIS
+	file = OpenAsyncR(fileName, bufferSize);
+
+	struct AsyncRFile *OpenAsyncR(const STRPTR, ULONG);
+
+   FUNCTION
+	The named file is opened for reading and an async file handle
+	returned.
+
+	'fileName' is a filename and SHOULD NOT be a window specification such
+	as CON: or RAW:, or "*". Using these functions with interactive handlers
+	will only waste resources for no gain.
 
 	'bufferSize' specifies the size of the IO buffer to use. There are
 	in fact two buffers allocated, each of roughly (bufferSize/2) bytes
-	in size. The actual buffer size use can vary slightly as the size
-	is rounded to speed up DMA.
+	in size. The actual buffer size use can vary as the size is rounded up
+	to the double of filesystem blocksize to speed up DMA. And for files
+	smaller than the rounded-up size the buffer allocation is capped at
+	file size and degraded to single-buffer mode if the file is smaller
+	than the filesystem blocksize.
 
 	If the file cannot be opened for any reason, the value returned
 	will be NULL, and a secondary error code will be available by
 	calling the routine dos.library/IoErr().
 
     INPUTS
-	name - name of the file to open, cannot be a window specification
-	accessMode - one of MODE_READ, MODE_WRITE, or MODE_APPEND
+	name       - name of the file to open, cannot be a window specification
 	bufferSize - size of IO buffer to use. 8192 is recommended as it
 		     provides very good performance for relatively little
-		     memory.
+		     memory. If 'bufferSize' is 0 this function will return NULL
+		     with IoErr() ERROR_LINE_TOO_LONG.
 
-    RESULTS
+    RESULT
 	file - an async file handle or NULL for failure. You should not access
-	       the fields in the AsyncFile structure, these are private to the
+	       the fields in the AsyncRFile structure, these are private to the
 	       async IO routines. In case of failure, dos.library/IoErr() can
 	       give more information.
 
     SEE ALSO
-	CloseAsync(), dos.library/Open()
+	CloseAsyncR(), dos.library/Open()
 
-asyncio/ReadAsync                                           asyncio/ReadAsync
+asyncr/ReadAsyncR                                             asyncr/ReadAsyncR
 
    NAME
-	ReadAsync -- read bytes from an async file.
+	ReadAsyncR -- read bytes from an async file.
 
    SYNOPSIS
-	actualLength = ReadAsync(file, buffer, numBytes);
+	actualLength = ReadAsyncR(file, buffer, numBytes);
 
-	LONG ReadAsync(struct AsyncFile *, APTR, LONG);
+	LONG ReadAsyncR(struct AsyncRFile *, APTR, LONG);
 
    FUNCTION
 	This function reads bytes of information from an opened async file
-        into the buffer given. 'numBytes' is the number of bytes to read from
-        the file.
+	into the buffer given. 'numBytes' is the number of bytes to read from
+	the file.
 
 	The value returned is the length of the information actually read.
 	So, when 'actualLength' is greater than zero, the value of
 	'actualLength' is the the number of characters read. Usually
-	ReadAsync() will try to fill up your buffer before returning. A value
-	of zero means that end-of-file has been reached. Errors are indicated
-	by a value of -1.
+	ReadAsyncR() will try to fill up your buffer before returning. A value
+	of zero means that end-of-file was immediately reached. Errors are
+	indicated by a value of -1.
 
     INPUTS
-	file - opened file to read, as obtained from OpenAsync()
-	buffer - buffer where to put bytes read
-	numBytes - number of bytes to read into buffer
+	file     - opened file to read, as obtained from OpenAsyncR()
+	buffer   - buffer where to put bytes read
+	numBytes - number of bytes to read into buffer. If 'numBytes' is smaller
+		   than 1 this function will return -1 with IoErr()
+		   ERROR_LINE_TOO_LONG.
 
     RESULT
 	actualLength - actual number of bytes read, or -1 if an error. In
@@ -219,18 +314,17 @@ files. These routines enable full asynchronous read/write of any file.
 		       information.
 
     SEE ALSO
-	OpenAsync(), CloseAsync(), ReadCharAsync(), WriteAsync(),
-	dos.library/Read()
+	OpenAsyncR(), CloseAsyncR(), ReadCharAsyncR(), dos.library/Read()
 
-asyncio/ReadCharAsync                                   asyncio/ReadCharAsync
+asyncr/ReadCharAsyncR                                     asyncr/ReadCharAsyncR
 
    NAME
-	ReadCharAsync -- read a single byte from an async file.
+	ReadCharAsyncR -- read a single byte from an async file.
 
    SYNOPSIS
-	byte = ReadCharAsync(file);
+	byte = ReadCharAsyncR(file);
 
-	LONG ReadCharAsync(struct AsyncFile *);
+	LONG ReadCharAsyncR(struct AsyncRFile *);
 
    FUNCTION
 	This function reads a single byte from an async file. The byte is
@@ -238,7 +332,7 @@ files. These routines enable full asynchronous read/write of any file.
 	was reached.
 
    INPUTS
-	file - opened file to read from, as obtained from OpenAsync()
+	file - opened file to read from, as obtained from OpenAsyncR()
 
    RESULT
 	byte - the byte read, or -1 if no byte was read. In case of error,
@@ -247,36 +341,79 @@ files. These routines enable full asynchronous read/write of any file.
 	       indicates an error.
 
    SEE ALSO
-	OpenAsync(), CloseAsync(), ReadAsync(), WriteCharAsync()
-	dos.library/Read()
+	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Read()
 
-asyncio/SeekAsync                                           asyncio/SeekAsync
+asyncr/ReadLineAsyncR                                     asyncr/ReadLineAsyncR
 
    NAME
-	SeekAsync -- set the current position for reading or writing within
+	ReadLineAsyncR -- read a line from an async file.
+
+   SYNOPSIS
+	bytes = ReadLineAsyncR( file, buffer, numBytes );
+	 d0                     a0     a1     d0
+
+	LONG ReadLineAsyncR( struct AsyncRFile *, STRPTR, LONG );
+
+   FUNCTION
+	This routine reads a single line of text from the specified async
+	file, stopping when a NEWLINE character or the End-Of-File (EOF) is
+	reached. Up to (numBytes - 1) characters will be copied into the
+	buffer.
+
+	Lines that are longer than 'numBytes' will be truncated. This routine
+	will always try leave the read cursor at the beginning of the
+	next line, or at EOF in case of the last line in the file.
+
+	If a newline exists in the original line, it will be present in the
+	truncated buffer.
+
+	If any character is copied into the buffer and no error occurs, the
+	resulting string is guaranteed to be null-terminated.
+
+	The value returned is the length of the information actually read. So,
+	when 'bytes' is greater than zero, the value of 'bytes' is the the
+	number of characters read. ReadLineAsyncR() will try to fill up your
+	buffer before returning. A value of zero means that end-of-file was
+	immediately reached. Errors are indicated by a value of -1.
+
+   INPUTS
+	file     - opened file to read from, as obtained from OpenAsyncR()
+	buffer   - buffer to read the line into.
+	numBytes - numBytes of the buffer, in bytes. If 'numBytes' is smaller
+		   than 2 this function will return -1 with IoErr()
+		   ERROR_LINE_TOO_LONG.
+
+   RESULT
+	bytes - number of bytes read. In case of error (-1 is returned)
+	    dos.library/IoErr() can give more information. EOF is indicated
+	    by a return of 0.
+
+asyncr/SeekAsyncR                                             asyncr/SeekAsyncR
+
+   NAME
+	SeekAsyncR -- set the current position for reading or writing within
 		     an async file.
 
    SYNOPSIS
-	oldPosition = SeekAsync(file, position, mode);
+	oldPosition = SeekAsyncR(file, position, mode);
 
-	LONG SeekAsync(struct AsyncFile *, LONG, BYTE);
+	LONG SeekAsyncR(struct AsyncRFile *, LONG, SeekModes);
 
    FUNCTION
-	SeekAsync() sets the read/write cursor for the file 'file' to the
-	position 'position'. This position is used by the various read/write
-	functions as the place to start reading or writing. The result is the
-	current absolute position in the file, or -1 if an error occurs, in
-	which case dos.library/IoErr() can be used to find more information.
-	'mode' can be MODE_START, MODE_CURRENT or MODE_END. It is used to
-	specify the relative start position. For example, 20 from current
-	is a position 20 bytes forward from current, -20 is 20 bytes back
-	from current.
+	SeekAsyncR() sets the read cursor for the file 'file' to the position
+	'position'. This position is used by the various read functions as the
+	place to start reading. The result is the current absolute position in
+	the file, or -1 if an error occurs, in which case dos.library/IoErr()
+	can be used to find more information. 'mode' can be MODE_START,
+	MODE_CURRENT or MODE_END. It is used to	specify the relative start
+	position. For example, 20 from current is a position 20 bytes forward
+	from current, -20 is 20 bytes back from current.
 
 	To find out what the current position within a file is, simply seek
 	zero from current.
 
     INPUTS
-	file - an opened async file, as obtained from OpenAsync()
+	file - an opened async file, as obtained from OpenAsyncR()
 	position - the place where to move the read/write cursor
 	mode - the mode for the position, one of MODE_START, MODE_CURRENT,
 	       or MODE_END.
@@ -286,63 +423,30 @@ files. These routines enable full asynchronous read/write of any file.
 		      if an error occurs. In case of error, dos.library/IoErr()
 		      can give more information.
 
-    SEE ALSO
-	OpenAsync(), CloseAsync(), ReadAsync(), WriteAsync(),
-	dos.library/Seek()
+    NOTES
+	Seeking in empty files is not supported.
 
-asyncio/WriteAsync                                         asyncio/WriteAsync
+	Seeking to EOF is not supported.
 
-   NAME
-	WriteAsync -- write data to an async file.
+	Seeking in files bigger than UINT_MAX is not supported, for such files
+	it will seek to wrong position for 'position' > INT_MAX.
 
-   SYNOPSIS
-	actualLength = WriteAsync(file, buffer, numBytes);
+	Just like dos.library/Seek() the only reliable way to differentiate
+	error from success is to check IoErr(). IoErr() is always set to 0 on
+	success.
 
-	LONG WriteAsync(struct AsyncFile *, APTR, LONG);
-
-   FUNCTION
-	WriteAsync() writes bytes of data to an opened async file. 'numBytes'
-	indicates the number of bytes of data to be transferred. 'buffer'
-	points to the data to write. The value returned is the length of
-	information actually written. So, when 'numBytes' is greater than
-	zero, the value of 'numBytes' is the number of characters written.
-	Errors are indicated by a return value of -1.
-
-    INPUTS
-	file - an opened file, as obtained from OpenAsync()
-	buffer - address of data to write
-	numBytes - number of bytes to write to the file
-
-    RESULT
-	actualLength - number of bytes written, or -1 if error. In case
-		       of error, dos.library/IoErr() can give more
-		       information.
+    BUGS
+	A seek to a target outside of currently filled buffers will initiate a
+	read packet to fill a buffer with the requested range. This read might
+	fail even if the SeekAsyncR() call itself succeeds. The error will
+	first show up on the the next read/seek call, and the read pointer
+	will then be reset to the position it had before the seek. SeekAsyncR()
+	will in such cases propagate the IoErr from the read packet in place
+	of using ERROR_SEEK_ERROR. But for read functions the only way to
+	detect this state is to call SeekAsyncR() with 'position' 0 and
+	MODE_CURRENT, and compare the result to the result of the previous
+	seek if a read directly after a seek fails.
+	This is a limitation of the core architecture, and can not be fixed.
 
     SEE ALSO
-	OpenAsync(), CloseAsync(), ReadAsync(), WriteCharAsync(),
-	dos.library/Write()
-
-asyncio/WriteCharAsync                                 asyncio/WriteCharAsync
-
-   NAME
-	WriteCharAsync -- write a single byte to an async file.
-
-   SYNOPSIS
-	result = WriteCharAsync(file, byte);
-
-	LONG WriteCharAsync(struct AsyncFile *, UBYTE);
-
-   FUNCTION
-	This function writes a single byte to an async file.
-
-   INPUTS
-	file - an opened async file, as obtained from OpenAsync()
-	byte - byte of data to add to the file
-
-   RESULT
-	result - 1 if the byte was written, -1 if there was an error. In
-		 case of error, dos.library/IoErr() can give more information.
-
-   SEE ALSO
-	OpenAsync(), CloseAsync(), ReadAsync(), WriteAsync(),
-	dos.library/Write()
+	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Seek()
