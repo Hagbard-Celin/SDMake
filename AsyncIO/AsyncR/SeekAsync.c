@@ -1,10 +1,24 @@
-#include "async_internal.h"
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
+#include "asyncr_internal.h"
 #include <limits.h>
 
 /*****************************************************************************/
 
 
-LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
+LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 {
     ULONG current, target;
     ULONG minBuf, maxBuf;
@@ -22,11 +36,11 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     if (!file->af_FileSize)
 	goto err;
 
-    if (file->af_PacketPending == PKT_START)
+    if (file->af_PacketPending == ASR_PKT_START)
     {
 	LONG bytesArrived;
 
-	bytesArrived = WaitPacket(file);
+	bytesArrived = WaitAsyncRPacket(file);
 	if (bytesArrived <= 0)
 	    goto err;
 
@@ -37,7 +51,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 		file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
 	}
 	else
-	    file->af_PacketPending = PKT_READY;
+	    file->af_PacketPending = ASR_PKT_READY;
 
 	file->af_BytesLeft   = bytesArrived;
 
@@ -46,7 +60,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     current = file->af_BufferPos;
 
     /* figure out the absolute offset within the file where we must seek to */
-    if (mode == MODE_CURRENT)
+    if (mode == ASR_MODE_CURRENT)
     {
 	if (!position)
 	    goto end;
@@ -61,7 +75,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
 	target = current + position;
     }
-    else if (mode == MODE_START)
+    else if (mode == ASR_MODE_START)
     {
 	/* catch seek past BOF */
 	if (position < 0)
@@ -69,7 +83,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 
 	target = position;
     }
-    else /* if (mode == MODE_END) */
+    else /* if (mode == ASR_MODE_END) */
     {
 	/* catch seek to or past EOF */
 	if (position >= 0)
@@ -105,11 +119,11 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
     /* we must handle pending packets here or we might get wrong data on
      * next sequential buffer fill
      */
-    if (file->af_PacketPending == PKT_PENDING)
+    if (file->af_PacketPending == ASR_PKT_PENDING)
     {
 	LONG bytesArrived;
 
-	bytesArrived = WaitPacket(file);
+	bytesArrived = WaitAsyncRPacket(file);
 
 	/* but we keep the IoErr from the read on error, since the target
 	 * might not be in the buffer that failed. So IoErr other than
@@ -118,13 +132,13 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	if (bytesArrived == -1)
 	    goto err_gotIoErr;
 
-	/* in case of multiple SeekAsync() calls back to back end in SendPacket()
+	/* in case of multiple SeekAsyncR() calls back to back end in SendAsyncRPacket()
 	 * and the last Seek() fails, this keeps the state consistent so a read
 	 * following a failed seek will read from the position of the last
 	 * successful seek
 	 */
 	if (bytesArrived > 0)
-	    file->af_PacketPending = PKT_READY;
+	    file->af_PacketPending = ASR_PKT_READY;
     }
 
     /* figure out what range of the file is in our current buffer */
@@ -146,7 +160,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	file->af_BytesLeft  = maxBuf + 1 - target;
 	file->af_BufferPos  = target;
 	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
-	file->af_PacketPending = PKT_IDLE;
+	file->af_PacketPending = ASR_PKT_IDLE;
 	goto end;
     }
     else
@@ -165,7 +179,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
 	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 	    file->af_BytesLeft  = maxBuf + 1 - target;
 	    file->af_BufferPos  = target;
-	    file->af_PacketPending = PKT_IDLE;
+	    file->af_PacketPending = ASR_PKT_IDLE;
 	    goto end;
 	}
     }
@@ -185,7 +199,7 @@ LONG SeekAsync(AsyncFile *file, LONG position, SeekModes mode)
      */
     roundTarget = (target / file->af_BufferSize) * file->af_BufferSize;
 
-    if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], roundTarget))
+    if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], roundTarget))
     {
 	file->af_SeekOffset = seekOffset;
 	goto err_gotIoErr;

@@ -1,13 +1,27 @@
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
 #include <proto/exec.h>
 #include <proto/dos.h>
-#include "async_internal.h"
+#include "asyncr_internal.h"
 
 /*****************************************************************************/
 
 
-AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
+AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 {
-    AsyncFile         *file = NULL;
+    AsyncRFile         *file = NULL;
     BPTR               handle;
     LONG               blockSize = 0;
     ULONG              fileSize = 0;
@@ -27,7 +41,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	D_S(struct InfoData,infoData);
 	D_S(struct FileInfoBlock,fib);
 
-	if (handle = Open(fileName,MODE_OLDFILE))
+	if (handle = Open(fileName,ASR_MODE_OLDFILE))
 	{
 	    if (lock = Lock(fileName,ACCESS_READ))
 	    {
@@ -120,7 +134,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 	 * quad-longword alignment of the buffers
 	 */
 
-	if (file = AllocVec(sizeof(AsyncFile) + bufferSize + 15,MEMF_PUBLIC | MEMF_ANY))
+	if (file = AllocVec(sizeof(AsyncRFile) + bufferSize + 15,MEMF_PUBLIC | MEMF_ANY))
 	{
 	    file->af_File      = handle;
 
@@ -139,7 +153,7 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 
 	    fh                       = BADDR(file->af_File);
 	    file->af_Handler         = fh->fh_Type;
-	    file->af_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
+	    file->af_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncRFile) + 15) & 0xfffffff0);
 	    if (halfbuffersize)
 	    {
 		if (halfbuffersize < bufferSize)
@@ -212,11 +226,11 @@ AsyncFile *OpenAsync(const STRPTR fileName, ULONG bufferSize)
 
 	    if (file->af_Handler)
 	    {
-		SendPacket(file,file->af_Buffers[0], 0);
-		file->af_PacketPending   = PKT_START;
+		SendAsyncRPacket(file,file->af_Buffers[0], 0);
+		file->af_PacketPending   = ASR_PKT_START;
 	    }
 	    else
-		file->af_PacketPending   = PKT_READY; /* this makes NIL: return EOF on every read */
+		file->af_PacketPending   = ASR_PKT_READY; /* this makes NIL: return EOF on every read */
 	}
 	else
 	{

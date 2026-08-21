@@ -1,9 +1,23 @@
-#include "async_internal.h"
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
+#include "asyncr_internal.h"
 
 /*****************************************************************************/
 
 
-LONG ReadCharAsync(AsyncFile *file)
+LONG ReadCharAsyncR(AsyncRFile *file)
 {
     LONG ret = -1;
     LONG bytesArrived;
@@ -12,9 +26,9 @@ LONG ReadCharAsync(AsyncFile *file)
     SetIoErr(0);
 
     /* wait for the buffer to fill if this is the first read after open */
-    if (file->af_PacketPending == PKT_START)
+    if (file->af_PacketPending == ASR_PKT_START)
     {
-	bytesArrived = WaitPacket(file);
+	bytesArrived = WaitAsyncRPacket(file);
 
 	if (bytesArrived <= 0)
 	    goto end;
@@ -28,13 +42,13 @@ LONG ReadCharAsync(AsyncFile *file)
 		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
 	    }
 	    else
-		file->af_PacketPending = PKT_READY;
+		file->af_PacketPending = ASR_PKT_READY;
 	}
 
 	file->af_BytesLeft   = bytesArrived;
     }
 
-    if (file->af_PacketPending == PKT_IDLE)
+    if (file->af_PacketPending == ASR_PKT_IDLE)
     {
 	ULONG nextpos;
 
@@ -43,17 +57,17 @@ LONG ReadCharAsync(AsyncFile *file)
 	/* do the other buffer already contain the data we need */
 	if (file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
 	{
-	    file->af_PacketPending = PKT_READY;
+	    file->af_PacketPending = ASR_PKT_READY;
 	}
 	else
 	{
-	    if (file->af_SequentialBytes < SEQBYTESTHRESH)
+	    if (file->af_SequentialBytes < ASR_SEQBYTESTHRESH)
 		file->af_SequentialBytes++;
 
-	    if (file->af_SequentialBytes >= SEQBYTESTHRESH ||
-		file->af_BytesLeft < BYTESLEFTTHRESH)
+	    if (file->af_SequentialBytes >= ASR_SEQBYTESTHRESH ||
+		file->af_BytesLeft < ASR_BYTESLEFTTHRESH)
 	    {
-		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
+		if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
 		    goto end;
 	    }
 	}
@@ -61,17 +75,17 @@ LONG ReadCharAsync(AsyncFile *file)
 
     if (!file->af_BytesLeft)
     {
-	if (file->af_PacketPending == PKT_READY)
+	if (file->af_PacketPending == ASR_PKT_READY)
 	{
 	    bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
 	    if (file->af_FileSize > file->af_BufferSize)
-		file->af_PacketPending = PKT_IDLE;
+		file->af_PacketPending = ASR_PKT_IDLE;
 	}
 	else
 	{
 bad_handler:
-	    bytesArrived = WaitPacket(file);
+	    bytesArrived = WaitAsyncRPacket(file);
 	}
 
 	if (bytesArrived <= 0)
@@ -90,7 +104,7 @@ bad_handler:
 	    file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]);
 	    file->af_SeekOffset -= bytesArrived;
 
-	    if (SendPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+	    if (SendAsyncRPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
 		goto end;
 
 	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;

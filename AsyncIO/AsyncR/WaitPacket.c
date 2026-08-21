@@ -1,4 +1,18 @@
-#include "async_internal.h"
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
+#include "asyncr_internal.h"
 
 /*****************************************************************************/
 
@@ -6,13 +20,13 @@
 /* this function waits for a packet to come back from the file system. 
  *
  * WARNING: This function requires file->af_PacketPending to be
- *          either PKT_START or PKT_PENDING, or it will cause a
+ *          either ASR_PKT_START or ASR_PKT_PENDING, or it will cause a
  *          dead lock.
  *
  * This function also deals with IO errors, bringing up the needed DOS
  * requesters to let the user retry an operation or cancel it.
  */
-LONG WaitPacket(AsyncFile *file)
+LONG WaitAsyncRPacket(AsyncRFile *file)
 {
     LONG bytes = 0;
 
@@ -43,7 +57,7 @@ LONG WaitPacket(AsyncFile *file)
 	     */
 	    if (bytes > 0)
 	    {
-		if (file->af_PacketPending == PKT_START)
+		if (file->af_PacketPending == ASR_PKT_START)
 		{
 		    file->af_BufMin[file->af_CurrentBuf] = file->af_FilesysPos;
 		    file->af_BytesArrived[file->af_CurrentBuf] = bytes;
@@ -67,7 +81,7 @@ LONG WaitPacket(AsyncFile *file)
 	/* see if the user wants to try again... */
 	if (ErrorReport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
 	{
-	    if (file->af_PacketPending == PKT_PENDING)
+	    if (file->af_PacketPending == ASR_PKT_PENDING)
 	    {
 		ULONG offset;
 
@@ -85,16 +99,16 @@ LONG WaitPacket(AsyncFile *file)
 	}
 
 	/* user wants to try again, resend the packet */
-	if (file->af_PacketPending == PKT_START)
+	if (file->af_PacketPending == ASR_PKT_START)
 	{
-	    SendPacket(file,file->af_Buffers[file->af_CurrentBuf], file->af_FilesysPos);
-	    file->af_PacketPending = PKT_START;
+	    SendAsyncRPacket(file,file->af_Buffers[file->af_CurrentBuf], file->af_FilesysPos);
+	    file->af_PacketPending = ASR_PKT_START;
 	}
 	else
-	    SendPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
+	    SendAsyncRPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
     }
 
-    file->af_PacketPending = PKT_IDLE;
+    file->af_PacketPending = ASR_PKT_IDLE;
 
     return(bytes);
 }

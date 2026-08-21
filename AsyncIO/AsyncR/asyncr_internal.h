@@ -1,9 +1,22 @@
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
 
 #include <proto/exec.h>
 #include <proto/dos.h>
 
 #include <asyncr.h>
-
 
 /*****************************************************************************/
 
@@ -15,13 +28,13 @@
 /*****************************************************************************/
 
 /* this is tuned for the SDMake use-case */
-#define SEQBYTESTHRESH 3
+#define ASR_SEQBYTESTHRESH 3
 
 /* SDMake does not actually need this, as it never seeks forward.
  * It is a safety valve to ensure forward seeks do not break future code.
  */
-#define BYTESLEFTTHRESH 4
+#define ASR_BYTESLEFTTHRESH 4
 
-LONG SendPacket(AsyncFile *file, APTR buffer, ULONG filesyspos);
-LONG WaitPacket(AsyncFile *file);
+LONG SendAsyncRPacket(AsyncRFile *file, APTR buffer, ULONG filesyspos);
+LONG WaitAsyncRPacket(AsyncRFile *file);
 

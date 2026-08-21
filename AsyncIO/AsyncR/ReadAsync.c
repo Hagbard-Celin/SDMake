@@ -1,9 +1,23 @@
-#include "async_internal.h"
+/*
+ * This file is part of AsyncR, a read-only fork of the original AsyncIO aka.
+ * "Fast AmigaDOS I/O".
+ *
+ * AsyncR is Public Domain.
+ *
+ * Original code by Martin Taillefer.
+ * AsyncR fork by Hagbard Celine.
+ *
+ * This code comes with absolutely no warranty.
+ * If it breaks, you get to keep the pieces.
+ *
+ */
+
+#include "asyncr_internal.h"
 
 /*****************************************************************************/
 
 
-LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
+LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 {
     LONG totalBytes;
     LONG bytesArrived;
@@ -21,9 +35,9 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
     SetIoErr(0);
 
     /* wait for the buffer to fill if this is the first read after open */
-    if (file->af_PacketPending == PKT_START)
+    if (file->af_PacketPending == ASR_PKT_START)
     {
-	bytesArrived = WaitPacket(file);
+	bytesArrived = WaitAsyncRPacket(file);
 	if (bytesArrived <= 0)
 	{
 	    if (bytesArrived == 0)
@@ -42,14 +56,14 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
 	    }
 	    else
-		file->af_PacketPending = PKT_READY;
+		file->af_PacketPending = ASR_PKT_READY;
 	}
 
 	file->af_BytesLeft   = bytesArrived;
     }
 
     /* do we need to send packet to fill other buffer? */
-    if (file->af_PacketPending == PKT_IDLE)
+    if (file->af_PacketPending == ASR_PKT_IDLE)
     {
 	ULONG nextpos;
 
@@ -58,21 +72,21 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 	/* do the other buffer already contain the data we need */
 	if (file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
 	{
-	    file->af_PacketPending = PKT_READY;
+	    file->af_PacketPending = ASR_PKT_READY;
 	}
 	else
 	{
 	    BOOL sequential = FALSE;
 
-	    if (file->af_SequentialBytes < SEQBYTESTHRESH)
+	    if (file->af_SequentialBytes < ASR_SEQBYTESTHRESH)
 		file->af_SequentialBytes += numBytes;
 
-	    if (file->af_SequentialBytes >= SEQBYTESTHRESH)
+	    if (file->af_SequentialBytes >= ASR_SEQBYTESTHRESH)
 		sequential = TRUE;
 
-	    if (sequential || numBytes > file->af_BytesLeft || file->af_BytesLeft < BYTESLEFTTHRESH)
+	    if (sequential || numBytes > file->af_BytesLeft || file->af_BytesLeft < ASR_BYTESLEFTTHRESH)
 	    {
-		if (SendPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
+		if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
 		{
 		    totalBytes = -1;
 		    goto end;
@@ -111,15 +125,15 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 		file->af_BytesLeft  = 0;
 	    }
 
-	    if (file->af_PacketPending == PKT_READY)
+	    if (file->af_PacketPending == ASR_PKT_READY)
 	    {
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
 		if (file->af_FileSize > file->af_BufferSize)
-		    file->af_PacketPending = PKT_IDLE;
+		    file->af_PacketPending = ASR_PKT_IDLE;
 	    }
 	    else
-		bytesArrived = WaitPacket(file);
+		bytesArrived = WaitAsyncRPacket(file);
 
 	    if (bytesArrived <= 0)
 	    {
@@ -159,7 +173,7 @@ LONG ReadAsync(AsyncFile *file, APTR buffer, LONG numBytes)
 		 */
 		if (numBytes > file->af_BytesLeft || reFill)
 		{
-		    if (SendPacket(file, file->af_Buffers[fillBuffer], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+		    if (SendAsyncRPacket(file, file->af_Buffers[fillBuffer], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
 		    {
 			totalBytes = -1;
 			break;
