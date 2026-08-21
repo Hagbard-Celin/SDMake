@@ -13,6 +13,12 @@
  */
 
 #include "asyncr_internal.h"
+#if OSVERMIN < 36
+#include <stdio.h>
+#include <proto/intuition.h>
+#endif
+
+static LONG errorreport(LONG code, LONG type, ULONG arg1, struct MsgPort *device);
 
 /*****************************************************************************/
 
@@ -79,7 +85,7 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 	SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
 
 	/* see if the user wants to try again... */
-	if (ErrorReport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
+	if (errorreport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
 	{
 	    if (file->af_PacketPending == ASR_PKT_PENDING)
 	    {
@@ -113,3 +119,42 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
     return(bytes);
 }
 
+static LONG errorreport(LONG code, LONG type, ULONG arg1, struct MsgPort *device)
+{
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
+    {
+#endif
+#if OSVERMAX >= 36
+	return ErrorReport(code, type, arg1, device);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	struct IntuiText autoText[3];
+	TEXT buf[24];
+
+	sprintf(buf, "I/O error: %ld", code);
+
+	autoText[0].FrontPen = autoText[1].FrontPen = autoText[2].FrontPen = 0;
+	autoText[0].BackPen = autoText[1].BackPen = autoText[2].BackPen = 1;
+	autoText[0].DrawMode = autoText[1].DrawMode = autoText[2].DrawMode = JAM2;
+	autoText[0].LeftEdge = 13;
+	autoText[1].LeftEdge = autoText[2].LeftEdge = 6;
+	autoText[0].TopEdge = 15;
+	autoText[1].TopEdge = autoText[2].TopEdge = 3;
+	autoText[0].ITextFont = autoText[1].ITextFont = autoText[2].ITextFont = 0;
+	autoText[0].NextText = autoText[1].NextText = autoText[2].NextText = 0;
+	autoText[0].IText = buf;
+	autoText[1].IText = "Retry";
+	autoText[2].IText = "Cancel";
+
+	return (!(AutoRequest(NULL, &autoText[0], &autoText[1], &autoText[2], 0, 0, 300, 40)));
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
+}

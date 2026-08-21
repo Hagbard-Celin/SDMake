@@ -18,6 +18,18 @@
 
 #include <asyncr.h>
 
+#ifndef OSVERMIN
+#define OSVERMIN 0
+#endif
+
+#ifndef OSVERMAX
+#define OSVERMAX 999
+#endif
+
+#if OSVERMIN < 36
+#define SetIoErr(code) ((struct Process *)FindTask(NULL))->pr_Result2 = code
+#endif
+
 /*****************************************************************************/
 
 /* this macro lets us long-align structures on the stack */
