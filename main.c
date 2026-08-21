@@ -842,21 +842,3 @@ const char *SkipAss(const char *ptr)
     return(ptr);
 }
 
-#if OSVERMIN < 36
-struct IntuiText *ITextOf(char *ptr)
-{
-    static struct IntuiText ITAry[8];
-    static short ITIdx;
-    struct IntuiText *it = ITAry + ITIdx;
-
-    ITIdx = (ITIdx + 1) & 7;
-    it->FrontPen = 1;
-    it->BackPen  = 0;
-    it->DrawMode = JAM2;
-    it->LeftEdge = 2;
-    it->TopEdge = 6;
-    it->IText = (unsigned char *)ptr;
-    return(it);
-}
-#endif
-
