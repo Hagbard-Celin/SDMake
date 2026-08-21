@@ -77,7 +77,7 @@ project, all author modifications (outside `AsyncIO/`), and any works derived
 from them.
 
 *Note: Unmodified upstream code from the DICE and DragonFly BSD projects remain
-available under their original, permissive BSD terms if extracted and used
+available under the original, permissive BSD terms if extracted and used
 independently from this combined work.*
 
 ### AsyncIO Subsystem (Public Domain)
