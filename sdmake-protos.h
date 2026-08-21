@@ -115,9 +115,3 @@ Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
 
 Prototype WORD ParseRevInclude(STRPTR includefile);
 
-/* async.c              */
-
-Prototype AsyncFile *OpenAsyncR(const STRPTR fileName);
-Prototype void CloseAsyncR(struct AsyncFile *file);
-Prototype LONG seekAsync( AsyncFile *filearg, LONG position, SeekModes mode );
-Prototype struct FileList *OpenFiles;

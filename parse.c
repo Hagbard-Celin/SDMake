@@ -69,14 +69,7 @@
 
 #include "defs.h"
 #include <stdarg.h>
-#if OSVERMIN < 36
-#if OSVERMAX >= 36
-#define SeekAsync seekAsync
-#else
-#define SeekAsync SeekAsyncR13
-extern LONG SeekAsyncR13( AsyncFile *filearg, LONG position, SeekModes mode );
-#endif
-#endif
+#include <asyncr_sdmake.h>
 
 Prototype void InitParser(void);
 Prototype void ParseFile(STRPTR);
@@ -107,7 +100,7 @@ char AltBuf[256];
 char AltBuf2[256];
 long LineNo = 1;
 char *FileName = "";
-struct AsyncFile *Fi;
+struct AsyncRFile *Fi;
 
 void InitParser()
 {
@@ -129,7 +122,7 @@ void InitParser()
 
 void ParseFile(STRPTR fileName)
 {
-    struct AsyncFile *fi;
+    struct AsyncRFile *fi;
     token_t t;
     IfNode *ifBase = NULL;
     int ifTrue = 1;
@@ -157,7 +150,7 @@ void ParseFile(STRPTR fileName)
 	CopyCmdListBuf(&list, tfileName);
 	strcpy(tfileName + len, fileName);
 
-	if ((fi = OpenAsyncR(tfileName)) == NULL)
+	if ((fi = OpenAsyncR_tracked(tfileName)) == NULL)
 	    error(FATAL, IoErr(), "Unable to open %s", tfileName);
 	PFreeVec(tfileName);
     }
@@ -254,7 +247,7 @@ void ParseFile(STRPTR fileName)
 			}
 		    }
 		} else if (ifTrue && SymBufLen == 8 && strcmp(SymBuf, ".include") == 0) {
-		    struct AsyncFile *saveFi = Fi;
+		    struct AsyncRFile *saveFi = Fi;
 		    char *saveFileName = FileName;
 		    int saveLine = LineNo;
 		    char *path;
@@ -512,7 +505,7 @@ void ParseFile(STRPTR fileName)
 	AppendCmdList(&topdirList, &var->var_CmdList);
     }
 
-    CloseAsyncR(fi);
+    CloseAsyncR_tracked(fi);
 }
 
 /*
@@ -525,7 +518,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 {
     Var *var;
     int newVar = 0;
-    long len;
+    ULONG len;
     short done;
     short eol = 1;
     short append = 0;
@@ -539,7 +532,7 @@ static token_t ParseAssignment(STRPTR varName, token_t t, int cond, char type)
 
     NewList(&tmpList);
 
-    while (FGetsLenAsync(Fi, AltBuf, sizeof(AltBuf), &len)) {
+    while (FGetsLenAsyncR(Fi, AltBuf, sizeof(AltBuf), &len)) {
 	if (eol && AltBuf[0] == '#') {
 	    ++LineNo;
 	    continue;
@@ -690,7 +683,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 	WORD endlt = 0;
 	WORD newline = 0;
 
-	while ((c = ReadCharAsync(Fi)) != EOF) {
+	while ((c = ReadCharAsyncR(Fi)) != EOF) {
 	    if (twolt < 2)
 	    {
 		if (c == '<')
@@ -704,10 +697,10 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 
 		    if (c == '#' && blankLine && !ws)
 		    {
-			while ((c = ReadCharAsync(Fi)) != EOF) {
+			while ((c = ReadCharAsyncR(Fi)) != EOF) {
 			    if (c == '\n') {
 				++LineNo;
-				c = ReadCharAsync(Fi);
+				c = ReadCharAsyncR(Fi);
 				if (c == '#')
 				    continue;
 				break;
@@ -726,7 +719,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 		    if (blankLine && ws == 0) {
 			if (c != ' ' && c != '\t')
 			{
-			    SeekAsync(Fi, -1, MODE_CURRENT);
+			    SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 			    break;
 			}
 		    }
@@ -745,7 +738,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			    PutCmdListChar(cmdList, ' ');
 			    ws = 0;
 			}
-			c = ReadCharAsync(Fi);
+			c = ReadCharAsyncR(Fi);
 			if (c == '\n') {
 			    blankLine = 1;
 			    ++LineNo;
@@ -762,7 +755,7 @@ static token_t ParseDependency(STRPTR firstSym, token_t t, UWORD lefttype)
 			        PutCmdListChar(cmdList, ' ');
 			        ws = 0;
 			    }
-			    c = ReadCharAsync(Fi);
+			    c = ReadCharAsyncR(Fi);
 			    if (c == '@')
 			    {
 				PutCmdListLen(cmdList, "%(left)", 7);
@@ -917,7 +910,7 @@ swi:
 	}
     case TokDollar:
     case TokPercent:
-	c = ReadCharAsync(Fi);
+	c = ReadCharAsyncR(Fi);
 	if (c == '(' && ifTrue) {
 	    ParseVariable(&CmdList, (t == TokPercent) ? '%' : '$');
 
@@ -925,7 +918,7 @@ swi:
 	     *	XXX how to handle dependancies verses nominal string concat?
 	     */
 
-	    while ((c = ReadCharAsync(Fi)) != ' ' && c != '\t' && c != '\n' && c != ':') {
+	    while ((c = ReadCharAsyncR(Fi)) != ' ' && c != '\t' && c != '\n' && c != ':') {
 		if (c == EOF)
 		    break;
 		if (c == '$') {
@@ -939,10 +932,10 @@ swi:
 		PutCmdListChar(&CmdList, c);
 	    }
 	    if (c != EOF)
-		SeekAsync(Fi, -1, MODE_CURRENT);
+		SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 	    goto top;
 	}
-	SeekAsync(Fi, -1, MODE_CURRENT);
+	SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 	/* fall through */
     default:
 	break;
@@ -969,7 +962,7 @@ static void ParseVariable(List *cmdList, short c0)
      *	variable name
      */
 
-    while ((c = ReadCharAsync(Fi)) != EOF && !SpecialChar[c])
+    while ((c = ReadCharAsyncR(Fi)) != EOF && !SpecialChar[c])
 	AltBuf[i++] = c;
     AltBuf[i] = 0;
 
@@ -994,16 +987,16 @@ static void ParseVariable(List *cmdList, short c0)
      *	source operation
      */
 
-    c = ReadCharAsync(Fi);
+    c = ReadCharAsyncR(Fi);
     if (c == '\"') {
-	SeekAsync(Fi, -1, MODE_CURRENT);
+	SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 	expect(GetToken(), TokStr);
-	c = ReadCharAsync(Fi);
+	c = ReadCharAsyncR(Fi);
     } else {
 	i = 0;
 	while (c != ')' && c != ':' && c != EOF) {
 	    SymBuf[i++] = c;
-	    c = ReadCharAsync(Fi);
+	    c = ReadCharAsyncR(Fi);
 	}
 	SymBuf[i] = 0;
     }
@@ -1022,16 +1015,16 @@ static void ParseVariable(List *cmdList, short c0)
     if (c != ':')
 	error(FATAL, NULL, "Bad variable replacement spec: %c", c);
 
-    c = ReadCharAsync(Fi);
+    c = ReadCharAsyncR(Fi);
     if (c == '\"') {
-	SeekAsync(Fi, -1, MODE_CURRENT);
+	SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 	expect(GetToken(), TokStr);
-	c = ReadCharAsync(Fi);
+	c = ReadCharAsyncR(Fi);
     } else {
 	i = 0;
 	while (c != ')' && c != ':' && c != EOF) {
 	    SymBuf[i++] = c;
-	    c = ReadCharAsync(Fi);
+	    c = ReadCharAsyncR(Fi);
 	}
 	SymBuf[i] = 0;
     }
@@ -1254,7 +1247,7 @@ static token_t GetToken()
     short i;
 
     for (;;) {
-	switch(c = ReadCharAsync(Fi)) {
+	switch(c = ReadCharAsyncR(Fi)) {
 	case EOF:
 	    return(0);
 	case ':':
@@ -1280,7 +1273,7 @@ static token_t GetToken()
 	case '\r':
 	    break;
 	case '#':
-	    while ((c = ReadCharAsync(Fi)) != EOF) {
+	    while ((c = ReadCharAsyncR(Fi)) != EOF) {
 		if (c == '\n') {
 		    ++LineNo;
 		    break;
@@ -1288,13 +1281,13 @@ static token_t GetToken()
 	    }
 	    break;
 	case '\"':
-	    for (i = 0; i < sizeof(SymBuf) - 1 && (c = ReadCharAsync(Fi)) != EOF; ++i) {
+	    for (i = 0; i < sizeof(SymBuf) - 1 && (c = ReadCharAsyncR(Fi)) != EOF; ++i) {
 		if (c == '\n')
 		    error(FATAL, NULL, "newline in control string");
 		if (c == '\"')
 		    break;
 		if (c == '\\')
-		    c = ReadCharAsync(Fi);
+		    c = ReadCharAsyncR(Fi);
 		SymBuf[i] = c;
 	    }
 	    SymBuf[i] = 0;
@@ -1304,7 +1297,7 @@ static token_t GetToken()
 		error(FATAL, NULL, "Expected closing quote");
 	    return(TokStr);
 	case '\\':
-	    c = ReadCharAsync(Fi);
+	    c = ReadCharAsyncR(Fi);
 	    if (c == '\n') {
 		++LineNo;
 		break;
@@ -1315,12 +1308,12 @@ static token_t GetToken()
 	    {
 		WORD gotcol = 0;
 
-		for (i = 1; i < sizeof(SymBuf) - 1 && (c = ReadCharAsync(Fi)) != EOF; ++i) {
+		for (i = 1; i < sizeof(SymBuf) - 1 && (c = ReadCharAsyncR(Fi)) != EOF; ++i) {
 		    if (gotcol)
 		    {
 			if (SpecialChar[c])
 			{
-			    SeekAsync(Fi, -2, MODE_CURRENT);
+			    SeekAsyncR(Fi, -2, ASR_MODE_CURRENT);
 			    i--;
 			    break;
 			}
@@ -1332,7 +1325,7 @@ static token_t GetToken()
 			    gotcol = 1;
 			else
 			{
-			    SeekAsync(Fi, -1, MODE_CURRENT);
+			    SeekAsyncR(Fi, -1, ASR_MODE_CURRENT);
 			    break;
 			}
 		    }

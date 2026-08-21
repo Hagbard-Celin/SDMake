@@ -6,10 +6,10 @@ OSVERMAX ?= 999
 
 INTERNAL_ASYNC ?= 1
 
-ASYNCDIR= asyncio/src/
+ASYNCDIR= asyncio/AsyncR/
 
 SRCS= depend.c cmdlist.c run.c poolmem.a string.c main.c var.c parse.c cond.c \
-      convert.c gethead.a getpred.a gettail.a buffer.c parserevh.c async.c
+      convert.c gethead.a getpred.a gettail.a buffer.c parserevh.c
 
 .ifgt 36 $(OSVERMIN)
 SRCS= $(SRCS) console.c system13.c
@@ -19,34 +19,9 @@ SRCS= $(SRCS) console.c system13.c
 SRCS= $(SRCS) path.c
 .endif
 
-.ifgt 1 $(INTERNAL_ASYNC)
-
-ASYNCSRCS=$(ASYNCDIR)AsyncLib.c $(ASYNCDIR)AsyncLibVer.c
-
-.ifgt $(OSVERMIN) 36
-.else
-NOBUILD =
-.endif
-
-.else
-
-ASYNCSRCS=$(ASYNCDIR)ReadAsync.c $(ASYNCDIR)CloseAsync.c $(ASYNCDIR)FGetsLenAsync.c \
-      $(ASYNCDIR)ReadLineAsync.c $(ASYNCDIR)ReadCharAsync.c \
-      $(ASYNCDIR)RecordAsyncFailure.c $(ASYNCDIR)SendPacket.c \
-      $(ASYNCDIR)RequeuePacket.c
-
-.ifgt $(OSVERMAX) 35
-ASYNCSRCS=$(ASYNCDIR)OpenAsyncFH.c $(ASYNCDIR)SeekAsync.c $(ASYNCSRCS)
-SRCS =$(SRCS) OpenAsync.c
-.endif
-
-.ifgt $(OSVERMIN) 35
-ASYNCSRCS=$(ASYNCDIR)WaitPacket.c $(ASYNCSRCS)
-.else
-SRCS = $(SRCS) asyncr13.c waitpacketr13.c
-.endif
-
-.endif
+ASYNCSRCS=$(ASYNCDIR)AsyncR_SDMake.c $(ASYNCDIR)OpenAsync.c $(ASYNCDIR)CloseAsync.c \
+      $(ASYNCDIR)SeekAsync.c $(ASYNCDIR)ReadCharAsync.c $(ASYNCDIR)SendPacket.c \
+      $(ASYNCDIR)WaitPacket.c $(ASYNCDIR)FGetsLenAsync.c $(ASYNCDIR)ReadLineAsync.c
 
 GUIDE= sdmake.guide
 
@@ -57,20 +32,12 @@ CFLAGS = DEF GENERIC
 TYPE = Generic
 .endif
 
-.ifgt 1 $(INTERNAL_ASYNC)
-BD= build/$(TYPE)-asyncio.library/
-.else
-BD= build/$(TYPE)-asyncio_internal/
-.endif
+BD= build/$(TYPE)/
 
 OD= $(BD)obj/
 EXEDIR= $(BD)bin/
 CFLAGS= OBJNAME $(OD) DEF OSVERMIN=$(OSVERMIN) DEF OSVERMAX=$(OSVERMAX) $(CFLAGS)
 
-.ifgt 1 $(INTERNAL_ASYNC)
-.else
-CFLAGS= DEF INTERNAL_ASYNC $(CFLAGS)
-.endif
 
 .ifdef USE_DEBUG
 CFLAGS= DEF USE_DEBUG=1 $(CFLAGS)
@@ -94,15 +61,6 @@ bootstrap: all install
 
 .leftisfile
 
-.ifdef NOBUILD
-$(DIRS) ::
-
-$(EXE):
-    @echo ""
-    @echo "Building %(left) is not supported as "
-    @echo "asyncio.library needs KS/WB 2.04 or greater."
-    @echo ""
-.else
 $(DIRS) :$(DIRS)
 	makedir %(left)
         copy build.info %(left).info
@@ -110,7 +68,6 @@ $(DIRS) :$(DIRS)
 $(EXE): $(OBJS)
     @fwrite $(OD)$(PROJECT).lnktmp %(right)
     sc $(CFLAGS) LINK to %(left) with $(OD)$(PROJECT).lnktmp
-.endif
 
 $(OBJS) : $(SRCS)
       sc $(CFLAGS) OBJNAME %(left) %(right)
@@ -167,15 +124,22 @@ version:
 $(OD)depend.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)path.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)cond.o: defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)parserevh.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parserevh.o: defs.h tokens.h sdmake-protos.h poolmem.h $(ASYNCDIR)include/asyncr.h $(ASYNCDIR)include/asyncr_sdmake.h
 $(OD)cmdlist.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)string.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)run.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)main.o: defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
 $(OD)var.o:  defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)parse.o: defs.h tokens.h sdmake-protos.h poolmem.h
+$(OD)parse.o: defs.h tokens.h sdmake-protos.h poolmem.h $(ASYNCDIR)include/asyncr.h $(ASYNCDIR)include/asyncr_sdmake.h
 $(OD)convert.o: defs.h tokens.h sdmake-protos.h poolmem.h
 $(OD)buffer.o: defs.h tokens.h sdmake-protos.h poolmem.h
-$(OD)asyncr13.o: asyncior13.h
-
+$(OD)AsyncR_SDMake.o: defs.h sdmake-protos.h poolmem.h $(ASYNCDIR)include/asyncr.h $(ASYNCDIR)include/asyncr_sdmake.h
+$(OD)OpenAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)CloseAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)SeekAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)SendPacket.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)WaitPacket.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)ReadCharAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)FGetsLenAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
+$(OD)ReadLineAsync.o: $(ASYNCDIR)asyncr_internal.h $(ASYNCDIR)include/asyncr.h
 

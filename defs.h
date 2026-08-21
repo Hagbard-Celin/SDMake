@@ -65,7 +65,6 @@
 #include <exec/types.h>
 #include <exec/nodes.h>
 #include <exec/lists.h>
-#include <asyncr.h>
 #include "lists.h"
 #include "poolmem.h"
 
@@ -88,11 +87,7 @@
 #define TYPESTR "Type: For "TYPE
 #endif
 
-#ifdef INTERNAL_ASYNC
 #define VEREXTRA TYPESTR
-#else
-#define VEREXTRA TYPESTR", requires asyncio.library v39.2"
-#endif
 
 typedef struct CommandLineInterface CLI;
 
@@ -213,11 +208,6 @@ typedef struct IfNode {
     struct IfNode *if_Next;
     int		if_Value;
 } IfNode;
-
-struct FileList {
-    AsyncFile *File;
-    struct FileList *Next;
-};
 
 #include "tokens.h"
 #include "sdmake-protos.h"

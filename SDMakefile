@@ -21,73 +21,22 @@ NATIVE = OSv34
 .endif
 .endif
 
-.ifdef INTERNAL_ASYNC
-AUTOASYNC=
-.else
-NOAUTOASYNC=
-.endif
-
-.iffile Libs:asyncio.library
-INTERNAL_ASYNC ?= 0
-.else
-INTERNAL_ASYNC ?= 1
-.endif
-
-.ifgt 1 $(INTERNAL_ASYNC)
-ASYNC = -DINTERNAL_ASYNC=0
-.else
-ASYNC =
-.endif
-
 .leftislabel
 
 native: $(NATIVE)
 
 .ifdef INSTALL
 $(Types)::
-    @if gt 1 $(INTERNAL_ASYNC)
-       version Libs:asyncio.library version 39 revision 2
-       @if WARN
-          @echo " "
-          @echo "Error: Outdated Libs:asyncio.library"
-          @echo " "
-          @echo "Install updated version with command:"
-          @echo "sdmake update_asyncio"
-          @echo " "
-          @echo "Or disable installed version with command:"
-          @echo "sdmake disable_asyncio"
-          @echo " "
-          @echo "Both options wil rename the currently installed"
-          @echo "version to Libs:asyncio.library_OLD"
-          @echo " "
-          @quit error
-       @endif
-    @endif
-    $(SDMAKE) -f SDMakefile.main $(ASYNC) -DTYPE=%(left) -DOSVERMIN=%(left:OSv*:*) -DOSVERMAX=%(left:OSv*:*) bootstrap
+    $(SDMAKE) -f SDMakefile.main -DTYPE=%(left) -DOSVERMIN=%(left:OSv*:*) -DOSVERMAX=%(left:OSv*:*) bootstrap
 .else
 $(Types)::
-    $(SDMAKE) -f SDMakefile.main  -DTYPE=%(left) -DOSVERMIN=%(left:OSv*:*) -DOSVERMAX=%(left:OSv*:*)
-
-$(Types)::
-    $(SDMAKE) -f SDMakefile.main -DINTERNAL_ASYNC=0 -DTYPE=%(left) -DOSVERMIN=%(left:OSv*:*) -DOSVERMAX=%(left:OSv*:*)
+    $(SDMAKE) -f SDMakefile.main -DTYPE=%(left) -DOSVERMIN=%(left:OSv*:*) -DOSVERMAX=%(left:OSv*:*)
 .endif
 
-.ifdef AUTOASYNC
-Generic: generic_intasync generic_extasync
-    $(SDMAKE) -f SDMakefile.main $(ASYNC) -DGENERIC
-.else
 Generic:
     $(SDMAKE) -f SDMakefile.main -DGENERIC
     $(SDMAKE) -f SDMakefile.main -DINTERNAL_ASYNC=0 -DGENERIC
-.endif
 
 all: $(Types) Generic
-
-update_asyncio: disable_asyncio
-	copy asyncio/libs/asyncio.library Libs:
-
-
-disable_asyncio:
-        rename Libs:asyncio.library Libs:asyncio.library_OLD
 
 

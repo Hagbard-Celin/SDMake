@@ -76,6 +76,7 @@
 #include <workbench/startup.h>
 #include <proto/wb.h>
 #include <proto/icon.h>
+#include <asyncr_sdmake.h>
 #include "sdmake_rev.h"
 
 int main(ULONG argc, char *argv[]);
@@ -191,11 +192,11 @@ void myexit(void)
 
 	nextfile = OpenFiles->Next;
 
-	CloseAsync(OpenFiles->File);
+	CloseAsyncR(OpenFiles->File);
 
 	while (nextfile)
 	{
-	    CloseAsync(nextfile->File);
+	    CloseAsyncR(nextfile->File);
 	    nextfile = nextfile->Next;
 	}
 

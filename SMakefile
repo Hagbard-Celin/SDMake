@@ -6,11 +6,9 @@ CFLAGS = OBJNAME $(ODIR)  DEF INTERNAL_ASYNC DEF OSVERMIN=0 DEF OSVERMAX=999 DEF
 OBJS= $(ODIR)depend.o $(ODIR)cmdlist.o $(ODIR)run.o $(ODIR)poolmem.o $(ODIR)string.o\
       $(ODIR)main.o $(ODIR)var.o $(ODIR)parse.o $(ODIR)cond.o $(ODIR)convert.o\
       $(ODIR)gethead.o $(ODIR)getpred.o $(ODIR)gettail.o $(ODIR)buffer.o $(ODIR)path.o\
-      $(ODIR)console.o $(ODIR)system13.o $(ODIR)parserevh.o $(ODIR)async.o\
-      $(ODIR)asyncr13.o $(ODIR)waitpacketr13.o $(ODIR)OpenAsyncFH.o $(ODIR)OpenAsync.o\
-      $(ODIR)SeekAsync.o $(ODIR)ReadAsync.o $(ODIR)CloseAsync.o $(ODIR)FGetsLenAsync.o\
-      $(ODIR)ReadLineAsync.o $(ODIR)ReadCharAsync.o $(ODIR)RecordAsyncFailure.o\
-      $(ODIR)SendPacket.o $(ODIR)RequeuePacket.o
+      $(ODIR)console.o $(ODIR)system13.o $(ODIR)parserevh.o $(ODIR)AsyncR_SDMake.o\
+      $(ODIR)OpenAsync.o $(ODIR)SeekAsync.o $(ODIR)CloseAsync.o $(ODIR)ReadLineAsync.o\
+      $(ODIR)ReadCharAsync.o $(ODIR)FGetsLenAsync.o $(ODIR)SendPacket.o $(ODIR)WaitPacket.o
 
 bin/sdmake: $(OBJS)
    sc $(CFLAGS) link to bin/sdmake with <<
@@ -36,7 +34,8 @@ $(ODIR)path.o: path.c defs.h tokens.h sdmake-protos.h poolmem.h
 
 $(ODIR)cond.o: cond.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-$(ODIR)parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)parserevh.o: parserevh.c defs.h tokens.h sdmake-protos.h poolmem.h \
+asyncio/AsyncR/include/asyncr_sdmake.h asyncio/AsyncR/include/asyncr.h
 
 $(ODIR)cmdlist.o: cmdlist.c defs.h tokens.h sdmake-protos.h poolmem.h
 
@@ -48,7 +47,8 @@ $(ODIR)main.o: main.c defs.h sdmake_rev.h tokens.h sdmake-protos.h poolmem.h
 
 $(ODIR)var.o: var.c defs.h tokens.h sdmake-protos.h poolmem.h
 
-$(ODIR)parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h
+$(ODIR)parse.o: parse.c defs.h tokens.h sdmake-protos.h poolmem.h \
+asyncio/AsyncR/include/asyncr_sdmake.h asyncio/AsyncR/include/asyncr.h
 
 $(ODIR)convert.o: convert.c defs.h tokens.h sdmake-protos.h poolmem.h
 
@@ -58,18 +58,30 @@ $(ODIR)console.o: console.c
 
 $(ODIR)system13.o: system13.c
 
-$(ODIR)async.o: async.c defs.h
-$(ODIR)asyncr13.o: asyncr13.c asyncior13.h
-$(ODIR)waitpacketr13.o: waitpacketr13.c
-$(ODIR)OpenAsync.o: OpenAsync.c
+$(ODIR)AsyncR_SDMake.o: asyncio/AsyncR/AsyncR_SDMake.c defs.h sdmake-protos.h \
+poolmem.h asyncio/AsyncR/include/asyncr_sdmake.h asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
 
-$(ODIR)OpenAsyncFH.o: asyncio/src/OpenAsyncFH.c
-$(ODIR)SeekAsync.o: asyncio/src/SeekAsync.c
-$(ODIR)ReadAsync.o: asyncio/src/ReadAsync.c
-$(ODIR)ReadLineAsync.o: asyncio/src/ReadLineAsync.c
-$(ODIR)CloseAsync.o: asyncio/src/CloseAsync.c
-$(ODIR)FGetsLenAsync.o: asyncio/src/FGetsLenAsync.c
-$(ODIR)ReadCharAsync.o: asyncio/src/ReadCharAsync.c
-$(ODIR)RecordAsyncFailure.o: asyncio/src/RecordAsyncFailure.c
-$(ODIR)SendPacket.o: asyncio/src/SendPacket.c
-$(ODIR)RequeuePacket.o: asyncio/src/RequeuePacket.c
+$(ODIR)OpenAsync.o: asyncio/AsyncR/OpenAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)SeekAsync.o: asyncio/AsyncR/SeekAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)CloseAsync.o: asyncio/AsyncR/CloseAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)FGetsLenAsync.o: asyncio/AsyncR/FGetsLenAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)ReadCharAsync.o: asyncio/AsyncR/ReadCharAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)ReadLineAsync.o: asyncio/AsyncR/ReadLineAsync.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)SendPacket.o: asyncio/AsyncR/SendPacket.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h
+
+$(ODIR)WaitPacket.o: asyncio/AsyncR/WaitPacket.c asyncio/AsyncR/asyncr_internal.h \
+asyncio/AsyncR/include/asyncr.h

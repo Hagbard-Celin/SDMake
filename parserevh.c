@@ -17,6 +17,7 @@
  */
 
 #include "defs.h"
+#include <asyncr_sdmake.h>
 
 #define VAR_NUM 1
 #define VAR_VAR -1
@@ -27,20 +28,20 @@ static void GetVerRev(STRPTR define);
 
 WORD ParseRevInclude(STRPTR includefile)
 {
-	struct AsyncFile *revfile;
+	struct AsyncRFile *revfile;
 
-	if (revfile = OpenAsyncR(includefile))
+	if (revfile = OpenAsyncR_tracked(includefile))
 	{
 	    TEXT line[64];
 
-	    while (ReadLineAsync(revfile, line, 64) > 0)
+	    while (ReadLineAsyncR(revfile, line, 64) > 0)
 	    {
 		if (!(strncmp(line, "#define", 7 )))
 		    GetVerRev(line + 8);
 	    }
 
 
-	    CloseAsyncR(revfile);
+	    CloseAsyncR_tracked(revfile);
 	}
 	else
 	    error(FATAL, IoErr(), "Unable to open %s", revfile);
