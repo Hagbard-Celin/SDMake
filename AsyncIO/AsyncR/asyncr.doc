@@ -397,15 +397,15 @@ files. These routines enable full asynchronous read/write of any file.
    SYNOPSIS
 	oldPosition = SeekAsyncR(file, position, mode);
 
-	LONG SeekAsyncR(struct AsyncRFile *, LONG, SeekModes);
+	LONG SeekAsyncR(struct AsyncRFile *, LONG, AsyncRSeekModes);
 
    FUNCTION
 	SeekAsyncR() sets the read cursor for the file 'file' to the position
 	'position'. This position is used by the various read functions as the
 	place to start reading. The result is the current absolute position in
 	the file, or -1 if an error occurs, in which case dos.library/IoErr()
-	can be used to find more information. 'mode' can be MODE_START,
-	MODE_CURRENT or MODE_END. It is used to	specify the relative start
+	can be used to find more information. 'mode' can be ASR_MODE_START,
+	ASR_MODE_CURRENT or ASR_MODE_END. It is used to	specify the relative start
 	position. For example, 20 from current is a position 20 bytes forward
 	from current, -20 is 20 bytes back from current.
 
@@ -415,8 +415,8 @@ files. These routines enable full asynchronous read/write of any file.
     INPUTS
 	file - an opened async file, as obtained from OpenAsyncR()
 	position - the place where to move the read/write cursor
-	mode - the mode for the position, one of MODE_START, MODE_CURRENT,
-	       or MODE_END.
+	mode - the mode for the position, one of ASR_MODE_START, ASR_MODE_CURRENT,
+	       or ASR_MODE_END.
 
     RESULT
 	oldPosition - the previous position of the read/write cursor, or -1
@@ -444,7 +444,7 @@ files. These routines enable full asynchronous read/write of any file.
 	will in such cases propagate the IoErr from the read packet in place
 	of using ERROR_SEEK_ERROR. But for read functions the only way to
 	detect this state is to call SeekAsyncR() with 'position' 0 and
-	MODE_CURRENT, and compare the result to the result of the previous
+	ASR_MODE_CURRENT, and compare the result to the result of the previous
 	seek if a read directly after a seek fails.
 	This is a limitation of the core architecture, and can not be fixed.
 
