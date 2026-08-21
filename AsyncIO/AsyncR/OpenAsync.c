@@ -41,9 +41,9 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	D_S(struct InfoData,infoData);
 	D_S(struct FileInfoBlock,fib);
 
-	if (handle = Open(fileName,ASR_MODE_OLDFILE))
+	if (handle = Open(fileName, MODE_OLDFILE))
 	{
-	    if (lock = Lock(fileName,ACCESS_READ))
+	    if (lock = Lock(fileName, ACCESS_READ))
 	    {
 		if (Info(lock,infoData))
 		{
