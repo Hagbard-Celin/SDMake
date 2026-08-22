@@ -166,7 +166,7 @@ files. These routines enable full asynchronous read/write of any file.
 	  will be set to ERROR_LINE_TOO_LONG, and no memory is modified.
 
    SEE ALSO
-	asyncr.library/FGetsLenAsyncR(), dos.library/FGets()
+	FGetsLenAsyncR(), dos.library/FGets()
 
 asyncr/FGetsLenAsyncR                                     asyncr/FGetsLenAsyncR
 
@@ -376,8 +376,8 @@ files. These routines enable full asynchronous read/write of any file.
    INPUTS
 	file     - opened file to read from, as obtained from OpenAsyncR()
 	buffer   - buffer to read the line into.
-	numBytes - numBytes of the buffer, in bytes. If 'numBytes' is smaller
-		   than 2 this function will return -1 with IoErr()
+	numBytes - The size of the destination buffer in bytes. If 'numBytes' is
+		   smaller than 2 this function will return -1 with IoErr()
 		   ERROR_LINE_TOO_LONG.
 
    RESULT
