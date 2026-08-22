@@ -121,7 +121,6 @@ files. These routines enable full asynchronous read/write of any file.
 
    SYNOPSIS
 	buffer = FGetsAsyncR( file, buffer, numBytes );
-	d0                   a0    a1      d0
 
 	STRPTR FGetsAsyncR( struct AsyncRFile *, STRPTR, ULONG );
 
@@ -176,7 +175,6 @@ files. These routines enable full asynchronous read/write of any file.
 
    SYNOPSIS
 	buffer = FGetsLenAsyncR( file, buffer, numBytes, len );
-	d0                      a0    a1      d0        a2
 
 	STRPTR FGetsLenAsyncR( struct AsyncRFile *, STRPTR, ULONG, ULONG * );
 
@@ -350,7 +348,6 @@ files. These routines enable full asynchronous read/write of any file.
 
    SYNOPSIS
 	bytes = ReadLineAsyncR( file, buffer, numBytes );
-	 d0                     a0     a1     d0
 
 	LONG ReadLineAsyncR( struct AsyncRFile *, STRPTR, LONG );
 
