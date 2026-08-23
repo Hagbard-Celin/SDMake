@@ -117,7 +117,7 @@ LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 	    {
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
-		if (file->af_FileSize > file->af_BufferSize)
+		if (file->af_Buffers[1])
 		    file->af_PacketPending = ASR_PKT_IDLE;
 	    }
 	    else
