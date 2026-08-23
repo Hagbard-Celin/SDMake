@@ -394,8 +394,7 @@ files. These routines enable full asynchronous read/write of any file.
 asyncr/SeekAsyncR                                             asyncr/SeekAsyncR
 
    NAME
-	SeekAsyncR -- set the current position for reading or writing within
-		     an async file.
+	SeekAsyncR -- set the current position for reading within an async file.
 
    SYNOPSIS
 	oldPosition = SeekAsyncR(file, position, mode);
@@ -408,22 +407,22 @@ files. These routines enable full asynchronous read/write of any file.
 	place to start reading. The result is the current absolute position in
 	the file, or -1 if an error occurs, in which case dos.library/IoErr()
 	can be used to find more information. 'mode' can be ASR_MODE_START,
-	ASR_MODE_CURRENT or ASR_MODE_END. It is used to	specify the relative start
-	position. For example, 20 from current is a position 20 bytes forward
-	from current, -20 is 20 bytes back from current.
+	ASR_MODE_CURRENT or ASR_MODE_END. It is used to	specify the relative
+	start position. For example, 20 from current is a position 20 bytes
+	forward from current, -20 is 20 bytes back from current.
 
 	To find out what the current position within a file is, simply seek
 	zero from current.
 
     INPUTS
-	file - an opened async file, as obtained from OpenAsyncR()
+	file     - an opened async file, as obtained from OpenAsyncR()
 	position - the place where to move the read/write cursor
-	mode - the mode for the position, one of ASR_MODE_START, ASR_MODE_CURRENT,
-	       or ASR_MODE_END.
+	mode     - the mode for the position, one of ASR_MODE_START,
+		   ASR_MODE_CURRENT, or ASR_MODE_END.
 
     RESULT
-	oldPosition - the previous position of the read/write cursor, or -1
-		      if an error occurs. In case of error, dos.library/IoErr()
+	oldPosition - the previous position of the read cursor, or -1 if an
+		      error occurs. In case of error, dos.library/IoErr()
 		      can give more information.
 
     NOTES
