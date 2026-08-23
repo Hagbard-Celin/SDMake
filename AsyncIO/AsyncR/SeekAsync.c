@@ -100,7 +100,7 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
      * filled buffer and the target is past what was returned, the only
      * option is to fail
      */
-    if (file->af_Buffers[1] == 0 && target > file->af_BytesArrived[file->af_CurrentBuf])
+    if (file->af_Buffers[1] == 0 && target >= file->af_BytesArrived[file->af_CurrentBuf])
 	goto err;
 
     seekOffset = file->af_SeekOffset;
@@ -151,7 +151,10 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	file->af_BytesLeft  = maxBuf + 1 - target;
 	file->af_BufferPos  = target;
 	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
-	file->af_PacketPending = ASR_PKT_IDLE;
+
+	if (file->af_Buffers[1])
+	    file->af_PacketPending = ASR_PKT_IDLE;
+
 	goto end;
     }
     else
