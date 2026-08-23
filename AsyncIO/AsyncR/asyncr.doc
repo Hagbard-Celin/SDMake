@@ -274,6 +274,12 @@ files. These routines enable full asynchronous read/write of any file.
 	       async IO routines. In case of failure, dos.library/IoErr() can
 	       give more information.
 
+    BUGS
+        This function is also responsible for sending the read request for the
+	initial buffer fill. If that read fails and the user cancels the retry
+	requester, subsequent reads will return EOF for files that where
+        degraded to single buffer mode.
+
     SEE ALSO
 	CloseAsyncR(), dos.library/Open()
 

@@ -114,7 +114,21 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 	    SendAsyncRPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
     }
 
-    file->af_PacketPending = ASR_PKT_IDLE;
+    if (file->af_PacketPending == ASR_PKT_START && file->af_FileSize)
+    {
+	/* handle small file and single buffer modes */
+	if (file->af_FileSize > file->af_BufferSize)
+	{
+	    if (file->af_FileSize < file->af_BufferSize << 1)
+		file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
+
+	    file->af_PacketPending = ASR_PKT_IDLE;
+	}
+	else
+	    file->af_PacketPending = ASR_PKT_READY;
+    }
+    else
+	file->af_PacketPending = ASR_PKT_IDLE;
 
     return(bytes);
 }

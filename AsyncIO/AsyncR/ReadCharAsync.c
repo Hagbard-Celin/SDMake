@@ -33,18 +33,6 @@ LONG ReadCharAsyncR(AsyncRFile *file)
 	if (bytesArrived <= 0)
 	    goto end;
 
-	if (file->af_FileSize)
-	{
-	    /* handle small file and single buffer modes */
-	    if (file->af_FileSize > file->af_BufferSize)
-	    {
-		if (file->af_FileSize < file->af_BufferSize << 1)
-		    file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
-	    }
-	    else
-		file->af_PacketPending = ASR_PKT_READY;
-	}
-
 	file->af_BytesLeft   = bytesArrived;
     }
 
@@ -55,7 +43,7 @@ LONG ReadCharAsyncR(AsyncRFile *file)
 	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
 
 	/* do the other buffer already contain the data we need */
-	if (file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
+	if (nextpos && file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
 	{
 	    file->af_PacketPending = ASR_PKT_READY;
 	}

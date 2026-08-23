@@ -44,15 +44,6 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	if (bytesArrived <= 0)
 	    goto err;
 
-	/* handle small file and single buffer modes */
-	if (file->af_FileSize > file->af_BufferSize)
-	{
-	    if (file->af_FileSize < file->af_BufferSize << 1)
-		file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
-	}
-	else
-	    file->af_PacketPending = ASR_PKT_READY;
-
 	file->af_BytesLeft   = bytesArrived;
 
     }
