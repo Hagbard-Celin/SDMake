@@ -120,7 +120,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 		file->af_BytesLeft -= lineBytes;
 		file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
 
-		if (got_eol || !numBytes)
+		if (got_eol)
 		{
 		    *buffer = 0;
 		    break;
