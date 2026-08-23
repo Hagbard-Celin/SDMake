@@ -96,7 +96,7 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 
 		offset = (ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf];
 
-		/* reset state of current buffer in case the read was initated from SeekAsync() */
+		/* reset state of current buffer in case the read was initiated from SeekAsync() */
 		file->af_BytesLeft = file->af_BytesArrived[file->af_CurrentBuf] - offset;
 		file->af_BufferPos = file->af_BufMin[file->af_CurrentBuf] + offset;
 		file->af_SeekOffset = 0;

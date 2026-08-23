@@ -63,7 +63,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 
 	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
 
-	/* do the other buffer already contain the data we need */
+	/* does the other buffer already contain the data we need */
 	if (nextpos && file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
 	{
 	    file->af_PacketPending = ASR_PKT_READY;
