@@ -83,20 +83,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
     {
 	struct FileHandle *fh;
 	ULONG halfbuffersize = 0;
-
-	if (fileSize)
-	{
-	    ULONG half = bufferSize >> 1;
-
-	    /* reduce buffer size for small files */
-	    while (fileSize <= half)
-	    {
-		if (half < 1024)
-		    break;
-		bufferSize = half;
-		half >>= 1;
-	    }
-	}
+	ULONG doubleblocksize;
 
 	/* if it was possible to obtain a lock on the same device as the
 	 * file we're working on, get the block size of that device and
@@ -110,13 +97,24 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	/* we do this even if Info() failed to avoid excessive overhead
 	 * from too small buffers
 	 */
-	{
-	    LONG doubleblocksize = blockSize * 2;
-	    bufferSize = (((bufferSize + doubleblocksize - 1) / doubleblocksize) * doubleblocksize);
-	}
+	doubleblocksize = blockSize << 1;
+	bufferSize = (((bufferSize + doubleblocksize - 1) / doubleblocksize) * doubleblocksize);
 
 	if (fileSize)
 	{
+	    ULONG reduced;
+
+	    reduced = bufferSize - doubleblocksize;
+
+	    /* reduce buffer size for small files */
+	    while (fileSize <= reduced)
+	    {
+		if (reduced < doubleblocksize)
+		    break;
+		bufferSize = reduced;
+		reduced	-= doubleblocksize;
+	    }
+
 	    /* in case of large blocksize and small file, reduce buffer size
 	     * and degrade to single buffer mode if file is not bigger than
 	     * one buffer

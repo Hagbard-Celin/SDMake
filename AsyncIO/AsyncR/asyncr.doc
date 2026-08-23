@@ -254,8 +254,8 @@ files. These routines enable full asynchronous read/write of any file.
 	in size. The actual buffer size use can vary as the size is rounded up
 	to the double of filesystem blocksize to speed up DMA. And for files
 	smaller than the rounded-up size the buffer allocation is capped at
-	file size and degraded to single-buffer mode if the file is smaller
-	than the filesystem blocksize.
+	file size and degraded to single-buffer mode if the file size is equal
+	to or smaller than the filesystem blocksize.
 
 	If the file cannot be opened for any reason, the value returned
 	will be NULL, and a secondary error code will be available by
