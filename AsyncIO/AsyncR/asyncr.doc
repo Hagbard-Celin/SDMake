@@ -34,7 +34,8 @@ can help reduce, and sometimes eliminate, the time spent waiting for IO to
 complete. This package offers a few small routines that can greatly improve
 an application's IO performance.
 
-Normally, an application processes a file in a manner similar to the following:
+Normally, an application processes a file in a manner similar to the
+following:
 
   1 - Open the file
 
@@ -46,13 +47,13 @@ Normally, an application processes a file in a manner similar to the following:
 
   5 - Close file
 
-Although the above sequence works fine, it doesn't make full use of the Amiga's
-multitasking abilities. Step 2 in the above can become a serious bottleneck.
-Whenever the application needs some data by using the DOS Read() function,
-AmigaDOS has to put that task to sleep, and initiate a request to the file
-system to have it fetch the data. The file system then starts up the disk
-hardware and reads the data. Once the data is read, the application is woken up
-and can start processing the data just read.
+Although the above sequence works fine, it doesn't make full use of the
+Amiga's multitasking abilities. Step 2 in the above can become a serious
+bottleneck. Whenever the application needs some data by using the DOS Read()
+function, AmigaDOS has to put that task to sleep, and initiate a request to
+the file system to have it fetch the data. The file system then starts up the
+disk hardware and reads the data. Once the data is read, the application is
+woken up and can start processing the data just read.
 
 The point to note in the above paragraph is that when the file system is
 reading data from disk, the application is asleep. Wouldn't it be nice if the
@@ -76,18 +77,19 @@ Using the asynchronous IO routines, an application's IO happens like this:
 
   5 - Close file
 
-Immediately after opening the file, a request is sent to the file system to get
-it reading data in the background. By the time the application gets around to
-reading the first byte of data, it is likely already in memory. That means the
-application doesn't need to wait and can start processing the data. As soon as
-the application starts processing data from the file, a second request is sent
-out to the file system to fill up a second buffer. Once the application is done
-processing the first buffer, it starts processing the second one. When this
-happens, the file system starts filling up the first buffer again with new
-data. This process continues until all data has been read.
+Immediately after opening the file, a request is sent to the file system to
+get it reading data in the background. By the time the application gets around
+to reading the first byte of data, it is likely already in memory. That means
+the application doesn't need to wait and can start processing the data. As
+soon as the application starts processing data from the file, a second request
+is sent out to the file system to fill up a second buffer. Once the
+application is done processing the first buffer, it starts processing the
+second one. When this happens, the file system starts filling up the first
+buffer again with new data. This process continues until all data has been
+read.
 
-The whole technique is known as "double-buffered asynchronous IO" since it uses
-two buffers, and happens in the background (asynchronously).
+The whole technique is known as "double-buffered asynchronous IO" since it
+uses two buffers, and happens in the background (asynchronously).
 
 The set of functions presented below offers high-performance IO using the
 technique described above. The interface is very similar to standard AmigaDOS
@@ -125,8 +127,9 @@ files. These routines enable full asynchronous read/write of any file.
 	STRPTR FGetsAsyncR( struct AsyncRFile *, STRPTR, ULONG );
 
    FUNCTION
-	This routine reads a single line of text from the specified async file,
-	stopping when a NEWLINE character or the End-Of-File (EOF) is reached.
+	This routine reads a single line of text from the specified async
+	file, stopping when a NEWLINE character or the End-Of-File (EOF) is
+	reached.
 
 	Up to (numBytes - 1) characters will be copied into the buffer. If
 	characters are successfully read into the buffer, the resulting string
@@ -168,7 +171,7 @@ files. These routines enable full asynchronous read/write of any file.
    SEE ALSO
 	FGetsLenAsyncR(), dos.library/FGets()
 
-asyncr/FGetsLenAsyncR                                     asyncr/FGetsLenAsyncR
+asyncr/FGetsLenAsyncR                                   asyncr/FGetsLenAsyncR
 
    NAME
 	FGetsLenAsyncR -- Reads a line from an async file with length. (V40)
@@ -179,8 +182,9 @@ files. These routines enable full asynchronous read/write of any file.
 	STRPTR FGetsLenAsyncR( struct AsyncRFile *, STRPTR, ULONG, ULONG * );
 
    FUNCTION
-	This routine reads a single line of text from the specified async file,
-	stopping when a NEWLINE character or the End-Of-File (EOF) is reached.
+	This routine reads a single line of text from the specified async
+	file, stopping when a NEWLINE character or the End-Of-File (EOF) is
+	reached.
 
 	Up to (numBytes - 1) characters will be copied into the buffer. If
 	characters are successfully read into the buffer, the resulting string
@@ -194,9 +198,9 @@ files. These routines enable full asynchronous read/write of any file.
 	file     - Pointer to an AsyncRFile structure opened for reading.
 	buffer   - Pointer to the memory area to receive the line.
 	numBytes - The size of the destination buffer in bytes.
-	len      - Optional pointer to a ULONG to store the number of characters
-		   written to the buffer (excluding the terminating null byte).
-		   Can be NULL if the length is not needed.
+	len      - Optional pointer to a ULONG to store the number of
+		   characters written to the buffer (excluding the terminating
+		   null byte). Can be NULL if the length is not needed.
 
    RESULT
 	buffer	 - Pointer to the buffer passed in, or NULL on failure or
@@ -217,8 +221,8 @@ files. These routines enable full asynchronous read/write of any file.
 	  recover partial data.
 
 	- If 'len' is provided, it is ALWAYS updated. It will contain 0 if no
-	  characters were read (due to immediate EOF, error, or invalid arguments),
-	  or the valid character count if data was written.
+	  characters were read (due to immediate EOF, error, or invalid
+	  arguments), or the valid character count if data was written.
 
 	- If 'numBytes' is 0, the function immediately returns NULL. IoErr()
 	  will be set to 0, no memory is modified, and 'len' (if provided)
@@ -231,7 +235,7 @@ files. These routines enable full asynchronous read/write of any file.
    SEE ALSO
 	dos.library/FGets()
 
-asyncr/OpenAsyncR                                             asyncr/OpenAsyncR
+asyncr/OpenAsyncR                                           asyncr/OpenAsyncR
 
    NAME
 	OpenAsyncR -- open a file for asynchronous IO.
@@ -246,8 +250,8 @@ files. These routines enable full asynchronous read/write of any file.
 	returned.
 
 	'fileName' is a filename and SHOULD NOT be a window specification such
-	as CON: or RAW:, or "*". Using these functions with interactive handlers
-	will only waste resources for no gain.
+	as CON: or RAW:, or "*". Using these functions with interactive
+	handlers will only waste resources for no gain.
 
 	'bufferSize' specifies the size of the IO buffer to use. There are
 	in fact two buffers allocated, each of roughly (bufferSize/2) bytes
@@ -262,17 +266,18 @@ files. These routines enable full asynchronous read/write of any file.
 	calling the routine dos.library/IoErr().
 
     INPUTS
-	name       - name of the file to open, cannot be a window specification
+	name       - name of the file to open, cannot be a window
+		     specification
 	bufferSize - size of IO buffer to use. 8192 is recommended as it
 		     provides very good performance for relatively little
-		     memory. If 'bufferSize' is 0 this function will return NULL
-		     with IoErr() ERROR_LINE_TOO_LONG.
+		     memory. If 'bufferSize' is 0 this function will return
+		     NULL with IoErr() ERROR_LINE_TOO_LONG.
 
     RESULT
 	file - an async file handle or NULL for failure. You should not access
-	       the fields in the AsyncRFile structure, these are private to the
-	       async IO routines. In case of failure, dos.library/IoErr() can
-	       give more information.
+	       the fields in the AsyncRFile structure, these are private to
+	       the async IO routines. In case of failure, dos.library/IoErr()
+	       can give more information.
 
     BUGS
         This function is also responsible for sending the read request for the
@@ -283,7 +288,7 @@ files. These routines enable full asynchronous read/write of any file.
     SEE ALSO
 	CloseAsyncR(), dos.library/Open()
 
-asyncr/ReadAsyncR                                             asyncr/ReadAsyncR
+asyncr/ReadAsyncR                                           asyncr/ReadAsyncR
 
    NAME
 	ReadAsyncR -- read bytes from an async file.
@@ -308,8 +313,8 @@ files. These routines enable full asynchronous read/write of any file.
     INPUTS
 	file     - opened file to read, as obtained from OpenAsyncR()
 	buffer   - buffer where to put bytes read
-	numBytes - number of bytes to read into buffer. If 'numBytes' is smaller
-		   than 1 this function will return -1 with IoErr()
+	numBytes - number of bytes to read into buffer. If 'numBytes' is
+		   smaller than 1 this function will return -1 with IoErr()
 		   ERROR_LINE_TOO_LONG.
 
     RESULT
@@ -320,7 +325,7 @@ files. These routines enable full asynchronous read/write of any file.
     SEE ALSO
 	OpenAsyncR(), CloseAsyncR(), ReadCharAsyncR(), dos.library/Read()
 
-asyncr/ReadCharAsyncR                                     asyncr/ReadCharAsyncR
+asyncr/ReadCharAsyncR                                   asyncr/ReadCharAsyncR
 
    NAME
 	ReadCharAsyncR -- read a single byte from an async file.
@@ -347,7 +352,7 @@ files. These routines enable full asynchronous read/write of any file.
    SEE ALSO
 	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Read()
 
-asyncr/ReadLineAsyncR                                     asyncr/ReadLineAsyncR
+asyncr/ReadLineAsyncR                                   asyncr/ReadLineAsyncR
 
    NAME
 	ReadLineAsyncR -- read a line from an async file.
@@ -382,8 +387,8 @@ files. These routines enable full asynchronous read/write of any file.
    INPUTS
 	file     - opened file to read from, as obtained from OpenAsyncR()
 	buffer   - buffer to read the line into.
-	numBytes - The size of the destination buffer in bytes. If 'numBytes' is
-		   smaller than 2 this function will return -1 with IoErr()
+	numBytes - The size of the destination buffer in bytes. If 'numBytes'
+		   is smaller than 2 this function will return -1 with IoErr()
 		   ERROR_LINE_TOO_LONG.
 
    RESULT
@@ -391,10 +396,11 @@ files. These routines enable full asynchronous read/write of any file.
 	    dos.library/IoErr() can give more information. EOF is indicated
 	    by a return of 0.
 
-asyncr/SeekAsyncR                                             asyncr/SeekAsyncR
+asyncr/SeekAsyncR                                           asyncr/SeekAsyncR
 
    NAME
-	SeekAsyncR -- set the current position for reading within an async file.
+	SeekAsyncR -- set the current position for reading within an async
+		      file.
 
    SYNOPSIS
 	oldPosition = SeekAsyncR(file, position, mode);
@@ -442,13 +448,13 @@ files. These routines enable full asynchronous read/write of any file.
 	read packet to fill a buffer with the requested range. This read might
 	fail even if the SeekAsyncR() call itself succeeds. The error will
 	first show up on the the next read/seek call, and the read pointer
-	will then be reset to the position it had before the seek. SeekAsyncR()
-	will in such cases propagate the IoErr from the read packet in place
-	of using ERROR_SEEK_ERROR. But for read functions the only way to
-	detect this state is to call SeekAsyncR() with 'position' 0 and
-	ASR_MODE_CURRENT, and compare the result to the result of the previous
-	seek if a read directly after a seek fails.
-	This is a limitation of the core architecture, and can not be fixed.
+	will then be reset to the position it had before the seek.
+	SeekAsyncR() will in such cases propagate the IoErr from the read
+	packet in place of using ERROR_SEEK_ERROR. But for read functions the
+	only way to detect this state is to call SeekAsyncR() with 'position'
+	0 and ASR_MODE_CURRENT, and compare the result to the result of the
+	previous seek if a read directly after a seek fails. This is a
+	limitation of the core architecture, and can not be fixed.
 
     SEE ALSO
 	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Seek()
