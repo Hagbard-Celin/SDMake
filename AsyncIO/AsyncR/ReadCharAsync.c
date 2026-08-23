@@ -67,7 +67,7 @@ LONG ReadCharAsyncR(AsyncRFile *file)
 	{
 	    bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
-	    if (file->af_Buffers[1])
+	    if (file->af_FileSize > file->af_BufferSize)
 		file->af_PacketPending = ASR_PKT_IDLE;
 	}
 	else
