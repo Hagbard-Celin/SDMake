@@ -87,7 +87,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 
 	/* if it was possible to obtain a lock on the same device as the
 	 * file we're working on, get the block size of that device and
-	 * round up our buffer size to be a multiple of the block size.
+	 * round up our buffer size to be a multiple of double block size.
 	 * This maximizes DMA efficiency.
 	 */
 
@@ -107,7 +107,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	    reduced = bufferSize - doubleblocksize;
 
 	    /* reduce buffer size for small files */
-	    while (fileSize <= reduced)
+	    while (reduced && fileSize <= reduced << 1)
 	    {
 		bufferSize = reduced;
 		reduced	-= doubleblocksize;
@@ -115,7 +115,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 
 	    /* in case of large blocksize and small file, reduce buffer size
 	     * and degrade to single buffer mode if file is not bigger than
-	     * one buffer
+	     * one block
 	     */
 	    if (fileSize < bufferSize)
 	    {
