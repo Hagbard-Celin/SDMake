@@ -109,8 +109,6 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	    /* reduce buffer size for small files */
 	    while (fileSize <= reduced)
 	    {
-		if (reduced < doubleblocksize)
-		    break;
 		bufferSize = reduced;
 		reduced	-= doubleblocksize;
 	    }
