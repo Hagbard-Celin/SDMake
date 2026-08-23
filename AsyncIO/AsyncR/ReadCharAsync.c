@@ -91,7 +91,7 @@ bad_handler:
 	if (bytesArrived <= 0)
 	    goto end;
 
-	file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+	file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 
 	if (file->af_SeekOffset >= bytesArrived)
 	{
@@ -107,7 +107,7 @@ bad_handler:
 	    if (SendAsyncRPacket(file, file->af_Buffers[file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
 		goto end;
 
-	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 
 	    goto bad_handler;
 	}

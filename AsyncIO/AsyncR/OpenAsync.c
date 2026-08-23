@@ -129,7 +129,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	}
 
 
-	/* now allocate the ASyncFile structure, as well as the read buffers.
+	/* now allocate the AsyncRFile structure, as well as the read buffers.
 	 * Add 15 bytes to the total size in order to allow for later
 	 * quad-longword alignment of the buffers
 	 */
@@ -138,7 +138,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	{
 	    file->af_File      = handle;
 
-	    /* initialize the ASyncFile structure. We do as much as we can here,
+	    /* initialize the AsyncRFile structure. We do as much as we can here,
 	     * in order to avoid doing it in more critical sections
 	     *
 	     * Note how the two buffers used are quad-longword aligned. This

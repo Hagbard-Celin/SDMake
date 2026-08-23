@@ -164,7 +164,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 	    {
 		UWORD fillBuffer;
 
-		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+		file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 
 		if (file->af_SeekOffset >= bytesArrived)
 		{
@@ -198,7 +198,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 		    }
 
 		    if (fillBuffer == file->af_CurrentBuf)
-			file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+			file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 		}
 	    }
 	}
@@ -315,9 +315,9 @@ static BOOL SpillToEOL(AsyncRFile *file, BOOL *got_eol)
 	}
 	else
 	{
-	    file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-	    file->af_BytesLeft   = bytesArrived;
-	    file->af_Offset      = file->af_Buffers[file->af_CurrentBuf];
+	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
+	    file->af_BytesLeft  = bytesArrived;
+	    file->af_Offset     = file->af_Buffers[file->af_CurrentBuf];
 
 	    /* we have no idea where the line ends, so the packet must be sent in case we exhaust the other buffer */
 	    if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))

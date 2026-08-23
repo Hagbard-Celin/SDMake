@@ -172,7 +172,7 @@ STRPTR FGetsLenAsyncR(AsyncRFile *file, STRPTR buffer, ULONG numBytes, ULONG *le
 	    {
 		UWORD fillBuffer;
 
-		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+		file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 
 		if (file->af_SeekOffset >= bytesArrived)
 		{
@@ -209,7 +209,7 @@ STRPTR FGetsLenAsyncR(AsyncRFile *file, STRPTR buffer, ULONG numBytes, ULONG *le
 		    }
 
 		    if (fillBuffer == file->af_CurrentBuf)
-			file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+			file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 		}
 	    }
 	}

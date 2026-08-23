@@ -146,7 +146,7 @@ LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 	    {
 		UWORD fillBuffer;
 
-		file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+		file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 
 		if (file->af_SeekOffset >= bytesArrived)
 		{
@@ -180,7 +180,7 @@ LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 		    }
 
 		    if (fillBuffer == file->af_CurrentBuf)
-			file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
+			file->af_CurrentBuf = 1 - file->af_CurrentBuf;
 	        }
 	    }
 	}
