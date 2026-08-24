@@ -131,6 +131,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 	    {
 		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
 
+		/* keep ASR_PKT_READY for single buffer mode and NIL: */
 		if (file->af_FileSize > file->af_BufferSize)
 		    file->af_PacketPending = ASR_PKT_IDLE;
 	    }
@@ -196,13 +197,20 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 
     if (totalBytes > 0 && !got_eol)
     {
+	/* we arrive here if we copied characters but no newline to 'buffer' */
 	if (SpillToEOL(file, &got_eol))
 	{
+	    /* if a newline was found, overwrite last character copied to 'buffer' */
 	    if (got_eol)
 		buffer[-1] = '\n';
 	}
 	else
+	{
+	    /* in case of error during SpillToEOL() we must fail, as we can not
+	     * guarantee the read cursor is at the beginning of next line or EOF
+	     */
 	    totalBytes = -1;
+	}
     }
 
 end:
@@ -245,6 +253,10 @@ static ULONG GetEOL(CONST_STRPTR buffer, ULONG size, BOOL *spilled_eol)
     return i;
 }
 
+/* this function moves the read cursor forward until it reaches EOF or the
+ * first character on the next line, whichever comes first. If it finds
+ * newline before EOF it sets *got_eol to TRUE.
+ */
 static BOOL SpillToEOL(AsyncRFile *file, BOOL *got_eol)
 {
     LONG bytesArrived;

@@ -152,6 +152,7 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	file->af_BufferPos  = target;
 	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
 
+	/* keep ASR_PKT_READY for single buffer mode */
 	if (file->af_Buffers[1])
 	    file->af_PacketPending = ASR_PKT_IDLE;
 

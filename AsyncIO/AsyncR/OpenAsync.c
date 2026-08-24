@@ -68,6 +68,11 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	else
 	    err = IoErr();
 
+	/* bail on out-of-memory. On other errors from Lock() or Examine()
+	 * we assume interactive handler or NIL:. If the handler does not
+	 * support Lock() on a opened file or Info() we default to a block
+	 * size of 512 bytes.
+	 */
 	if (lockerr == ERROR_NO_FREE_STORE ||
 	    infoerr == ERROR_NO_FREE_STORE ||
 	    examerr == ERROR_NO_FREE_STORE)
@@ -154,11 +159,17 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	    {
 		if (halfbuffersize < bufferSize)
 		{
+		    /* split buffer mode, WaitPacket() adjusts af_Packet.sp_Pkt.dp_Arg3
+		     * for second buffer
+		     */
 		    file->af_BufferSize  = halfbuffersize;
 		    file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + halfbuffersize);
 		}
 		else
 		{
+		    /* single buffer mode, WaitPacket() sets ASR_PKT_READY after buffer
+		     * is filled
+		     */
 		    file->af_BufferSize  = bufferSize;
 		    file->af_Buffers[1]  = 0;
 		}
