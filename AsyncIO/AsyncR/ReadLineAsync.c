@@ -280,22 +280,9 @@ static BOOL SpillToEOL(AsyncRFile *file, BOOL *got_eol)
 	    file->af_BytesLeft       -= spilledBytes;
 	    file->af_Offset           = (APTR)((ULONG)file->af_Offset + spilledBytes);
 	    file->af_SequentialBytes += spilledBytes;
+
 	    if (*got_eol)
-	    {
-		if (file->af_PacketPending == ASR_PKT_IDLE)
-		{
-		    if (file->af_SequentialBytes >= ASR_SEQBYTESTHRESH ||
-			file->af_BytesLeft < ASR_BYTESLEFTTHRESH)
-		    {
-			if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]))
-			{
-			    ret = FALSE;
-			    break;
-			}
-		    }
-		}
 		break;
-	    }
 	}
 
 	if (file->af_PacketPending == ASR_PKT_READY)
