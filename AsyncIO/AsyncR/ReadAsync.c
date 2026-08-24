@@ -86,7 +86,7 @@ LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 	}
     }
 
-    do
+    while (TRUE)
     {
 	if (numBytes <= file->af_BytesLeft)
 	{
@@ -172,7 +172,7 @@ LONG ReadAsyncR(AsyncRFile *file, APTR buffer, LONG numBytes)
 	        }
 	    }
 	}
-    } while (numBytes);
+    }
 end:
     return (totalBytes);
 }
