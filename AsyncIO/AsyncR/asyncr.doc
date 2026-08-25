@@ -463,10 +463,10 @@ files. These routines enable full asynchronous read/write of any file.
 	previous seek if a read directly after a seek fails. This is a
 	limitation of the core architecture, and can not be fixed.
 
-	¹ The one exception is seeking zero from current position. This always
-	  returns the current logical position without waiting for pending
-	  reads. So to get the rolled back position as described above, a read
-	  or nonzero seek must be preformed first.
+	¹ The one exception is seeking zero from current position. Which will
+	  in this case return the target of the previous seek without waiting
+	  for pending reads. So to get the rolled back position as described
+	  above, a read or nonzero seek must be preformed first.
 
     SEE ALSO
 	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Seek()
