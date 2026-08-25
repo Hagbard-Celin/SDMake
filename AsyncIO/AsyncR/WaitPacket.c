@@ -26,8 +26,8 @@ static LONG errorreport(LONG code, LONG type, ULONG arg1, struct MsgPort *device
 /* this function waits for a packet to come back from the file system. 
  *
  * WARNING: This function requires file->af_PacketPending to be
- *          either ASR_PKT_START or ASR_PKT_PENDING, or it will cause a
- *          dead lock.
+ *          either ASR_PKT_START, ASR_PKT_PENDING or ASR_PKT_CLOSE,
+ *          or it will cause a dead lock.
  *
  * This function also deals with IO errors, bringing up the needed DOS
  * requesters to let the user retry an operation or cancel it.
@@ -80,6 +80,9 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 	    SetIoErr(0);
 	    break;
 	}
+	else
+	if (file->af_PacketPending == ASR_PKT_CLOSE)
+	    goto close;
 
 	/* packet's error code */
 	SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
@@ -134,7 +137,7 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
     }
     else
 	file->af_PacketPending = ASR_PKT_IDLE;
-
+close:
     return(bytes);
 }
 

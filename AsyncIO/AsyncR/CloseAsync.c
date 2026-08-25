@@ -24,6 +24,7 @@ void CloseAsyncR(AsyncRFile *file)
 	if (file->af_PacketPending == ASR_PKT_PENDING ||
 	    file->af_PacketPending == ASR_PKT_START)
 	{
+	    file->af_PacketPending = ASR_PKT_CLOSE;
 	    WaitAsyncRPacket(file);
 	}
 

@@ -36,10 +36,14 @@
 
 typedef short enum AsyncRPacketState
 {
-    ASR_PKT_START = -1,   /* initial buffer fill pending            */
-    ASR_PKT_IDLE,         /* no packet pending                      */
-    ASR_PKT_PENDING,      /* packet sent, pending reply             */
-    ASR_PKT_READY         /* other buffer ready for sequential read */
+    ASR_PKT_CLOSE = -2,   /* closing file, ignores read errors */
+    ASR_PKT_START,        /* initial buffer fill pending       */
+    ASR_PKT_IDLE,         /* no packet pending                 */
+    ASR_PKT_PENDING,      /* packet sent, pending reply        */
+    ASR_PKT_READY         /* next sequential/seeked-to data is ready in the */
+			  /* other buffer. Also used to synthesize EOF for  */
+			  /* NIL:, and for the actual EOF in single buffer  */
+			  /* mode to avoid a read packet with dp_Arg2 of 0  */
 } AsyncRPacketState;
 
 
