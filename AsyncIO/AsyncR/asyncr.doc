@@ -280,9 +280,9 @@ files. These routines enable full asynchronous read/write of any file.
 	       can give more information.
 
     NOTES
-	The async file handle is bound to the task that called OpenAsync().
+	The async file handle is bound to the process that called OpenAsync().
 	All asyncr calls on a handle, including CloseAsync(), must be made
-	from that task. Sharing a handle across tasks is unsupported.
+	from that process. Sharing a handle across processes is unsupported.
 
     BUGS
         This function is also responsible for sending the read request for the
