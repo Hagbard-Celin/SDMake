@@ -98,7 +98,8 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 
     /* if we are in single buffer mode and the handler returned a partly
      * filled buffer and the target is past what was returned, the only
-     * option is to fail
+     * option is to fail. This is improbable for a seekable filesystem
+     * handler, but should it happen this protects us from the Guru.
      */
     if (file->af_Buffers[1] == 0 && target >= file->af_BytesArrived[file->af_CurrentBuf])
 	goto err;

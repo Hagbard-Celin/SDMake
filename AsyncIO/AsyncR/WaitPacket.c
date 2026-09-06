@@ -100,10 +100,7 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 		offset = (ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf];
 
 		/* reset state of current buffer in case the read was initiated
-		 * from SeekAsync(). If SendPacket() was called for the current buffer
-		 * from one of the non-blocking handler refill loops, this will place the
-		 * read pointer at end of last successfully read data as opposed to the last
-		 * position before the seek as documented.
+		 * from SeekAsync()
 		 */
 		file->af_BytesLeft = file->af_BytesArrived[file->af_CurrentBuf] - offset;
 		file->af_BufferPos = file->af_BufMin[file->af_CurrentBuf] + offset;

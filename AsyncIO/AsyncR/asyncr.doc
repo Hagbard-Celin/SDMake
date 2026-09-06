@@ -249,9 +249,9 @@ files. These routines enable full asynchronous read/write of any file.
 	The named file is opened for reading and an async file handle
 	returned.
 
-	'fileName' is a filename and SHOULD NOT be a window specification such
-	as CON: or RAW:, or "*". Using these functions with interactive
-	handlers will only waste resources for no gain.
+	'fileName' is a filename and SHOULD be a a regular file. Using these
+	functions with interactive handlers like CON:, RAW:, SER: or "*" is
+	NOT recommended, as it will only waste resources for no gain.
 
 	'bufferSize' specifies the size of the IO buffer to use. There are
 	in fact two buffers allocated, each of roughly (bufferSize/2) bytes
@@ -266,8 +266,7 @@ files. These routines enable full asynchronous read/write of any file.
 	calling the routine dos.library/IoErr().
 
     INPUTS
-	fileName   - name of the file to open, cannot be a window
-		     specification
+	fileName   - name of the file to open
 	bufferSize - size of IO buffer to use. 8192 is recommended as it
 		     provides very good performance for relatively little
 		     memory. If 'bufferSize' is 0 this function will return
@@ -276,7 +275,7 @@ files. These routines enable full asynchronous read/write of any file.
     RESULT
 	file - an async file handle or NULL for failure. You should not access
 	       the fields in the AsyncRFile structure, these are private to
-	       the async IO routines. In case of failure, dos.library/IoErr()
+	       the asyncr IO routines. In case of failure, dos.library/IoErr()
 	       can give more information.
 
     NOTES
@@ -450,23 +449,28 @@ files. These routines enable full asynchronous read/write of any file.
 	error from success is to check IoErr(). IoErr() is always set to 0 on
 	success.
 
-    BUGS
 	A seek to a target outside of currently filled buffers will initiate a
 	read packet to fill a buffer with the requested range. This read might
 	fail even if the SeekAsyncR() call itself succeeds. The error will
 	first show up on the the next read/seek call¹, and the read pointer
-	will then be reset to the position it had before the seek.
+	will then be reset to the position it had before the seek, or seeks if
+	this happens with multiple SeekAsyncR() calls back to back.
 	SeekAsyncR() will in such cases propagate the IoErr from the read
 	packet in place of using ERROR_SEEK_ERROR. But for read functions the
 	only way to detect this state is to call SeekAsyncR() with 'position'
 	0 and ASR_MODE_CURRENT, and compare the result to the result of the
 	previous seek if a read directly after a seek fails. This is a
-	limitation of the core architecture, and can not be fixed.
+	limitation of the core architecture.
 
 	¹ The one exception is seeking zero from current position. Which will
 	  in this case return the target of the previous seek without waiting
 	  for pending reads. So to get the rolled back position as described
 	  above, a read or nonzero seek must be preformed first.
+
+	If a seek to a target outside of currently filled buffers is
+	performed, and the following read for some reason returns fewer bytes
+	than needed to reach the seek target, the following read function will
+	fail with ERROR_SEEK_ERROR.
 
     SEE ALSO
 	OpenAsyncR(), CloseAsyncR(), ReadAsyncR(), dos.library/Seek()
