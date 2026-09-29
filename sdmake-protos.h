@@ -27,6 +27,7 @@ Prototype short	DoAll;
 Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
+Prototype short	OrgCurrentDirValid;
 Prototype short	SMakeMode;
 Prototype LONG  ExitIoErr;
 Prototype APTR  MemPool;
@@ -39,6 +40,7 @@ Prototype BPTR StdOut;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
+Prototype void CleanupCommand(void);
 Prototype void SetReturnVar(LONG rc, LONG return2);
 
 /* cmdlist.c            */
@@ -114,4 +116,3 @@ Prototype BOOL StriInStr(CONST_STRPTR find, CONST_STRPTR string);
 /* parserevh.c          */
 
 Prototype WORD ParseRevInclude(STRPTR includefile);
-

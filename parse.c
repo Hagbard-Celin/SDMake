@@ -1369,6 +1369,7 @@ void error(short type, LONG ioerr, CONST_STRPTR ctl, ...)
     PrintF("\n");
     if (ExitAry[type])
     {
+	CleanupCommand();
 	ExitCode = RETURN_FAIL;
 	ExitIoErr = ioerr;
 #if OSVERMAX >= 36

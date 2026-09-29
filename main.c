@@ -106,6 +106,7 @@ Prototype short	DoAll;
 Prototype short	TouchAll;
 Prototype short DefIgnore;
 Prototype short SomeWork;
+Prototype short	OrgCurrentDirValid;
 Prototype short	SMakeMode;
 Prototype LONG  ExitIoErr;
 Prototype APTR  MemPool;
@@ -128,9 +129,10 @@ short	QuietCmd;
 short	DoAll;
 short   DefIgnore;
 short   SomeWork;
-short	XSaveLockValid;
+short	WBOrgDirValid;
+short	OrgCurrentDirValid;
 short	SMakeMode;
-BPTR	XSaveLock;
+BPTR	WBOrgDir;
 char     version[] = VERSTAG ", "VEREXTRA"\0 Copyright 1994, O.I.C.\n";
 char __near SDFileName[] = "SDMakefile";
 char	*XFileName = SDFileName;
@@ -150,16 +152,13 @@ struct Process *WorkProc;
 struct climsg *clmsg;
 struct	Library *UtilityBase = 0;
 
-void xmyexit(void)
-{
-    if (XSaveLockValid) {
-	CurrentDir(XSaveLock);
-	XSaveLockValid = 0;
-    }
-}
-
 void myexit(void)
 {
+    if (WBOrgDirValid) {
+	CurrentDir(WBOrgDir);
+	WBOrgDirValid = 0;
+    }
+
     if (Break)
 	PrintF("SDMAKE: ***Break\n");
     else
@@ -363,6 +362,8 @@ LONG realmain(void)
 {
     int r;
 
+    InitCommand();
+
     /*
      *	add built-inn variables
      *
@@ -529,6 +530,7 @@ LONG realmain(void)
 	}
     }
 
+    CleanupCommand();
     return(ExitCode);
 }
 
@@ -641,9 +643,8 @@ int main(ULONG argc, char *argv[])
 	    CurrentDir(saveLock);
 	}
 
-	XSaveLock = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
-	XSaveLockValid = 1;
-	atexit(xmyexit);
+	WBOrgDir = CurrentDir((BPTR)wbs->sm_ArgList[wbs->sm_NumArgs-1].wa_Lock);
+	WBOrgDirValid = 1;
 
 #if OSVERMIN < 36 && OSVERMAX >= 36
 	if (restart)
@@ -785,6 +786,7 @@ void MemErr(void)
 {
     PrintF("Fatal error: memory allocation failed");
 
+    CleanupCommand();
     ExitCode = RETURN_FAIL;
     ExitIoErr = ERROR_NO_FREE_STORE;
 #if OSVERMAX >= 36
@@ -815,7 +817,6 @@ static void InitStuff(void)
 	}
 #endif
 	NewList(&DoList);
-	InitCommand();
 	InitCmdList();
 	InitVariable();
 	InitDep();

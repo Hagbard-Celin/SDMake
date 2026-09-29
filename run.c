@@ -45,6 +45,7 @@ typedef struct Process		    Process;
 
 Prototype long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cmdIfTrue, LONG *lastret, LONG cmdsize);
 Prototype void InitCommand(void);
+Prototype void CleanupCommand(void);
 Prototype void SetReturnVar(LONG rc, LONG return2);
 
 #if OSVERMAX >= 36
@@ -56,16 +57,16 @@ static void RunCleanup(char *cmdArgs);
 static void SetLocalVar(CONST_STRPTR var, LONG value);
 #endif
 
-BPTR SaveLock;
+BPTR OrgCurrentDir;
 #if OSVERMIN < 36
 char RootPath[256];
 #endif
 
-void ICExit(void)
+void CleanupCommand(void)
 {
-    if (SaveLock) {
-	UnLock(CurrentDir(SaveLock));
-	SaveLock = NULL;
+    if (OrgCurrentDirValid) {
+	UnLock(CurrentDir(OrgCurrentDir));
+	OrgCurrentDirValid = 0;
     }
 }
 
@@ -90,10 +91,9 @@ void InitCommand()
     }
 #endif
 
-    path = DupLock(StartProc->pr_CurrentDir);
-    SaveLock = CurrentDir(path);
-
-    atexit(ICExit);
+    path = DupLock(WorkProc->pr_CurrentDir);
+    OrgCurrentDir = CurrentDir(path);
+    OrgCurrentDirValid = 1;
 }
 
 /*
@@ -365,7 +365,7 @@ long Execute_Command(char **cmdptr, WORD *cmdflags, IfNode **cmdIfBase, LONG *cm
 		}
 
 		if (*ptr == 0)
-		    lock = DupLock(SaveLock);
+		    lock = DupLock(OrgCurrentDir);
 		else
 		    lock = Lock(ptr, SHARED_LOCK);
 
