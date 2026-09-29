@@ -139,7 +139,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 
 	if (file = allocarf(sizeof(AsyncRFile) + bufferSize + 15))
 	{
-	    file->af_File      = handle;
+	    file->arf_File      = handle;
 
 	    /* initialize the AsyncRFile structure. We do as much as we can here,
 	     * in order to avoid doing it in more critical sections
@@ -154,45 +154,45 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	     * most 15 bytes of ram.
 	     */
 
-	    fh                       = BADDR(file->af_File);
-	    file->af_Handler         = fh->fh_Type;
-	    file->af_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncRFile) + 15) & 0xfffffff0);
+	    fh                       = BADDR(file->arf_File);
+	    file->arf_Handler         = fh->fh_Type;
+	    file->arf_Buffers[0]      = (APTR)(((ULONG)file + sizeof(AsyncRFile) + 15) & 0xfffffff0);
 	    if (halfbuffersize)
 	    {
 		if (halfbuffersize < bufferSize)
 		{
-		    /* split buffer mode, WaitPacket() adjusts af_Packet.sp_Pkt.dp_Arg3
+		    /* split buffer mode, WaitPacket() adjusts arf_Packet.sp_Pkt.dp_Arg3
 		     * for second buffer
 		     */
-		    file->af_BufferSize  = halfbuffersize;
-		    file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + halfbuffersize);
+		    file->arf_BufferSize  = halfbuffersize;
+		    file->arf_Buffers[1]  = (APTR)((ULONG)file->arf_Buffers[0] + halfbuffersize);
 		}
 		else
 		{
 		    /* single buffer mode, WaitPacket() sets ASR_PKT_READY after buffer
 		     * is filled
 		     */
-		    file->af_BufferSize  = bufferSize;
-		    file->af_Buffers[1]  = 0;
+		    file->arf_BufferSize  = bufferSize;
+		    file->arf_Buffers[1]  = 0;
 		}
 	    }
 	    else
 	    {
-		file->af_BufferSize  = bufferSize >> 1;
-		file->af_Buffers[1]  = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
+		file->arf_BufferSize  = bufferSize >> 1;
+		file->arf_Buffers[1]  = (APTR)((ULONG)file->arf_Buffers[0] + file->arf_BufferSize);
 	    }
-	    file->af_Offset          = file->af_Buffers[0];
-	    file->af_BytesLeft       = 0;
-	    file->af_BufMin[0]       = 0;
-	    file->af_BufMin[1]       = 0;
-	    file->af_BytesArrived[0] = 0;
-	    file->af_BytesArrived[1] = 0;
-	    file->af_CurrentBuf      = 0;
-	    file->af_SeekOffset      = 0;
-	    file->af_FilesysPos      = 0;
-	    file->af_BufferPos       = 0;
-	    file->af_FileSize        = fileSize;
-	    file->af_SequentialBytes = 0;
+	    file->arf_Offset          = file->arf_Buffers[0];
+	    file->arf_BytesLeft       = 0;
+	    file->arf_BufMin[0]       = 0;
+	    file->arf_BufMin[1]       = 0;
+	    file->arf_BytesArrived[0] = 0;
+	    file->arf_BytesArrived[1] = 0;
+	    file->arf_CurrentBuf      = 0;
+	    file->arf_SeekOffset      = 0;
+	    file->arf_FilesysPos      = 0;
+	    file->arf_BufferPos       = 0;
+	    file->arf_FileSize        = fileSize;
+	    file->arf_SequentialBytes = 0;
 
 	    /* this is the port used to get the packets we send out back.
 	     * It is initialized to PA_IGNORE, which means that no signal is
@@ -207,24 +207,24 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	     * bit for the port. It is quite efficient.
 	     */
 
-	    file->af_PacketPort.mp_MsgList.lh_Head     = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Tail;
-	    file->af_PacketPort.mp_MsgList.lh_Tail     = NULL;
-	    file->af_PacketPort.mp_MsgList.lh_TailPred = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Head;
-	    file->af_PacketPort.mp_Node.ln_Name        = NULL;
-	    file->af_PacketPort.mp_Node.ln_Type        = NT_MSGPORT;
-	    file->af_PacketPort.mp_Flags               = PA_IGNORE;
-	    file->af_PacketPort.mp_SigBit              = SIGB_SINGLE;
-	    file->af_PacketPort.mp_SigTask             = FindTask(NULL);
+	    file->arf_PacketPort.mp_MsgList.lh_Head     = (struct Node *)&file->arf_PacketPort.mp_MsgList.lh_Tail;
+	    file->arf_PacketPort.mp_MsgList.lh_Tail     = NULL;
+	    file->arf_PacketPort.mp_MsgList.lh_TailPred = (struct Node *)&file->arf_PacketPort.mp_MsgList.lh_Head;
+	    file->arf_PacketPort.mp_Node.ln_Name        = NULL;
+	    file->arf_PacketPort.mp_Node.ln_Type        = NT_MSGPORT;
+	    file->arf_PacketPort.mp_Flags               = PA_IGNORE;
+	    file->arf_PacketPort.mp_SigBit              = SIGB_SINGLE;
+	    file->arf_PacketPort.mp_SigTask             = FindTask(NULL);
 
-	    file->af_Packet.sp_Pkt.dp_Link          = &file->af_Packet.sp_Msg;
-	    file->af_Packet.sp_Pkt.dp_Type          = ACTION_READ;
-	    file->af_Packet.sp_Pkt.dp_Arg1          = fh->fh_Arg1;
-	    file->af_Packet.sp_Pkt.dp_Arg3          = file->af_BufferSize;
-	    file->af_Packet.sp_Pkt.dp_Res1          = 0;
-	    file->af_Packet.sp_Pkt.dp_Res2          = 0;
-	    file->af_Packet.sp_Msg.mn_Node.ln_Name  = (STRPTR)&file->af_Packet.sp_Pkt;
-	    file->af_Packet.sp_Msg.mn_Node.ln_Type  = NT_MESSAGE;
-	    file->af_Packet.sp_Msg.mn_Length        = sizeof(struct StandardPacket);
+	    file->arf_Packet.sp_Pkt.dp_Link          = &file->arf_Packet.sp_Msg;
+	    file->arf_Packet.sp_Pkt.dp_Type          = ACTION_READ;
+	    file->arf_Packet.sp_Pkt.dp_Arg1          = fh->fh_Arg1;
+	    file->arf_Packet.sp_Pkt.dp_Arg3          = file->arf_BufferSize;
+	    file->arf_Packet.sp_Pkt.dp_Res1          = 0;
+	    file->arf_Packet.sp_Pkt.dp_Res2          = 0;
+	    file->arf_Packet.sp_Msg.mn_Node.ln_Name  = (STRPTR)&file->arf_Packet.sp_Pkt;
+	    file->arf_Packet.sp_Msg.mn_Node.ln_Type  = NT_MESSAGE;
+	    file->arf_Packet.sp_Msg.mn_Length        = sizeof(struct StandardPacket);
 
 	    /* send out the first read packet to the file system. While
 	     * the application is getting ready to read data, the file
@@ -233,13 +233,13 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	     * data, it will be in the buffer waiting
 	     */
 
-	    if (file->af_Handler)
+	    if (file->arf_Handler)
 	    {
-		SendAsyncRPacket(file,file->af_Buffers[0], 0);
-		file->af_PacketPending   = ASR_PKT_START;
+		SendAsyncRPacket(file,file->arf_Buffers[0], 0);
+		file->arf_PacketPending   = ASR_PKT_START;
 	    }
 	    else
-		file->af_PacketPending   = ASR_PKT_READY; /* this makes NIL: return EOF on every read */
+		file->arf_PacketPending   = ASR_PKT_READY; /* this makes NIL: return EOF on every read */
 	}
 	else
 	{

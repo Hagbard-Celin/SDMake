@@ -33,10 +33,10 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
      * The third can be either that or a empty file, which are treated the
      * same for simplicity.
      */
-    if (!file->af_FileSize)
+    if (!file->arf_FileSize)
 	goto err;
 
-    if (file->af_PacketPending == ASR_PKT_START)
+    if (file->arf_PacketPending == ASR_PKT_START)
     {
 	LONG bytesArrived;
 
@@ -44,11 +44,11 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	if (bytesArrived <= 0)
 	    goto err;
 
-	file->af_BytesLeft   = bytesArrived;
+	file->arf_BytesLeft   = bytesArrived;
 
     }
 
-    current = file->af_BufferPos;
+    current = file->arf_BufferPos;
 
     /* figure out the absolute offset within the file where we must seek to */
     if (mode == ASR_MODE_CURRENT)
@@ -81,10 +81,10 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	    goto err;
 
 	/* catch seek past BOF */
-	if (-position > file->af_FileSize)
+	if (-position > file->arf_FileSize)
 	    goto err;
 
-	target = file->af_FileSize + position;
+	target = file->arf_FileSize + position;
     }
 
     /* catch seek to or past EOF, we catch both since allowing seek
@@ -93,7 +93,7 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
      * EOF does not make sense anyway.
      */
 
-    if (target >= file->af_FileSize)
+    if (target >= file->arf_FileSize)
 	goto err;
 
     /* if we are in single buffer mode and the handler returned a partly
@@ -101,17 +101,17 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
      * option is to fail. This is improbable for a seekable filesystem
      * handler, but should it happen this protects us from the Guru.
      */
-    if (file->af_Buffers[1] == 0 && target >= file->af_BytesArrived[file->af_CurrentBuf])
+    if (file->arf_Buffers[1] == 0 && target >= file->arf_BytesArrived[file->arf_CurrentBuf])
 	goto err;
 
-    seekOffset = file->af_SeekOffset;
-    file->af_SeekOffset = 0;
-    file->af_SequentialBytes = 0;
+    seekOffset = file->arf_SeekOffset;
+    file->arf_SeekOffset = 0;
+    file->arf_SequentialBytes = 0;
 
     /* we must handle pending packets here or we might get wrong data on
      * next sequential buffer fill
      */
-    if (file->af_PacketPending == ASR_PKT_PENDING)
+    if (file->arf_PacketPending == ASR_PKT_PENDING)
     {
 	LONG bytesArrived;
 
@@ -130,14 +130,14 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	 * successful seek
 	 */
 	if (bytesArrived > 0)
-	    file->af_PacketPending = ASR_PKT_READY;
+	    file->arf_PacketPending = ASR_PKT_READY;
     }
 
     /* figure out what range of the file is in our current buffer */
-    minBuf = file->af_BufMin[file->af_CurrentBuf];
-    maxBuf = minBuf + file->af_BytesArrived[file->af_CurrentBuf] - 1;
+    minBuf = file->arf_BufMin[file->arf_CurrentBuf];
+    maxBuf = minBuf + file->arf_BytesArrived[file->arf_CurrentBuf] - 1;
 
-    if (file->af_BytesArrived[file->af_CurrentBuf] && target >= minBuf && target <= maxBuf)
+    if (file->arf_BytesArrived[file->arf_CurrentBuf] && target >= minBuf && target <= maxBuf)
     {
 	/* one of the two following things is true:
 	 *
@@ -149,33 +149,33 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
 	 * read buffer. Advance to that location.
 	 */
 
-	file->af_BytesLeft  = maxBuf + 1 - target;
-	file->af_BufferPos  = target;
-	file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
+	file->arf_BytesLeft  = maxBuf + 1 - target;
+	file->arf_BufferPos  = target;
+	file->arf_Offset     = (APTR)((ULONG)file->arf_Buffers[file->arf_CurrentBuf] + (target - minBuf));
 
 	/* keep ASR_PKT_READY for single buffer mode */
-	if (file->af_Buffers[1])
-	    file->af_PacketPending = ASR_PKT_IDLE;
+	if (file->arf_Buffers[1])
+	    file->arf_PacketPending = ASR_PKT_IDLE;
 
 	goto end;
     }
     else
-    if (file->af_BytesArrived[1 - file->af_CurrentBuf])
+    if (file->arf_BytesArrived[1 - file->arf_CurrentBuf])
     {
 	/* the other buffer contains valid data. Figure out what range of the file is
 	 * in that buffer, and check if the target location is within that range.
 	 */
 
-	minBuf = file->af_BufMin[1 - file->af_CurrentBuf];
-	maxBuf = minBuf + file->af_BytesArrived[1 - file->af_CurrentBuf] - 1;
+	minBuf = file->arf_BufMin[1 - file->arf_CurrentBuf];
+	maxBuf = minBuf + file->arf_BytesArrived[1 - file->arf_CurrentBuf] - 1;
 
 	if (target >= minBuf && target <= maxBuf)
 	{
-	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + (target - minBuf));
-	    file->af_BytesLeft  = maxBuf + 1 - target;
-	    file->af_BufferPos  = target;
-	    file->af_PacketPending = ASR_PKT_IDLE;
+	    file->arf_CurrentBuf = 1 - file->arf_CurrentBuf;
+	    file->arf_Offset     = (APTR)((ULONG)file->arf_Buffers[file->arf_CurrentBuf] + (target - minBuf));
+	    file->arf_BytesLeft  = maxBuf + 1 - target;
+	    file->arf_BufferPos  = target;
+	    file->arf_PacketPending = ASR_PKT_IDLE;
 	    goto end;
 	}
     }
@@ -190,20 +190,20 @@ LONG SeekAsyncR(AsyncRFile *file, LONG position, AsyncRSeekModes mode)
      * worth the trouble to keep things aligned
      */
 
-    /* changed to align to af_BufferSize, this helps avoid unnecessary
+    /* changed to align to arf_BufferSize, this helps avoid unnecessary
      * reads under some conditions
      */
-    roundTarget = (target / file->af_BufferSize) * file->af_BufferSize;
+    roundTarget = (target / file->arf_BufferSize) * file->arf_BufferSize;
 
-    if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], roundTarget))
+    if (SendAsyncRPacket(file, file->arf_Buffers[1 - file->arf_CurrentBuf], roundTarget))
     {
-	file->af_SeekOffset = seekOffset;
+	file->arf_SeekOffset = seekOffset;
 	goto err_gotIoErr;
     }
 
-    file->af_BufferPos  = target;
-    file->af_BytesLeft  = 0;
-    file->af_SeekOffset = target - roundTarget;
+    file->arf_BufferPos  = target;
+    file->arf_BytesLeft  = 0;
+    file->arf_SeekOffset = target - roundTarget;
 
 end:
     SetIoErr(0);

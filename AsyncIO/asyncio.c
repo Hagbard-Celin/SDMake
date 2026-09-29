@@ -34,10 +34,10 @@ extern struct Library *SysBase;
 /* send out an async packet to the file system. */
 static void SendPacket(AsyncFile *file, APTR arg2)
 {
-    file->af_Packet.sp_Pkt.dp_Port = &file->af_PacketPort;
-    file->af_Packet.sp_Pkt.dp_Arg2 = (LONG)arg2;
-    PutMsg(file->af_Handler, &file->af_Packet.sp_Msg);
-    file->af_PacketPending = TRUE;
+    file->arf_Packet.sp_Pkt.dp_Port = &file->arf_PacketPort;
+    file->arf_Packet.sp_Pkt.dp_Arg2 = (LONG)arg2;
+    PutMsg(file->arf_Handler, &file->arf_Packet.sp_Msg);
+    file->arf_PacketPending = TRUE;
 }
 
 
@@ -56,12 +56,12 @@ static LONG WaitPacket(AsyncFile *file)
 {
 LONG bytes;
 
-    if (file->af_PacketPending)
+    if (file->arf_PacketPending)
     {
         while (TRUE)
         {
             /* This enables signalling when a packet comes back to the port */
-            file->af_PacketPort.mp_Flags = PA_SIGNAL;
+            file->arf_PacketPort.mp_Flags = PA_SIGNAL;
 
             /* Wait for the packet to come back, and remove it from the message
              * list. Since we know no other packets can come in to the port, we can
@@ -69,17 +69,17 @@ LONG bytes;
              * we would have to use GetMsg(), which correctly arbitrates access in such
              * a case
              */
-            Remove((struct Node *)WaitPort(&file->af_PacketPort));
+            Remove((struct Node *)WaitPort(&file->arf_PacketPort));
 
             /* set the port type back to PA_IGNORE so we won't be bothered with
              * spurious signals
              */
-            file->af_PacketPort.mp_Flags = PA_IGNORE;
+            file->arf_PacketPort.mp_Flags = PA_IGNORE;
 
             /* mark packet as no longer pending since we removed it */
-            file->af_PacketPending = FALSE;
+            file->arf_PacketPending = FALSE;
 
-            bytes = file->af_Packet.sp_Pkt.dp_Res1;
+            bytes = file->arf_Packet.sp_Pkt.dp_Res1;
             if (bytes >= 0)
             {
                 /* packet didn't report an error, so bye... */
@@ -87,21 +87,21 @@ LONG bytes;
             }
 
             /* see if the user wants to try again... */
-            if (ErrorReport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
+            if (ErrorReport(file->arf_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->arf_File,NULL))
                 return(-1);
 
             /* user wants to try again, resend the packet */
-            if (file->af_ReadMode)
-                SendPacket(file,file->af_Buffers[file->af_CurrentBuf]);
+            if (file->arf_ReadMode)
+                SendPacket(file,file->arf_Buffers[file->arf_CurrentBuf]);
             else
-                SendPacket(file,file->af_Buffers[1 - file->af_CurrentBuf]);
+                SendPacket(file,file->arf_Buffers[1 - file->arf_CurrentBuf]);
          }
     }
 
     /* last packet's error code, or 0 if packet was never sent */
-    SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
+    SetIoErr(file->arf_Packet.sp_Pkt.dp_Res2);
 
-    return(file->af_Packet.sp_Pkt.dp_Res1);
+    return(file->arf_Packet.sp_Pkt.dp_Res1);
 }
 
 
@@ -113,8 +113,8 @@ LONG bytes;
  */
 static void RequeuePacket(AsyncFile *file)
 {
-    AddHead(&file->af_PacketPort.mp_MsgList,&file->af_Packet.sp_Msg.mn_Node);
-    file->af_PacketPending = TRUE;
+    AddHead(&file->arf_PacketPort.mp_MsgList,&file->arf_Packet.sp_Msg.mn_Node);
+    file->arf_PacketPending = TRUE;
 }
 
 
@@ -126,8 +126,8 @@ static void RequeuePacket(AsyncFile *file)
  */
 static void RecordSyncFailure(AsyncFile *file)
 {
-    file->af_Packet.sp_Pkt.dp_Res1 = -1;
-    file->af_Packet.sp_Pkt.dp_Res2 = IoErr();
+    file->arf_Packet.sp_Pkt.dp_Res1 = -1;
+    file->arf_Packet.sp_Pkt.dp_Res2 = IoErr();
 }
 
 
@@ -209,9 +209,9 @@ D_S(struct InfoData,infoData);
 
         if (file = AllocVec(sizeof(AsyncFile) + bufferSize + 15,MEMF_PUBLIC | MEMF_ANY))
         {
-            file->af_File      = handle;
-            file->af_ReadMode  = (mode == MODE_READ);
-            file->af_BlockSize = blockSize;
+            file->arf_File      = handle;
+            file->arf_ReadMode  = (mode == MODE_READ);
+            file->arf_BlockSize = blockSize;
 
             /* initialize the ASyncFile structure. We do as much as we can here,
              * in order to avoid doing it in more critical sections
@@ -226,15 +226,15 @@ D_S(struct InfoData,infoData);
              * most 15 bytes of ram.
              */
 
-            fh                     = BADDR(file->af_File);
-            file->af_Handler       = fh->fh_Type;
-            file->af_BufferSize    = bufferSize / 2;
-            file->af_Buffers[0]    = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
-            file->af_Buffers[1]    = (APTR)((ULONG)file->af_Buffers[0] + file->af_BufferSize);
-            file->af_Offset        = file->af_Buffers[0];
-            file->af_CurrentBuf    = 0;
-            file->af_SeekOffset    = 0;
-            file->af_PacketPending = FALSE;
+            fh                     = BADDR(file->arf_File);
+            file->arf_Handler       = fh->fh_Type;
+            file->arf_BufferSize    = bufferSize / 2;
+            file->arf_Buffers[0]    = (APTR)(((ULONG)file + sizeof(AsyncFile) + 15) & 0xfffffff0);
+            file->arf_Buffers[1]    = (APTR)((ULONG)file->arf_Buffers[0] + file->arf_BufferSize);
+            file->arf_Offset        = file->arf_Buffers[0];
+            file->arf_CurrentBuf    = 0;
+            file->arf_SeekOffset    = 0;
+            file->arf_PacketPending = FALSE;
 
             /* this is the port used to get the packets we send out back.
              * It is initialized to PA_IGNORE, which means that no signal is
@@ -249,22 +249,22 @@ D_S(struct InfoData,infoData);
              * bit for the port. It is quite efficient.
              */
 
-            file->af_PacketPort.mp_MsgList.lh_Head     = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Tail;
-            file->af_PacketPort.mp_MsgList.lh_Tail     = NULL;
-            file->af_PacketPort.mp_MsgList.lh_TailPred = (struct Node *)&file->af_PacketPort.mp_MsgList.lh_Head;
-            file->af_PacketPort.mp_Node.ln_Type        = NT_MSGPORT;
-            file->af_PacketPort.mp_Flags               = PA_IGNORE;
-            file->af_PacketPort.mp_SigBit              = SIGB_SINGLE;
-            file->af_PacketPort.mp_SigTask             = FindTask(NULL);
+            file->arf_PacketPort.mp_MsgList.lh_Head     = (struct Node *)&file->arf_PacketPort.mp_MsgList.lh_Tail;
+            file->arf_PacketPort.mp_MsgList.lh_Tail     = NULL;
+            file->arf_PacketPort.mp_MsgList.lh_TailPred = (struct Node *)&file->arf_PacketPort.mp_MsgList.lh_Head;
+            file->arf_PacketPort.mp_Node.ln_Type        = NT_MSGPORT;
+            file->arf_PacketPort.mp_Flags               = PA_IGNORE;
+            file->arf_PacketPort.mp_SigBit              = SIGB_SINGLE;
+            file->arf_PacketPort.mp_SigTask             = FindTask(NULL);
 
-            file->af_Packet.sp_Pkt.dp_Link          = &file->af_Packet.sp_Msg;
-            file->af_Packet.sp_Pkt.dp_Arg1          = fh->fh_Arg1;
-            file->af_Packet.sp_Pkt.dp_Arg3          = file->af_BufferSize;
-            file->af_Packet.sp_Pkt.dp_Res1          = 0;
-            file->af_Packet.sp_Pkt.dp_Res2          = 0;
-            file->af_Packet.sp_Msg.mn_Node.ln_Name  = (STRPTR)&file->af_Packet.sp_Pkt;
-            file->af_Packet.sp_Msg.mn_Node.ln_Type  = NT_MESSAGE;
-            file->af_Packet.sp_Msg.mn_Length        = sizeof(struct StandardPacket);
+            file->arf_Packet.sp_Pkt.dp_Link          = &file->arf_Packet.sp_Msg;
+            file->arf_Packet.sp_Pkt.dp_Arg1          = fh->fh_Arg1;
+            file->arf_Packet.sp_Pkt.dp_Arg3          = file->arf_BufferSize;
+            file->arf_Packet.sp_Pkt.dp_Res1          = 0;
+            file->arf_Packet.sp_Pkt.dp_Res2          = 0;
+            file->arf_Packet.sp_Msg.mn_Node.ln_Name  = (STRPTR)&file->arf_Packet.sp_Pkt;
+            file->arf_Packet.sp_Msg.mn_Node.ln_Type  = NT_MESSAGE;
+            file->arf_Packet.sp_Msg.mn_Length        = sizeof(struct StandardPacket);
 
             if (mode == MODE_READ)
             {
@@ -275,15 +275,15 @@ D_S(struct InfoData,infoData);
                  * needs the data, it will be in the buffer waiting
                  */
 
-                file->af_Packet.sp_Pkt.dp_Type = ACTION_READ;
-                file->af_BytesLeft             = 0;
-                if (file->af_Handler)
-                    SendPacket(file,file->af_Buffers[0]);
+                file->arf_Packet.sp_Pkt.dp_Type = ACTION_READ;
+                file->arf_BytesLeft             = 0;
+                if (file->arf_Handler)
+                    SendPacket(file,file->arf_Buffers[0]);
             }
             else
             {
-                file->af_Packet.sp_Pkt.dp_Type = ACTION_WRITE;
-                file->af_BytesLeft             = file->af_BufferSize;
+                file->arf_Packet.sp_Pkt.dp_Type = ACTION_WRITE;
+                file->arf_BytesLeft             = file->arf_BufferSize;
             }
         }
         else
@@ -308,15 +308,15 @@ LONG result;
         result = WaitPacket(file);
         if (result >= 0)
         {
-            if (!file->af_ReadMode)
+            if (!file->arf_ReadMode)
             {
                 /* this will flush out any pending data in the write buffer */
-                if (file->af_BufferSize > file->af_BytesLeft)
-                    result = Write(file->af_File,file->af_Buffers[file->af_CurrentBuf],file->af_BufferSize - file->af_BytesLeft);
+                if (file->arf_BufferSize > file->arf_BytesLeft)
+                    result = Write(file->arf_File,file->arf_Buffers[file->arf_CurrentBuf],file->arf_BufferSize - file->arf_BytesLeft);
             }
         }
 
-        Close(file->af_File);
+        Close(file->arf_File);
         FreeVec(file);
     }
     else
@@ -343,15 +343,15 @@ LONG bytesArrived;
      * read loop
      */
 
-    while (numBytes > file->af_BytesLeft)
+    while (numBytes > file->arf_BytesLeft)
     {
         /* drain buffer */
-        CopyMem(file->af_Offset,buffer,file->af_BytesLeft);
+        CopyMem(file->arf_Offset,buffer,file->arf_BytesLeft);
 
-        numBytes           -= file->af_BytesLeft;
-        buffer              = (APTR)((ULONG)buffer + file->af_BytesLeft);
-        totalBytes         += file->af_BytesLeft;
-        file->af_BytesLeft  = 0;
+        numBytes           -= file->arf_BytesLeft;
+        buffer              = (APTR)((ULONG)buffer + file->arf_BytesLeft);
+        totalBytes         += file->arf_BytesLeft;
+        file->arf_BytesLeft  = 0;
 
         bytesArrived = WaitPacket(file);
         if (bytesArrived <= 0)
@@ -363,20 +363,20 @@ LONG bytesArrived;
         }
 
         /* ask that the buffer be filled */
-        SendPacket(file,file->af_Buffers[1-file->af_CurrentBuf]);
+        SendPacket(file,file->arf_Buffers[1-file->arf_CurrentBuf]);
 
-        if (file->af_SeekOffset > bytesArrived)
-            file->af_SeekOffset = bytesArrived;
+        if (file->arf_SeekOffset > bytesArrived)
+            file->arf_SeekOffset = bytesArrived;
 
-        file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
-        file->af_CurrentBuf  = 1 - file->af_CurrentBuf;
-        file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
-        file->af_SeekOffset  = 0;
+        file->arf_Offset      = (APTR)((ULONG)file->arf_Buffers[file->arf_CurrentBuf] + file->arf_SeekOffset);
+        file->arf_CurrentBuf  = 1 - file->arf_CurrentBuf;
+        file->arf_BytesLeft   = bytesArrived - file->arf_SeekOffset;
+        file->arf_SeekOffset  = 0;
     }
 
-    CopyMem(file->af_Offset,buffer,numBytes);
-    file->af_BytesLeft -= numBytes;
-    file->af_Offset     = (APTR)((ULONG)file->af_Offset + numBytes);
+    CopyMem(file->arf_Offset,buffer,numBytes);
+    file->arf_BytesLeft -= numBytes;
+    file->arf_Offset     = (APTR)((ULONG)file->arf_Offset + numBytes);
 
     return (totalBytes + numBytes);
 }
@@ -389,15 +389,15 @@ LONG ReadCharAsync(AsyncFile *file)
 {
 unsigned char ch;
 
-    if (file->af_BytesLeft)
+    if (file->arf_BytesLeft)
     {
         /* if there is at least a byte left in the current buffer, get it
          * directly. Also update all counters
          */
 
-        ch = *(char *)file->af_Offset;
-        file->af_BytesLeft--;
-        file->af_Offset = (APTR)((ULONG)file->af_Offset + 1);
+        ch = *(char *)file->arf_Offset;
+        file->arf_BytesLeft--;
+        file->arf_Offset = (APTR)((ULONG)file->arf_Offset + 1);
 
         return((LONG)ch);
     }
@@ -427,39 +427,39 @@ LONG totalBytes;
 
     totalBytes = 0;
 
-    while (numBytes > file->af_BytesLeft)
+    while (numBytes > file->arf_BytesLeft)
     {
         /* this takes care of NIL: */
-        if (!file->af_Handler)
+        if (!file->arf_Handler)
         {
-            file->af_Offset    = file->af_Buffers[0];
-            file->af_BytesLeft = file->af_BufferSize;
+            file->arf_Offset    = file->arf_Buffers[0];
+            file->arf_BytesLeft = file->arf_BufferSize;
             return(numBytes);
         }
 
-        if (file->af_BytesLeft)
+        if (file->arf_BytesLeft)
         {
-            CopyMem(buffer,file->af_Offset,file->af_BytesLeft);
+            CopyMem(buffer,file->arf_Offset,file->arf_BytesLeft);
 
-            numBytes   -= file->af_BytesLeft;
-            buffer      = (APTR)((ULONG)buffer + file->af_BytesLeft);
-            totalBytes += file->af_BytesLeft;
+            numBytes   -= file->arf_BytesLeft;
+            buffer      = (APTR)((ULONG)buffer + file->arf_BytesLeft);
+            totalBytes += file->arf_BytesLeft;
         }
 
         if (WaitPacket(file) < 0)
             return(-1);
 
         /* send the current buffer out to disk */
-        SendPacket(file,file->af_Buffers[file->af_CurrentBuf]);
+        SendPacket(file,file->arf_Buffers[file->arf_CurrentBuf]);
 
-        file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-        file->af_Offset     = file->af_Buffers[file->af_CurrentBuf];
-        file->af_BytesLeft  = file->af_BufferSize;
+        file->arf_CurrentBuf = 1 - file->arf_CurrentBuf;
+        file->arf_Offset     = file->arf_Buffers[file->arf_CurrentBuf];
+        file->arf_BytesLeft  = file->arf_BufferSize;
     }
 
-    CopyMem(buffer,file->af_Offset,numBytes);
-    file->af_BytesLeft -= numBytes;
-    file->af_Offset     = (APTR)((ULONG)file->af_Offset + numBytes);
+    CopyMem(buffer,file->arf_Offset,numBytes);
+    file->arf_BytesLeft -= numBytes;
+    file->arf_Offset     = (APTR)((ULONG)file->arf_Offset + numBytes);
 
     return (totalBytes + numBytes);
 }
@@ -470,15 +470,15 @@ LONG totalBytes;
 
 LONG WriteCharAsync(AsyncFile *file, UBYTE ch)
 {
-    if (file->af_BytesLeft)
+    if (file->arf_BytesLeft)
     {
         /* if there's any room left in the current buffer, directly write
          * the byte into it, updating counters and stuff.
          */
 
-        *(UBYTE *)file->af_Offset = ch;
-        file->af_BytesLeft--;
-        file->af_Offset = (APTR)((ULONG)file->af_Offset + 1);
+        *(UBYTE *)file->arf_Offset = ch;
+        file->arf_BytesLeft--;
+        file->arf_Offset = (APTR)((ULONG)file->arf_Offset + 1);
 
         /* one byte written */
         return(1);
@@ -512,10 +512,10 @@ D_S(struct FileInfoBlock,fib);
     if (bytesArrived < 0)
         return(-1);
 
-    if (file->af_ReadMode)
+    if (file->arf_ReadMode)
     {
         /* figure out what the actual file position is */
-        filePos = Seek(file->af_File,0,OFFSET_CURRENT);
+        filePos = Seek(file->arf_File,0,OFFSET_CURRENT);
         if (filePos < 0)
         {
             RecordSyncFailure(file);
@@ -523,8 +523,8 @@ D_S(struct FileInfoBlock,fib);
         }
 
         /* figure out what the caller's file position is */
-        current = filePos - (file->af_BytesLeft+bytesArrived) + file->af_SeekOffset;
-        file->af_SeekOffset = 0;
+        current = filePos - (file->arf_BytesLeft+bytesArrived) + file->arf_SeekOffset;
+        file->arf_SeekOffset = 0;
 
         /* figure out the absolute offset within the file where we must seek to */
         if (mode == MODE_CURRENT)
@@ -537,7 +537,7 @@ D_S(struct FileInfoBlock,fib);
         }
         else /* if (mode == MODE_END) */
         {
-            if (!ExamineFH(file->af_File,fib))
+            if (!ExamineFH(file->arf_File,fib))
             {
                 RecordSyncFailure(file);
                 return(-1);
@@ -547,8 +547,8 @@ D_S(struct FileInfoBlock,fib);
         }
 
         /* figure out what range of the file is currently in our buffers */
-        minBuf = current - (LONG)((ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf]);
-        maxBuf = current + file->af_BytesLeft + bytesArrived;  /* WARNING: this is one too big */
+        minBuf = current - (LONG)((ULONG)file->arf_Offset - (ULONG)file->arf_Buffers[file->arf_CurrentBuf]);
+        maxBuf = current + file->arf_BytesLeft + bytesArrived;  /* WARNING: this is one too big */
 
         diff = target - current;
 
@@ -563,22 +563,22 @@ D_S(struct FileInfoBlock,fib);
              * block-aligned reads are generally quite a bit faster, so it is
              * worth the trouble to keep things aligned
              */
-            roundTarget = (target / file->af_BlockSize) * file->af_BlockSize;
+            roundTarget = (target / file->arf_BlockSize) * file->arf_BlockSize;
 
-            if (Seek(file->af_File,roundTarget-filePos,OFFSET_CURRENT) < 0)
+            if (Seek(file->arf_File,roundTarget-filePos,OFFSET_CURRENT) < 0)
             {
                 RecordSyncFailure(file);
                 return(-1);
             }
 
-            SendPacket(file,file->af_Buffers[0]);
+            SendPacket(file,file->arf_Buffers[0]);
 
-            file->af_SeekOffset = target-roundTarget;
-            file->af_BytesLeft  = 0;
-            file->af_CurrentBuf = 0;
-            file->af_Offset     = file->af_Buffers[0];
+            file->arf_SeekOffset = target-roundTarget;
+            file->arf_BytesLeft  = 0;
+            file->arf_CurrentBuf = 0;
+            file->arf_Offset     = file->arf_Buffers[0];
         }
-        else if ((target < current) || (diff <= file->af_BytesLeft))
+        else if ((target < current) || (diff <= file->arf_BytesLeft))
         {
             /* one of the two following things is true:
              *
@@ -594,8 +594,8 @@ D_S(struct FileInfoBlock,fib);
 
             RequeuePacket(file);
 
-            file->af_BytesLeft -= diff;
-            file->af_Offset     = (APTR)((ULONG)file->af_Offset + diff);
+            file->arf_BytesLeft -= diff;
+            file->arf_Offset     = (APTR)((ULONG)file->arf_Offset + diff);
         }
         else
         {
@@ -607,19 +607,19 @@ D_S(struct FileInfoBlock,fib);
              * with a grin on your face... :-)
              */
 
-            diff -= file->af_BytesLeft;
+            diff -= file->arf_BytesLeft;
 
-            SendPacket(file,file->af_Buffers[file->af_CurrentBuf]);
+            SendPacket(file,file->arf_Buffers[file->arf_CurrentBuf]);
 
-            file->af_Offset    = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + diff);
-            file->af_BytesLeft = bytesArrived - diff;
+            file->arf_Offset    = (APTR)((ULONG)file->arf_Buffers[file->arf_CurrentBuf] + diff);
+            file->arf_BytesLeft = bytesArrived - diff;
         }
     }
     else
     {
-        if (file->af_BufferSize > file->af_BytesLeft)
+        if (file->arf_BufferSize > file->arf_BytesLeft)
         {
-            if (Write(file->af_File,file->af_Buffers[file->af_CurrentBuf],file->af_BufferSize - file->af_BytesLeft) < 0)
+            if (Write(file->arf_File,file->arf_Buffers[file->arf_CurrentBuf],file->arf_BufferSize - file->arf_BytesLeft) < 0)
             {
                 RecordSyncFailure(file);
                 return(-1);
@@ -633,7 +633,7 @@ D_S(struct FileInfoBlock,fib);
          * sizes, where the chunk size has to be written after the chunk data)
          */
 
-        current = Seek(file->af_File,position,mode);
+        current = Seek(file->arf_File,position,mode);
 
         if (current < 0)
         {
@@ -641,9 +641,9 @@ D_S(struct FileInfoBlock,fib);
             return(-1);
         }
 
-        file->af_BytesLeft  = file->af_BufferSize;
-        file->af_CurrentBuf = 0;
-        file->af_Offset     = file->af_Buffers[0];
+        file->arf_BytesLeft  = file->arf_BufferSize;
+        file->arf_CurrentBuf = 0;
+        file->arf_Offset     = file->arf_Buffers[0];
     }
 
     return(current);

@@ -25,7 +25,7 @@ static LONG errorreport(LONG code, LONG type, ULONG arg1, struct MsgPort *device
 
 /* this function waits for a packet to come back from the file system. 
  *
- * WARNING: This function requires file->af_PacketPending to be
+ * WARNING: This function requires file->arf_PacketPending to be
  *          either ASR_PKT_START, ASR_PKT_PENDING or ASR_PKT_CLOSE,
  *          or it will cause a dead lock.
  *
@@ -39,7 +39,7 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
     while (TRUE)
     {
 	/* This enables signaling when a packet comes back to the port */
-	file->af_PacketPort.mp_Flags = PA_SIGNAL;
+	file->arf_PacketPort.mp_Flags = PA_SIGNAL;
 
 	/* Wait for the packet to come back, and remove it from the message
 	 * list. Since we know no other packets can come in to the port, we can
@@ -47,15 +47,15 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 	 * we would have to use GetMsg(), which correctly arbitrates access in such
 	 * a case
 	 */
-	Remove((struct Node *)WaitPort(&file->af_PacketPort));
+	Remove((struct Node *)WaitPort(&file->arf_PacketPort));
 
 	/* set the port type back to PA_IGNORE so we won't be bothered with
 	 * spurious signals
 	 */
-	file->af_PacketPort.mp_Flags = PA_IGNORE;
+	file->arf_PacketPort.mp_Flags = PA_IGNORE;
 
 
-	bytes = file->af_Packet.sp_Pkt.dp_Res1;
+	bytes = file->arf_Packet.sp_Pkt.dp_Res1;
 	if (bytes >= 0)
 	{
 	    /* if bytes == 0, we want to keep the previous buffer contents valid
@@ -63,77 +63,77 @@ LONG WaitAsyncRPacket(AsyncRFile *file)
 	     */
 	    if (bytes > 0)
 	    {
-		if (file->af_PacketPending == ASR_PKT_START)
+		if (file->arf_PacketPending == ASR_PKT_START)
 		{
-		    file->af_BufMin[file->af_CurrentBuf] = file->af_FilesysPos;
-		    file->af_BytesArrived[file->af_CurrentBuf] = bytes;
+		    file->arf_BufMin[file->arf_CurrentBuf] = file->arf_FilesysPos;
+		    file->arf_BytesArrived[file->arf_CurrentBuf] = bytes;
 		}
 		else
 		{
-		    file->af_BufMin[1 - file->af_CurrentBuf] = file->af_FilesysPos;
-		    file->af_BytesArrived[1 - file->af_CurrentBuf] = bytes;
+		    file->arf_BufMin[1 - file->arf_CurrentBuf] = file->arf_FilesysPos;
+		    file->arf_BytesArrived[1 - file->arf_CurrentBuf] = bytes;
 		}
 
-		file->af_FilesysPos += bytes;
+		file->arf_FilesysPos += bytes;
 	    }
 
 	    SetIoErr(0);
 	    break;
 	}
 	else
-	if (file->af_PacketPending == ASR_PKT_CLOSE)
+	if (file->arf_PacketPending == ASR_PKT_CLOSE)
 	    goto close;
 
 	/* packet's error code */
-	SetIoErr(file->af_Packet.sp_Pkt.dp_Res2);
+	SetIoErr(file->arf_Packet.sp_Pkt.dp_Res2);
 
 	/* see if the user wants to try again... */
-	if (errorreport(file->af_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->af_File,NULL))
+	if (errorreport(file->arf_Packet.sp_Pkt.dp_Res2,REPORT_STREAM,file->arf_File,NULL))
 	{
-	    if (file->af_PacketPending == ASR_PKT_PENDING)
+	    if (file->arf_PacketPending == ASR_PKT_PENDING)
 	    {
 		ULONG offset;
 
-		file->af_BufMin[1 - file->af_CurrentBuf] = 0;
-		file->af_BytesArrived[1 - file->af_CurrentBuf] = 0;
+		file->arf_BufMin[1 - file->arf_CurrentBuf] = 0;
+		file->arf_BytesArrived[1 - file->arf_CurrentBuf] = 0;
 
-		offset = (ULONG)file->af_Offset - (ULONG)file->af_Buffers[file->af_CurrentBuf];
+		offset = (ULONG)file->arf_Offset - (ULONG)file->arf_Buffers[file->arf_CurrentBuf];
 
 		/* reset state of current buffer in case the read was initiated
 		 * from SeekAsync()
 		 */
-		file->af_BytesLeft = file->af_BytesArrived[file->af_CurrentBuf] - offset;
-		file->af_BufferPos = file->af_BufMin[file->af_CurrentBuf] + offset;
-		file->af_SeekOffset = 0;
+		file->arf_BytesLeft = file->arf_BytesArrived[file->arf_CurrentBuf] - offset;
+		file->arf_BufferPos = file->arf_BufMin[file->arf_CurrentBuf] + offset;
+		file->arf_SeekOffset = 0;
 	    }
 	    break;
 	}
 
 	/* user wants to try again, resend the packet */
-	if (file->af_PacketPending == ASR_PKT_START)
+	if (file->arf_PacketPending == ASR_PKT_START)
 	{
-	    SendAsyncRPacket(file,file->af_Buffers[file->af_CurrentBuf], file->af_FilesysPos);
-	    file->af_PacketPending = ASR_PKT_START;
+	    SendAsyncRPacket(file,file->arf_Buffers[file->arf_CurrentBuf], file->arf_FilesysPos);
+	    file->arf_PacketPending = ASR_PKT_START;
 	}
 	else
-	    SendAsyncRPacket(file,file->af_Buffers[1 - file->af_CurrentBuf], file->af_FilesysPos);
+	    SendAsyncRPacket(file,file->arf_Buffers[1 - file->arf_CurrentBuf], file->arf_FilesysPos);
     }
 
-    if (file->af_PacketPending == ASR_PKT_START && file->af_FileSize)
+    if (file->arf_PacketPending == ASR_PKT_START && file->arf_FileSize)
     {
 	/* handle split buffer and single buffer modes */
-	if (file->af_FileSize > file->af_BufferSize)
+	if (file->arf_FileSize > file->arf_BufferSize)
 	{
-	    if (file->af_FileSize < file->af_BufferSize << 1)
-		file->af_Packet.sp_Pkt.dp_Arg3 = file->af_FileSize - file->af_Packet.sp_Pkt.dp_Arg3;
+	    if (file->arf_FileSize < file->arf_BufferSize << 1)
+		file->arf_Packet.sp_Pkt.dp_Arg3 = file->arf_FileSize - file->arf_Packet.sp_Pkt.dp_Arg3;
 
-	    file->af_PacketPending = ASR_PKT_IDLE;
+	    file->arf_PacketPending = ASR_PKT_IDLE;
 	}
 	else
-	    file->af_PacketPending = ASR_PKT_READY;
+	    file->arf_PacketPending = ASR_PKT_READY;
     }
     else
-	file->af_PacketPending = ASR_PKT_IDLE;
+	file->arf_PacketPending = ASR_PKT_IDLE;
 close:
     return(bytes);
 }

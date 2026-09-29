@@ -21,22 +21,22 @@
 /* send out an async packet to the file system. */
 LONG SendAsyncRPacket(AsyncRFile *file, APTR buffer, ULONG filesyspos)
 {
-    if (filesyspos != file->af_FilesysPos)
+    if (filesyspos != file->arf_FilesysPos)
     {
 	if (filesyspos > INT_MAX)
-	    Seek(file->af_File, filesyspos - file->af_FileSize, OFFSET_END);
+	    Seek(file->arf_File, filesyspos - file->arf_FileSize, OFFSET_END);
 	else
-	    Seek(file->af_File, filesyspos, OFFSET_BEGINNING);
+	    Seek(file->arf_File, filesyspos, OFFSET_BEGINNING);
 
 	if (IoErr())
 	    return(-1);
 
-	file->af_FilesysPos = filesyspos;
+	file->arf_FilesysPos = filesyspos;
     }
-    file->af_Packet.sp_Pkt.dp_Port = &file->af_PacketPort;
-    file->af_Packet.sp_Pkt.dp_Arg2 = (LONG)buffer;
-    PutMsg(file->af_Handler, &file->af_Packet.sp_Msg);
-    file->af_PacketPending = ASR_PKT_PENDING;
+    file->arf_Packet.sp_Pkt.dp_Port = &file->arf_PacketPort;
+    file->arf_Packet.sp_Pkt.dp_Arg2 = (LONG)buffer;
+    PutMsg(file->arf_Handler, &file->arf_Packet.sp_Msg);
+    file->arf_PacketPending = ASR_PKT_PENDING;
 
     return(0);
 }

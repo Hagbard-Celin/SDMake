@@ -26,19 +26,19 @@
  */
 typedef struct AsyncFile
 {
-    BPTR                  af_File;
-    ULONG                 af_BlockSize;
-    struct MsgPort       *af_Handler;
-    APTR                  af_Offset;
-    LONG                  af_BytesLeft;
-    ULONG                 af_BufferSize;
-    APTR                  af_Buffers[2];
-    struct StandardPacket af_Packet;
-    struct MsgPort        af_PacketPort;
-    ULONG                 af_CurrentBuf;
-    ULONG                 af_SeekOffset;
-    UBYTE                 af_PacketPending;
-    UBYTE                 af_ReadMode;
+    BPTR                  arf_File;
+    ULONG                 arf_BlockSize;
+    struct MsgPort       *arf_Handler;
+    APTR                  arf_Offset;
+    LONG                  arf_BytesLeft;
+    ULONG                 arf_BufferSize;
+    APTR                  arf_Buffers[2];
+    struct StandardPacket arf_Packet;
+    struct MsgPort        arf_PacketPort;
+    ULONG                 arf_CurrentBuf;
+    ULONG                 arf_SeekOffset;
+    UBYTE                 arf_PacketPending;
+    UBYTE                 arf_ReadMode;
 } AsyncFile;
 
 

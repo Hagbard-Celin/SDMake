@@ -55,23 +55,23 @@ typedef short enum AsyncRPacketState
  */
 typedef struct AsyncRFile
 {
-    BPTR                  af_File;
-    struct MsgPort       *af_Handler;
-    APTR                  af_Offset;
-    LONG                  af_BytesLeft;
-    ULONG                 af_BufferSize;
-    APTR                  af_Buffers[2];
-    ULONG                 af_BufMin[2];
-    ULONG                 af_BytesArrived[2];
-    struct StandardPacket af_Packet;
-    struct MsgPort        af_PacketPort;
-    ULONG                 af_SeekOffset;
-    UWORD                 af_CurrentBuf;
-    AsyncRPacketState     af_PacketPending;
-    ULONG                 af_FilesysPos;
-    ULONG                 af_BufferPos;
-    ULONG                 af_FileSize;
-    ULONG                 af_SequentialBytes;
+    BPTR                  arf_File;
+    struct MsgPort       *arf_Handler;
+    APTR                  arf_Offset;
+    LONG                  arf_BytesLeft;
+    ULONG                 arf_BufferSize;
+    APTR                  arf_Buffers[2];
+    ULONG                 arf_BufMin[2];
+    ULONG                 arf_BytesArrived[2];
+    struct StandardPacket arf_Packet;
+    struct MsgPort        arf_PacketPort;
+    ULONG                 arf_SeekOffset;
+    UWORD                 arf_CurrentBuf;
+    AsyncRPacketState     arf_PacketPending;
+    ULONG                 arf_FilesysPos;
+    ULONG                 arf_BufferPos;
+    ULONG                 arf_FileSize;
+    ULONG                 arf_SequentialBytes;
 } AsyncRFile;
 
 

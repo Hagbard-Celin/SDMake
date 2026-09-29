@@ -41,7 +41,7 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
     }
 
     /* wait for the buffer to fill if this is the first read after open */
-    if (file->af_PacketPending == ASR_PKT_START)
+    if (file->arf_PacketPending == ASR_PKT_START)
     {
 	bytesArrived = WaitAsyncRPacket(file);
 	if (bytesArrived <= 0)
@@ -53,34 +53,34 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 	    goto end;
 	}
 
-	file->af_BytesLeft   = bytesArrived;
+	file->arf_BytesLeft   = bytesArrived;
     }
 
     /* do we need to send packet to fill other buffer? */
-    if (file->af_PacketPending == ASR_PKT_IDLE)
+    if (file->arf_PacketPending == ASR_PKT_IDLE)
     {
 	ULONG nextpos;
 
-	nextpos = file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf];
+	nextpos = file->arf_BufMin[file->arf_CurrentBuf] + file->arf_BytesArrived[file->arf_CurrentBuf];
 
 	/* does the other buffer already contain the data we need */
-	if (nextpos && file->af_BufMin[1 - file->af_CurrentBuf] == nextpos)
+	if (nextpos && file->arf_BufMin[1 - file->arf_CurrentBuf] == nextpos)
 	{
-	    file->af_PacketPending = ASR_PKT_READY;
+	    file->arf_PacketPending = ASR_PKT_READY;
 	}
 	else
 	{
 	    BOOL sequential = FALSE;
 
-	    if (file->af_SequentialBytes < ASR_SEQBYTESTHRESH)
-		file->af_SequentialBytes += numBytes;
+	    if (file->arf_SequentialBytes < ASR_SEQBYTESTHRESH)
+		file->arf_SequentialBytes += numBytes;
 
-	    if (file->af_SequentialBytes >= ASR_SEQBYTESTHRESH)
+	    if (file->arf_SequentialBytes >= ASR_SEQBYTESTHRESH)
 		sequential = TRUE;
 
-	    if (sequential || numBytes > file->af_BytesLeft || file->af_BytesLeft < ASR_BYTESLEFTTHRESH)
+	    if (sequential || numBytes > file->arf_BytesLeft || file->arf_BytesLeft < ASR_BYTESLEFTTHRESH)
 	    {
-		if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], nextpos))
+		if (SendAsyncRPacket(file, file->arf_Buffers[1 - file->arf_CurrentBuf], nextpos))
 		{
 		    totalBytes = -1;
 		    goto end;
@@ -94,31 +94,31 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 
     while (TRUE)
     {
-	if (numBytes <= file->af_BytesLeft)
+	if (numBytes <= file->arf_BytesLeft)
 	{
-	    lineBytes = CopyLineEOL((STRPTR)file->af_Offset, buffer, numBytes, &got_eol);
+	    lineBytes = CopyLineEOL((STRPTR)file->arf_Offset, buffer, numBytes, &got_eol);
 
-	    file->af_BufferPos += lineBytes;
+	    file->arf_BufferPos += lineBytes;
 	    buffer              = (APTR)((ULONG)buffer + lineBytes);
 	    totalBytes         += lineBytes;
-	    file->af_BytesLeft -= lineBytes;
-	    file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
+	    file->arf_BytesLeft -= lineBytes;
+	    file->arf_Offset     = (APTR)((ULONG)file->arf_Offset + lineBytes);
 	    *buffer             = 0;
 	    break;
 	}
 	else
 	{
 	    /* drain buffer */
-	    if (file->af_BytesLeft)
+	    if (file->arf_BytesLeft)
 	    {
-		lineBytes = CopyLineEOL((STRPTR)file->af_Offset, (STRPTR)buffer, file->af_BytesLeft, &got_eol);
+		lineBytes = CopyLineEOL((STRPTR)file->arf_Offset, (STRPTR)buffer, file->arf_BytesLeft, &got_eol);
 
 		numBytes           -= lineBytes;
-		file->af_BufferPos += lineBytes;
+		file->arf_BufferPos += lineBytes;
 		buffer              = (APTR)((ULONG)buffer + lineBytes);
 		totalBytes         += lineBytes;
-		file->af_BytesLeft -= lineBytes;
-		file->af_Offset     = (APTR)((ULONG)file->af_Offset + lineBytes);
+		file->arf_BytesLeft -= lineBytes;
+		file->arf_Offset     = (APTR)((ULONG)file->arf_Offset + lineBytes);
 
 		if (got_eol)
 		{
@@ -127,13 +127,13 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 		}
 	    }
 
-	    if (file->af_PacketPending == ASR_PKT_READY)
+	    if (file->arf_PacketPending == ASR_PKT_READY)
 	    {
-		bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
+		bytesArrived = file->arf_BytesArrived[1 - file->arf_CurrentBuf];
 
 		/* keep ASR_PKT_READY for single buffer mode and NIL: */
-		if (file->af_FileSize > file->af_BufferSize)
-		    file->af_PacketPending = ASR_PKT_IDLE;
+		if (file->arf_FileSize > file->arf_BufferSize)
+		    file->arf_PacketPending = ASR_PKT_IDLE;
 	    }
 	    else
 		bytesArrived = WaitAsyncRPacket(file);
@@ -158,24 +158,24 @@ LONG ReadLineAsyncR(AsyncRFile *file, STRPTR buffer, LONG numBytes)
 		 * is improbable for a seekable filesystem handler, but should
 		 * it happen this protects us from the Guru.
 		 */
-		if (file->af_SeekOffset >= bytesArrived)
+		if (file->arf_SeekOffset >= bytesArrived)
 		{
 		    SetIoErr(ERROR_SEEK_ERROR);
 		    totalBytes = -1;
 		    break;
 		}
 
-		file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-		file->af_BytesLeft   = bytesArrived - file->af_SeekOffset;
-		file->af_Offset      = (APTR)((ULONG)file->af_Buffers[file->af_CurrentBuf] + file->af_SeekOffset);
-		file->af_SeekOffset  = 0;
+		file->arf_CurrentBuf = 1 - file->arf_CurrentBuf;
+		file->arf_BytesLeft   = bytesArrived - file->arf_SeekOffset;
+		file->arf_Offset      = (APTR)((ULONG)file->arf_Buffers[file->arf_CurrentBuf] + file->arf_SeekOffset);
+		file->arf_SeekOffset  = 0;
 
 		/* send packet if we will exhaust the other buffer in next iteration,
 		 * or if the sequential read detection heuristics has triggered
 		 */
-		if (numBytes > file->af_BytesLeft || reFill)
+		if (numBytes > file->arf_BytesLeft || reFill)
 		{
-		    if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+		    if (SendAsyncRPacket(file, file->arf_Buffers[1 - file->arf_CurrentBuf], file->arf_BufMin[file->arf_CurrentBuf] + bytesArrived))
 		    {
 			totalBytes = -1;
 			goto end;
@@ -253,34 +253,34 @@ static BOOL SpillToEOL(AsyncRFile *file, BOOL *got_eol)
     LONG spilledBytes;
     BOOL ret = TRUE;
 
-    if (file->af_PacketPending == ASR_PKT_IDLE)
+    if (file->arf_PacketPending == ASR_PKT_IDLE)
     {
-	if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + file->af_BytesArrived[file->af_CurrentBuf]))
+	if (SendAsyncRPacket(file, file->arf_Buffers[1 - file->arf_CurrentBuf], file->arf_BufMin[file->arf_CurrentBuf] + file->arf_BytesArrived[file->arf_CurrentBuf]))
 	    ret = FALSE;
     }
 
     while (ret)
     {
 	/* spill buffer */
-	if (file->af_BytesLeft)
+	if (file->arf_BytesLeft)
 	{
-	    spilledBytes = GetEOL((STRPTR)file->af_Offset, file->af_BytesLeft, got_eol);
+	    spilledBytes = GetEOL((STRPTR)file->arf_Offset, file->arf_BytesLeft, got_eol);
 
-	    file->af_BufferPos       += spilledBytes;
-	    file->af_BytesLeft       -= spilledBytes;
-	    file->af_Offset           = (APTR)((ULONG)file->af_Offset + spilledBytes);
-	    file->af_SequentialBytes += spilledBytes;
+	    file->arf_BufferPos       += spilledBytes;
+	    file->arf_BytesLeft       -= spilledBytes;
+	    file->arf_Offset           = (APTR)((ULONG)file->arf_Offset + spilledBytes);
+	    file->arf_SequentialBytes += spilledBytes;
 
 	    if (*got_eol)
 		break;
 	}
 
-	if (file->af_PacketPending == ASR_PKT_READY)
+	if (file->arf_PacketPending == ASR_PKT_READY)
 	{
-	    bytesArrived = file->af_BytesArrived[1 - file->af_CurrentBuf];
+	    bytesArrived = file->arf_BytesArrived[1 - file->arf_CurrentBuf];
 
-	    if (file->af_FileSize > file->af_BufferSize)
-		file->af_PacketPending = ASR_PKT_IDLE;
+	    if (file->arf_FileSize > file->arf_BufferSize)
+		file->arf_PacketPending = ASR_PKT_IDLE;
 	}
 	else
 	    bytesArrived = WaitAsyncRPacket(file);
@@ -294,12 +294,12 @@ static BOOL SpillToEOL(AsyncRFile *file, BOOL *got_eol)
 	}
 	else
 	{
-	    file->af_CurrentBuf = 1 - file->af_CurrentBuf;
-	    file->af_BytesLeft  = bytesArrived;
-	    file->af_Offset     = file->af_Buffers[file->af_CurrentBuf];
+	    file->arf_CurrentBuf = 1 - file->arf_CurrentBuf;
+	    file->arf_BytesLeft  = bytesArrived;
+	    file->arf_Offset     = file->arf_Buffers[file->arf_CurrentBuf];
 
 	    /* we have no idea where the line ends, so the packet must be sent in case we exhaust the other buffer */
-	    if (SendAsyncRPacket(file, file->af_Buffers[1 - file->af_CurrentBuf], file->af_BufMin[file->af_CurrentBuf] + bytesArrived))
+	    if (SendAsyncRPacket(file, file->arf_Buffers[1 - file->arf_CurrentBuf], file->arf_BufMin[file->arf_CurrentBuf] + bytesArrived))
 	    {
 		ret = FALSE;
 		break;
