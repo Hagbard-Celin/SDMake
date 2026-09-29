@@ -16,6 +16,8 @@
 #include <proto/dos.h>
 #include "asyncr_internal.h"
 
+static APTR allocarf(ULONG size);
+
 /*****************************************************************************/
 
 
@@ -135,7 +137,7 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 	 * quad-longword alignment of the buffers
 	 */
 
-	if (file = AllocVec(sizeof(AsyncRFile) + bufferSize + 15,MEMF_PUBLIC | MEMF_ANY))
+	if (file = allocarf(sizeof(AsyncRFile) + bufferSize + 15))
 	{
 	    file->af_File      = handle;
 
@@ -248,5 +250,34 @@ AsyncRFile *OpenAsyncR(const STRPTR fileName, ULONG bufferSize)
 end:
     SetIoErr(err);
     return(file);
+}
+
+static APTR allocarf(ULONG size)
+{
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
+    {
+#endif
+#if OSVERMAX >= 36
+	return AllocVec(size, MEMF_PUBLIC|MEMF_ANY);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	ULONG *alloc;
+
+	if (alloc = AllocMem(sizeof(ULONG) + size, MEMF_PUBLIC|MEMF_ANY))
+	{
+	    *alloc = size;
+	    alloc++;
+	}
+	return alloc;
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
 }
 

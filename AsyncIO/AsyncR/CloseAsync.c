@@ -14,6 +14,8 @@
 
 #include "asyncr_internal.h"
 
+static void freearf(APTR arf);
+
 /*****************************************************************************/
 
 
@@ -29,7 +31,33 @@ void CloseAsyncR(AsyncRFile *file)
 	}
 
 	Close(file->af_File);
-	FreeVec(file);
+	freearf(file);
     }
+}
+
+static void freearf(APTR arf)
+{
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    if (DOSBase->dl_lib.lib_Version >= 36)
+    {
+#endif
+#if OSVERMAX >= 36
+	FreeVec(arf);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+    else
+    {
+#endif
+#if OSVERMIN < 36
+	ULONG *alloc = (ULONG *)arf;
+
+	alloc--;
+
+	FreeMem(alloc, *alloc);
+#endif
+#if OSVERMIN < 36 && OSVERMAX >= 36
+    }
+#endif
 }
 
